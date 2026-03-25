@@ -1,8 +1,8 @@
-import 'react-native-get-random-values';
 import { RealmProvider, seedInitialGoals, useQuery, useRealm } from "@/context/RealmProvider";
 import { UserProfile } from "@/models/UserProfile";
 import { Stack, useRouter, useSegments } from "expo-router";
 import React, { useEffect, useState } from "react";
+import 'react-native-get-random-values';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const users = useQuery(UserProfile);
@@ -14,7 +14,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     seedInitialGoals(realm);
     setIsReady(true);
-  }, []);
+  }, [realm]);
 
   useEffect(() => {
     if (!isReady) return;
