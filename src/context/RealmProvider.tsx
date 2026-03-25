@@ -1,3 +1,4 @@
+import { ActivityLog } from '@/models/ActivityLog';
 import { Goal } from '@/models/Goal';
 import { UserProfile } from '@/models/UserProfile';
 import { createRealmContext, Realm } from '@realm/react';
@@ -32,8 +33,23 @@ const PREDEFINED_GOALS = [
 ];
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal],
-  schemaVersion: 3,
+  schema: [UserProfile, Goal, ActivityLog],
+  schemaVersion: 5,
+  onMigration: (oldRealm, newRealm) => {
+    if (oldRealm.schemaVersion < 5) {
+      const oldLogs = oldRealm.objects('ActivityLog');
+      const newLogs = newRealm.objects<ActivityLog>('ActivityLog');
+
+      for (let i = 0; i < oldLogs.length; i++) {
+        const oldLog = oldLogs[i] as any;
+        const newLog = newLogs[i];
+        
+        if (oldLog.distance < 100) { 
+           newLog.distance = oldLog.distance * 1000;
+        }
+      }
+    }
+  },
   onFirstOpen: (realm) => {
   },
 });

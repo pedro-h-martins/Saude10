@@ -2,6 +2,7 @@ import { Card } from '@/components/Card';
 import { ProgressCircle } from '@/components/ProgressCircle';
 import { Colors } from '@/constants/Colors';
 import { useQuery } from '@/context/RealmProvider';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { UserProfile } from '@/models/UserProfile';
 import { calculateBMI } from '@/utils/health';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -24,7 +25,7 @@ const DashboardHeader = () => (
   </View>
 );
 
-const ActivityCard = () => (
+const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFormatted: string }) => (
   <LinearGradient
     colors={[Colors.primary, Colors.primaryLight]}
     start={{ x: 0, y: 0 }}
@@ -38,13 +39,13 @@ const ActivityCard = () => (
       </View>
     </View>
     
-    <Text style={styles.stepsCount}>8,432</Text>
+    <Text style={styles.stepsCount}>{steps.toLocaleString()}</Text>
     <Text style={styles.stepsLabel}>Passos concluidos hoje</Text>
 
     <View style={styles.activityStats}>
       <View style={styles.statItem}>
         <Text style={styles.statLabel}>DISTÂNCIA PERCORRIDA</Text>
-        <Text style={styles.statValue}>6.2 km</Text>
+        <Text style={styles.statValue}>{distanceFormatted}</Text>
       </View>
       <View style={styles.divider} />
       <View style={styles.statItem}>
@@ -61,6 +62,7 @@ const ActivityCard = () => (
 export function Home() {
   const users = useQuery(UserProfile);
   const user = users[0];
+  const { steps, formattedDistance } = useActivityTracking();
 
   const bmiData = useMemo(() => {
     return user ? calculateBMI(user.weight, user.height) : null;
@@ -70,7 +72,7 @@ export function Home() {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <DashboardHeader />
-        <ActivityCard />
+        <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
         
         <Card style={styles.bpCard}>
             <View style={styles.bpHeader}>
