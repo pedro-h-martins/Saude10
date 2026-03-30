@@ -1,5 +1,6 @@
 import { ActivityLog } from '@/models/ActivityLog';
 import { Goal } from '@/models/Goal';
+import { PomodoroLog } from '@/models/PomodoroLog';
 import { UserProfile } from '@/models/UserProfile';
 import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
@@ -33,8 +34,8 @@ const PREDEFINED_GOALS = [
 ];
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog],
-  schemaVersion: 7,
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog],
+  schemaVersion: 8,
   onMigration: (oldRealm, newRealm) => {
     if (oldRealm.schemaVersion < 6) {
       const hasActivityLog = oldRealm.schema.some(s => s.name === 'ActivityLog');
