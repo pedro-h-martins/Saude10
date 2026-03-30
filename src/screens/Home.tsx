@@ -1,6 +1,7 @@
 import { Card } from '@/components/Card';
 import { PomodoroWidget } from '@/components/PomodoroWidget';
 import { WaterWidget } from '@/components/WaterWidget';
+import { WellnessWidget } from '@/components/WellnessWidget';
 import { Colors } from '@/constants/Colors';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
@@ -140,6 +141,7 @@ export function Home() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <DashboardHeader />
         <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
+        <WellnessWidget />
         <WaterWidget />
         
         <TouchableOpacity 
