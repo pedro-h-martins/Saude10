@@ -37,11 +37,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="goals"
+        name="goals-reminders"
         options={{
-          title: 'METAS',
+          title: 'METAS E LEMBRETES',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="track-changes" size={size} color={color} />
+            <MaterialIcons name="notifications-active" size={size} color={color} />
           ),
         }}
       />
