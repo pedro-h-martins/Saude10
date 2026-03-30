@@ -10,14 +10,6 @@ interface WellnessRatingProps {
   disabled?: boolean;
 }
 
-const RATING_DATA = [
-  { value: 1, icon: 'sad-outline', color: '#E74C3C', label: 'Muito Mal' },
-  { value: 2, icon: '陵-outline', color: '#F39C12', label: 'Mal' },
-  { value: 3, icon: 'happy-outline', color: '#F1C40F', label: 'Neutro' },
-  { value: 4, icon: 'checkmark-circle-outline', color: '#2ECC71', label: 'Bem' },
-  { value: 5, icon: 'star-outline', color: '#0052D4', label: 'Excelente' },
-];
-
 const RATINGS = [
   { value: 1, icon: 'sad-outline', label: 'Péssimo' },
   { value: 2, icon: 'trending-down-outline', label: 'Mal' },

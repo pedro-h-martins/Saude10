@@ -37,7 +37,7 @@ export const WellnessWidget = () => {
       setNote(latest.notes || '');
       setIsSubmitted(true);
     }
-  }, []);
+  }, [todayLogs]);
 
   const handleRatingChange = (newRating: number) => {
     setRating(newRating);

@@ -91,7 +91,7 @@ export default function Metrics() {
             {config.label}
           </Text>
           {item.notes ? (
-            <Text style={styles.noteText}>"{item.notes}"</Text>
+            <Text style={styles.noteText}>&quot;{item.notes}&quot;</Text>
           ) : (
             <Text style={styles.emptyNoteText}>Sem observações</Text>
           )}
