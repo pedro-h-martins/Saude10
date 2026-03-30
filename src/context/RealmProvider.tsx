@@ -34,18 +34,22 @@ const PREDEFINED_GOALS = [
 
 export const RealmContext = createRealmContext({
   schema: [UserProfile, Goal, ActivityLog],
-  schemaVersion: 5,
+  schemaVersion: 7,
   onMigration: (oldRealm, newRealm) => {
-    if (oldRealm.schemaVersion < 5) {
-      const oldLogs = oldRealm.objects('ActivityLog');
-      const newLogs = newRealm.objects<ActivityLog>('ActivityLog');
+    if (oldRealm.schemaVersion < 6) {
+      const hasActivityLog = oldRealm.schema.some(s => s.name === 'ActivityLog');
+      
+      if (hasActivityLog) {
+        const oldLogs = oldRealm.objects('ActivityLog');
+        const newLogs = newRealm.objects<ActivityLog>('ActivityLog');
 
-      for (let i = 0; i < oldLogs.length; i++) {
-        const oldLog = oldLogs[i] as any;
-        const newLog = newLogs[i];
-        
-        if (oldLog.distance < 100) { 
-           newLog.distance = oldLog.distance * 1000;
+        for (let i = 0; i < oldLogs.length; i++) {
+          const oldLog = oldLogs[i] as any;
+          const newLog = newLogs[i];
+          
+          if (oldLog && newLog && oldLog.distance < 100) { 
+             newLog.distance = oldLog.distance * 1000;
+          }
         }
       }
     }

@@ -1,13 +1,13 @@
 import { Realm } from '@realm/react';
 
-export class ActivityLog extends Realm.Object {
+export class ActivityLog extends Realm.Object<ActivityLog> {
   _id!: Realm.BSON.ObjectId;
   date!: string;
   steps!: number;
   distance!: number;
   updatedAt!: Date;
 
-  static schema = {
+  static schema: Realm.ObjectSchema = {
     name: 'ActivityLog',
     primaryKey: '_id',
     properties: {
