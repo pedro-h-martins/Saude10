@@ -1,5 +1,5 @@
 import { Card } from '@/components/Card';
-import { ProgressCircle } from '@/components/ProgressCircle';
+import { PomodoroWidget } from '@/components/PomodoroWidget';
 import { Colors } from '@/constants/Colors';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
@@ -268,12 +268,7 @@ export function Home() {
         </Modal>
         
         <View style={styles.gridRow}>
-            <Card style={styles.halfCard}>
-                <Text style={styles.gridCardTitle}>FOCO</Text>
-                <ProgressCircle size={70} strokeWidth={6} progress={0.6}>
-                    <Text style={styles.timerText}>18:45</Text>
-                </ProgressCircle>
-            </Card>
+            <PomodoroWidget />
             <Card style={styles.halfCard}>
                 <Text style={styles.gridCardTitle}>IMC</Text>
                 {bmiData ? (

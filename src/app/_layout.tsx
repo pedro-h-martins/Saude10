@@ -2,6 +2,7 @@ import { RealmProvider, seedInitialGoals, useQuery, useRealm } from "@/context/R
 import { UserProfile } from "@/models/UserProfile";
 import { Stack, useRouter, useSegments } from "expo-router";
 import React, { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 import 'react-native-get-random-values';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -31,15 +32,27 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RootLayoutContent() {
+  return (
+    <AuthGuard>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
+      </Stack>
+    </AuthGuard>
+  );
+}
+
 export default function RootLayout() {
   return (
-    <RealmProvider>
-      <AuthGuard>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="welcome" options={{ headerShown: false }} />
-        </Stack>
-      </AuthGuard>
+    <RealmProvider 
+      fallback={
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" />
+        </View>
+      }
+    >
+      <RootLayoutContent />
     </RealmProvider>
   );
 }
