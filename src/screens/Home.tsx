@@ -142,7 +142,13 @@ export function Home() {
         <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
         <WaterWidget />
         
-        <TouchableOpacity activeOpacity={0.8} onPress={() => setModalVisible(true)}>
+        <TouchableOpacity 
+          activeOpacity={0.8} 
+          onPress={() => {
+            setDate(new Date());
+            setModalVisible(true);
+          }}
+        >
           <Card style={styles.bpCard}>
               <View style={styles.bpHeader}>
                   <View style={styles.bpIconContainer}>
@@ -243,10 +249,14 @@ export function Home() {
                   value={date}
                   mode={showDatePicker ? 'date' : 'time'}
                   is24Hour={true}
-                  onChange={(event, selectedDate) => {
+                  onValueChange={(event, selectedDate) => {
                     setShowDatePicker(false);
                     setShowTimePicker(false);
                     if (selectedDate) setDate(selectedDate);
+                  }}
+                  onDismiss={() => {
+                    setShowDatePicker(false);
+                    setShowTimePicker(false);
                   }}
                 />
               )}
