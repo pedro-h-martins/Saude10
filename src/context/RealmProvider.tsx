@@ -9,8 +9,6 @@ import { UserProfile } from '@/models/UserProfile';
 import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
 
-
-
 const ENCRYPTION_KEY_ID = 'realm_encryption_key_v1';
 
 export async function getEncryptionKey(): Promise<Uint8Array> {
