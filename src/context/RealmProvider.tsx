@@ -1,4 +1,5 @@
 import { ActivityLog } from '@/models/ActivityLog';
+import { BloodPressure } from '@/models/BloodPressure';
 import { Goal } from '@/models/Goal';
 import { UserProfile } from '@/models/UserProfile';
 import { createRealmContext, Realm } from '@realm/react';
@@ -33,9 +34,27 @@ const PREDEFINED_GOALS = [
 ];
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog],
-  schemaVersion: 7,
+  schema: [UserProfile, Goal, ActivityLog, BloodPressure],
+  schemaVersion: 10,
   onMigration: (oldRealm, newRealm) => {
+    if (oldRealm.schemaVersion < 10) {
+      const oldModels = oldRealm.schema.map(s => s.name);
+      
+      if (oldModels.includes('BloodPressure')) {
+        const oldBloodPressures = oldRealm.objects('BloodPressure');
+        const newBloodPressures = newRealm.objects<BloodPressure>('BloodPressure');
+
+        for (let i = 0; i < oldBloodPressures.length; i++) {
+          const oldBP = oldBloodPressures[i] as any;
+          const newBP = newBloodPressures[i];
+          
+          if (oldBP && newBP) {
+            newBP.timestamp = oldBP.createdAt || new Date();
+            newBP.userId = oldBP.userId || 'default_user';
+          }
+        }
+      }
+    }
     if (oldRealm.schemaVersion < 6) {
       const hasActivityLog = oldRealm.schema.some(s => s.name === 'ActivityLog');
       
