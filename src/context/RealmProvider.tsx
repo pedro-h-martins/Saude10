@@ -6,8 +6,10 @@ import { HydrationLog } from '@/models/HydrationLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
 import { Reminder } from '@/models/Reminder';
 import { UserProfile } from '@/models/UserProfile';
+import { WellnessLog } from '@/models/WellnessLog';
 import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
+
 
 const ENCRYPTION_KEY_ID = 'realm_encryption_key_v1';
 
@@ -37,8 +39,17 @@ const PREDEFINED_GOALS = [
 ];
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder],
-  schemaVersion: 12,
+  schema: [
+    UserProfile,
+    Goal,
+    ActivityLog,
+    PomodoroLog,
+    BloodPressure,
+    HydrationLog,
+    Reminder,
+    WellnessLog,
+  ],
+  schemaVersion: 13,
   onMigration: (oldRealm, newRealm) => {
     if (oldRealm.schemaVersion < 12) {
       const oldModels = oldRealm.schema.map(s => s.name);
