@@ -16,14 +16,14 @@ export function Welcome({ onLogin }: WelcomeProps) {
         <View style={styles.branding}>
           <View style={styles.logoRow}>
             <MaterialCommunityIcons name="heart-plus" size={32} color={Colors.primary} />
-            <Text style={styles.brandTitle}>Saude10</Text>
+            <Text style={styles.brandTitle}>Saúde10</Text>
           </View>
           <Text style={styles.brandSubtitle}>ELITE WELLNESS</Text>
         </View>
 
         <View style={styles.mainContent}>
           <Text style={styles.welcomeTitle}>Bem-vindo ao</Text>
-          <Text style={[styles.welcomeTitle, styles.brandName]}>Saude10</Text>
+          <Text style={[styles.welcomeTitle, styles.brandName]}>Saúde10</Text>
         </View>
 
         <View style={styles.buttonContainer}>
