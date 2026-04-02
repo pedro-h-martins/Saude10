@@ -39,16 +39,7 @@ const PREDEFINED_GOALS = [
 ];
 
 export const RealmContext = createRealmContext({
-  schema: [
-    UserProfile,
-    Goal,
-    ActivityLog,
-    PomodoroLog,
-    BloodPressure,
-    HydrationLog,
-    Reminder,
-    WellnessLog,
-  ],
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder],
   schemaVersion: 13,
   onMigration: (oldRealm, newRealm) => {
     if (oldRealm.schemaVersion < 12) {
