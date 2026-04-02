@@ -40,16 +40,12 @@ Para rodar em Android (emulador ou dispositivo conectado):
 
 ```bash
 npm run android
-# ou
-yarn android
 ```
 
 Executar como web:
 
 ```bash
 npm run web
-# ou
-yarn web
 ```
 
 Scripts úteis (ver também [package.json](package.json))
