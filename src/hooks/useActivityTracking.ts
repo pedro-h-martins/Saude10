@@ -1,3 +1,4 @@
+import { DEFAULT_METERS_PER_STEP } from '@/constants/defaults';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { ActivityLog } from '@/models/ActivityLog';
 import { UserProfile } from '@/models/UserProfile';
@@ -27,7 +28,7 @@ export function useActivityTracking() {
     endOfToday.setHours(23, 59, 59, 999);
 
     const totalSteps = await fetchStepsForPeriod(startOfToday, endOfToday);
-    const estimatedDistanceMeters = user ? calculateDistance(totalSteps, user.height) : totalSteps * 0.7;
+    const estimatedDistanceMeters = user ? calculateDistance(totalSteps, user.height) : totalSteps * DEFAULT_METERS_PER_STEP;
 
     setSteps(totalSteps);
     setDistanceMeters(estimatedDistanceMeters);
@@ -52,7 +53,7 @@ export function useActivityTracking() {
 
   const updateAndroidSteps = useCallback((newStepsSinceStart: number) => {
     const totalSteps = lastBaseSteps.current + newStepsSinceStart;
-    const estimatedDistanceMeters = user ? calculateDistance(totalSteps, user.height) : totalSteps * 0.7;
+    const estimatedDistanceMeters = user ? calculateDistance(totalSteps, user.height) : totalSteps * DEFAULT_METERS_PER_STEP;
     const dateStr = new Date().toISOString().split('T')[0];
 
     setSteps(totalSteps);

@@ -1,22 +1,18 @@
-import { useRealm } from '@/context/RealmProvider';
+import { useAuth } from '@/context/AuthContext';
 import { Welcome } from '@/screens/Welcome';
+import { useRouter } from 'expo-router';
 import React from 'react';
 
 export default function WelcomeScreen() {
-  const realm = useRealm();
+  const { signInDev } = useAuth();
+  const router = useRouter();
 
-  const handleLogin = () => {
-    realm.write(() => {
-      realm.create('UserProfile', {
-        _id: 'demo-user-id',
-        name: 'Demo User',
-        email: 'user@email.com',
-        birthDate: new Date(1995, 0, 1),
-        weight: 80.0,
-        height: 180.0,
-        updatedAt: new Date(),
-      });
-    });
+  const handleLogin = async () => {
+    if (__DEV__) {
+      await signInDev();
+      return;
+    }
+    router.push('/login');
   };
 
   return <Welcome onLogin={handleLogin} />;

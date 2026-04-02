@@ -1,15 +1,15 @@
-import { RealmProvider, seedInitialGoals, useQuery, useRealm } from "@/context/RealmProvider";
-import { UserProfile } from "@/models/UserProfile";
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { RealmProvider, seedInitialGoals, useRealm } from "@/context/RealmProvider";
 import { Stack, useRouter, useSegments } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import 'react-native-get-random-values';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const users = useQuery(UserProfile);
   const router = useRouter();
   const segments = useSegments();
   const realm = useRealm();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -18,16 +18,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [realm]);
 
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || authLoading) return;
 
     const inAuthGroup = segments[0] === "welcome";
 
-    if (users.length === 0 && !inAuthGroup) {
+    if (!isAuthenticated && !inAuthGroup) {
       router.replace("/welcome");
-    } else if (users.length > 0 && inAuthGroup) {
+    } else if (isAuthenticated && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [users.length, segments, isReady, router]);
+  }, [isAuthenticated, segments, isReady, authLoading, router]);
 
   return <>{children}</>;
 }
@@ -52,7 +52,9 @@ export default function RootLayout() {
         </View>
       }
     >
-      <RootLayoutContent />
+      <AuthProvider>
+        <RootLayoutContent />
+      </AuthProvider>
     </RealmProvider>
   );
 }

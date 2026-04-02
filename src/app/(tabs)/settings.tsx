@@ -1,6 +1,7 @@
 import { Card } from '@/components/Card';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { Goal } from '@/models/Goal';
 import { UserProfile } from '@/models/UserProfile';
@@ -35,6 +36,7 @@ export default function SettingsScreen() {
   const goals = useQuery(Goal);
   const user = React.useMemo(() => (users.length > 0 ? users[0] : null), [users]);
   const realm = useRealm();
+  const { signOut } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -341,7 +343,7 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
               <View style={[styles.menuIconCircle, { backgroundColor: '#FFEEED' }]}>
                 <Ionicons name="log-out-outline" size={20} color={Colors.warning} />
               </View>
