@@ -6,8 +6,10 @@ import { HydrationLog } from '@/models/HydrationLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
 import { Reminder } from '@/models/Reminder';
 import { UserProfile } from '@/models/UserProfile';
+import { WellnessLog } from '@/models/WellnessLog';
 import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
+
 
 const ENCRYPTION_KEY_ID = 'realm_encryption_key_v1';
 
