@@ -3,6 +3,7 @@ import { PomodoroWidget } from '@/components/PomodoroWidget';
 import { WaterWidget } from '@/components/WaterWidget';
 import { WellnessWidget } from '@/components/WellnessWidget';
 import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { BloodPressure } from '@/models/BloodPressure';
@@ -13,7 +14,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Realm } from '@realm/react';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const DashboardHeader = () => (
   <View style={styles.header}>
@@ -67,7 +68,8 @@ const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFor
 export function Home() {
   const realm = useRealm();
   const users = useQuery(UserProfile);
-  const user = users[0];
+  const { currentUser } = useAuth();
+  const user = currentUser ?? (users.length > 0 ? users[0] : null);
   const { steps, formattedDistance } = useActivityTracking();
   
   const bpLogs = useQuery(BloodPressure).sorted('timestamp', true);
@@ -87,13 +89,18 @@ export function Home() {
   const handleSaveBP = () => {
     if (!systolic || !diastolic) return;
 
+    if (!user) {
+      Alert.alert('Atenção', 'É necessário fazer login para salvar medições.');
+      return;
+    }
+
     realm.write(() => {
       realm.create(BloodPressure, {
         _id: new Realm.BSON.ObjectId(),
         systolic: parseInt(systolic),
         diastolic: parseInt(diastolic),
         timestamp: date,
-        userId: user?._id.toString() || 'default',
+        userId: user._id,
       });
     });
 

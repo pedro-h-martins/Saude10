@@ -1,4 +1,3 @@
-import 'react-native-get-random-values';
 import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
 import { Goal } from '@/models/Goal';
@@ -9,6 +8,7 @@ import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
+import 'react-native-get-random-values';
 
 
 const ENCRYPTION_KEY_ID = 'realm_encryption_key_v1';
@@ -39,10 +39,10 @@ const PREDEFINED_GOALS = [
 ];
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder],
-  schemaVersion: 13,
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog],
+  schemaVersion: 14,
   onMigration: (oldRealm, newRealm) => {
-    if (oldRealm.schemaVersion < 12) {
+    if (oldRealm.schemaVersion < 13) {
       const oldModels = oldRealm.schema.map(s => s.name);
       
       if (oldModels.includes('BloodPressure')) {
@@ -55,7 +55,7 @@ export const RealmContext = createRealmContext({
           
           if (oldBP && newBP) {
             newBP.timestamp = oldBP.createdAt || new Date();
-            newBP.userId = oldBP.userId || 'default_user';
+            newBP.userId = oldBP.userId ?? '';
           }
         }
       }

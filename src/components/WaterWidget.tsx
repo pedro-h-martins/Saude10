@@ -1,18 +1,20 @@
 import { Card } from '@/components/Card';
 import { ProgressCircle } from '@/components/ProgressCircle';
 import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { HydrationLog } from '@/models/HydrationLog';
 import { UserProfile } from '@/models/UserProfile';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
 import React, { useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WaterWidget = () => {
   const realm = useRealm();
   const users = useQuery(UserProfile);
-  const user = users[0];
+  const { currentUser } = useAuth();
+  const user = currentUser ?? (users.length > 0 ? users[0] : null);
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -31,12 +33,17 @@ export const WaterWidget = () => {
   const [newGoal, setNewGoal] = useState(targetGoal.toString());
 
   const handleAddWater = (amount: number) => {
+    if (!user) {
+      Alert.alert('Atenção', 'Faça login para registrar a ingestão de água.');
+      return;
+    }
+
     realm.write(() => {
       realm.create(HydrationLog, {
         _id: new Realm.BSON.ObjectId(),
         amount,
         timestamp: new Date(),
-        userId: user?._id || 'default',
+        userId: user._id,
       });
     });
   };
@@ -46,12 +53,17 @@ export const WaterWidget = () => {
     
     const amountToRemove = Math.min(amount, currentIntake);
     
+    if (!user) {
+      Alert.alert('Atenção', 'Faça login para remover ingestão de água.');
+      return;
+    }
+
     realm.write(() => {
       realm.create(HydrationLog, {
         _id: new Realm.BSON.ObjectId(),
         amount: -amountToRemove,
         timestamp: new Date(),
-        userId: user?._id || 'default',
+        userId: user._id,
       });
     });
   };

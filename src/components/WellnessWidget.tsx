@@ -2,6 +2,7 @@ import { Card } from '@/components/Card';
 import { WellnessRating } from '@/components/WellnessRating';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
@@ -16,7 +17,8 @@ export const WellnessWidget = () => {
   const [note, setNote] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const users = useQuery(UserProfile);
-  const user = users[0];
+  const { currentUser } = useAuth();
+  const user = currentUser ?? (users.length > 0 ? users[0] : null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -55,6 +57,11 @@ export const WellnessWidget = () => {
       return;
     }
 
+    if (!user) {
+      Alert.alert('Atenção', 'Faça login para registrar seu bem-estar.');
+      return;
+    }
+
     realm.write(() => {
       const existingToday = todayLogs.sorted('timestamp', true)[0];
       
@@ -68,7 +75,7 @@ export const WellnessWidget = () => {
           rating: rating,
           notes: note,
           timestamp: new Date(),
-          userId: user?._id?.toString() || 'default',
+          userId: user._id,
         });
       }
     });
