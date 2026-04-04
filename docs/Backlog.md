@@ -29,12 +29,12 @@
 
 # SPRINT 3
 
-| 19 | RF-21 | Baixa | Playlist de músicas relaxantes para poder escutar quando meditar ou dormir. | 2 | 3 |
+| 19 | RF-9 | Média | Definir metas personalizadas | 2 | 3 |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| 20 | RF-26 | Baixa | Relatório semanal por e-mail, contendo atividades do usuário. | 4 | 3 |
-| 21 | RF-20 | Baixa | Calcular hidratação baseada em atividade | 3 | 3 |
-| 22 | RF-6 | Baixa | Monitorar tempo de sonho | 3 | 3 |
-| 23 | RF-9 | Média | Definir metas personalizadas | 2 | 3 |
+| 20 | RF-21 | Baixa | Playlist de músicas relaxantes para poder escutar quando meditar ou dormir. | 2 | 3 |
+| 21 | RF-26 | Baixa | Relatório semanal por e-mail, contendo atividades do usuário. | 4 | 3 |
+| 22 | RF-20 | Baixa | Calcular hidratação baseada em atividade | 3 | 3 |
+| 23 | RF-6 | Baixa | Monitorar tempo de sonho | 3 | 3 |
 | 24 | RF-11 | Baixa | Biblioteca de receitas saudáveis | 2 | 3 |
 | 25 | RF-4 | Baixa | Registrar atividades manuais de exercícios | 2 | 3 |
 | 26 | RF-6 | Baixa | Monitorar tempo de sonho | 3 | 3 |
