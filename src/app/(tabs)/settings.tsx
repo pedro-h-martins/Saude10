@@ -7,6 +7,7 @@ import { Goal } from '@/models/Goal';
 import { UserProfile } from '@/models/UserProfile';
 import { Ionicons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -150,6 +151,39 @@ export default function SettingsScreen() {
     }
   };
 
+  const handlePickAvatar = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permissão', 'Permissão para acessar fotos é necessária.');
+        return;
+      }
+
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsEditing: true, aspect: [1, 1] });
+      if (res.cancelled) return;
+
+      if (user) {
+        realm.write(() => {
+          user.avatarUri = res.assets && res.assets[0] ? res.assets[0].uri : (res.uri as any);
+          user.updatedAt = new Date();
+        });
+        Alert.alert('Sucesso', 'Foto de perfil atualizada.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível selecionar a imagem.');
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    if (!user) return;
+    realm.write(() => {
+      (user as any).avatarUri = null;
+      user.updatedAt = new Date();
+    });
+    Alert.alert('Removido', 'Foto de perfil removida.');
+  };
+
   const handleCancel = () => {
     if (user) {
       setFormData({
@@ -186,14 +220,21 @@ export default function SettingsScreen() {
 
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' }}
-              style={styles.avatar}
-            />
+            <TouchableOpacity onPress={isEditing ? handlePickAvatar : undefined} activeOpacity={0.8}>
+              <Image
+                source={{ uri: user.avatarUri ?? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' }}
+                style={styles.avatar}
+              />
+            </TouchableOpacity>
             {isEditing && (
-              <TouchableOpacity style={styles.editAvatarButton}>
-                <Ionicons name="camera" size={16} color={Colors.white} />
-              </TouchableOpacity>
+              <View style={styles.editAvatarControls}>
+                <TouchableOpacity style={styles.editAvatarButton} onPress={handlePickAvatar}>
+                  <Ionicons name="camera" size={16} color={Colors.white} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.removeAvatarButton} onPress={handleRemoveAvatar}>
+                  <Ionicons name="trash" size={16} color={Colors.white} />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
           <Text style={styles.sectionLabel}>PERFIL PESSOAL</Text>
@@ -440,6 +481,23 @@ const styles = StyleSheet.create({
     bottom: 5,
     right: 5,
     backgroundColor: Colors.primary,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  editAvatarControls: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  removeAvatarButton: {
+    backgroundColor: Colors.warning,
     width: 28,
     height: 28,
     borderRadius: 14,

@@ -13,15 +13,22 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Realm } from '@realm/react';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const DashboardHeader = () => (
+const DashboardHeader = ({ avatarUri, onAvatarPress }: { avatarUri?: string | null; onAvatarPress?: () => void }) => (
   <View style={styles.header}>
     <View style={styles.userSection}>
-      <View style={styles.avatarPlaceholder}>
-        <Ionicons name="person" size={20} color={Colors.white} />
-      </View>
+      <TouchableOpacity onPress={onAvatarPress} activeOpacity={0.8}>
+        {avatarUri ? (
+          <Image source={{ uri: avatarUri }} style={styles.avatarPlaceholderImage} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons name="person" size={20} color={Colors.white} />
+          </View>
+        )}
+      </TouchableOpacity>
       <Text style={styles.headerTitle}>SaudeIO</Text>
     </View>
     <TouchableOpacity style={styles.notificationBtn}>
@@ -71,6 +78,7 @@ export function Home() {
   const { currentUser } = useAuth();
   const user = currentUser ?? (users.length > 0 ? users[0] : null);
   const { steps, formattedDistance } = useActivityTracking();
+  const router = useRouter();
   
   const bpLogs = useQuery(BloodPressure).sorted('timestamp', true);
   const lastBP = bpLogs.length > 0 ? bpLogs[0] : null;
@@ -146,7 +154,7 @@ export function Home() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <DashboardHeader />
+        <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
         <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
         <WellnessWidget />
         <WaterWidget />
@@ -348,6 +356,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+  },
+  avatarPlaceholderImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2,
+    borderColor: Colors.white,
   },
   headerTitle: {
     fontSize: 22,
