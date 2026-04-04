@@ -1,11 +1,13 @@
 import { Card } from '@/components/Card';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { Goal } from '@/models/Goal';
 import { UserProfile } from '@/models/UserProfile';
 import { Ionicons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -33,8 +35,10 @@ const calculateAge = (birthDate: Date) => {
 export default function SettingsScreen() {
   const users = useQuery(UserProfile);
   const goals = useQuery(Goal);
-  const user = React.useMemo(() => (users.length > 0 ? users[0] : null), [users]);
+  const { currentUser } = useAuth();
+  const user = React.useMemo(() => currentUser ?? (users.length > 0 ? users[0] : null), [currentUser, users]);
   const realm = useRealm();
+  const { signOut } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,11 +46,33 @@ export default function SettingsScreen() {
     email: '',
     weight: '',
     height: '',
+    birthDate: '',
   });
 
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [goalTitle, setGoalTitle] = useState('');
+
+  const formatDisplayDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatBirthDateInput = (text: string) => {
+    let cleaned = text.replace(/\D/g, '');
+    if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
+    
+    let formatted = cleaned;
+    if (cleaned.length > 2) {
+      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
+      if (cleaned.length > 4) {
+        formatted += `/${cleaned.slice(4, 8)}`;
+      }
+    }
+    setFormData(prev => ({ ...prev, birthDate: formatted }));
+  };
 
   useEffect(() => {
     if (user) {
@@ -55,9 +81,10 @@ export default function SettingsScreen() {
         email: user.email,
         weight: user.weight.toString(),
         height: user.height.toString(),
+        birthDate: formatDisplayDate(user.birthDate),
       });
     }
-  }, [user]);
+  }, [user, currentUser]);
 
   const handleAddGoal = () => {
     if (goals.length >= 3) {
@@ -130,12 +157,29 @@ export default function SettingsScreen() {
 
   const handleSave = () => {
     try {
+      const dateParts = formData.birthDate.split('/');
+      if (dateParts.length !== 3 || formData.birthDate.length !== 10) {
+        Alert.alert('Validação', 'Por favor informe a data de nascimento completa (DD/MM/AAAA).');
+        return;
+      }
+
+      const day = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]) - 1;
+      const year = parseInt(dateParts[2]);
+      const parsedDate = new Date(year, month, day);
+
+      if (isNaN(parsedDate.getTime()) || parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month || parsedDate.getDate() !== day) {
+        Alert.alert('Validação', 'Por favor informe uma data de nascimento válida.');
+        return;
+      }
+
       realm.write(() => {
         if (user) {
           user.name = formData.name;
           user.email = formData.email;
           user.weight = parseFloat(formData.weight) || 0;
           user.height = parseFloat(formData.height) || 0;
+          user.birthDate = parsedDate;
           user.updatedAt = new Date();
         }
       });
@@ -147,6 +191,39 @@ export default function SettingsScreen() {
     }
   };
 
+  const handlePickAvatar = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permissão', 'Permissão para acessar fotos é necessária.');
+        return;
+      }
+
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsEditing: true, aspect: [1, 1] });
+      if (res.canceled) return;
+
+      if (user) {
+        realm.write(() => {
+          user.avatarUri = res.assets && res.assets[0] ? res.assets[0].uri : undefined;
+          user.updatedAt = new Date();
+        });
+        Alert.alert('Sucesso', 'Foto de perfil atualizada.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível selecionar a imagem.');
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    if (!user) return;
+    realm.write(() => {
+      (user as any).avatarUri = null;
+      user.updatedAt = new Date();
+    });
+    Alert.alert('Removido', 'Foto de perfil removida.');
+  };
+
   const handleCancel = () => {
     if (user) {
       setFormData({
@@ -154,6 +231,7 @@ export default function SettingsScreen() {
         email: user.email,
         weight: user.weight.toString(),
         height: user.height.toString(),
+        birthDate: formatDisplayDate(user.birthDate),
       });
     }
     setIsEditing(false);
@@ -183,14 +261,21 @@ export default function SettingsScreen() {
 
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' }}
-              style={styles.avatar}
-            />
+            <TouchableOpacity onPress={isEditing ? handlePickAvatar : undefined} activeOpacity={0.8}>
+              <Image
+                source={{ uri: user.avatarUri ?? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' }}
+                style={styles.avatar}
+              />
+            </TouchableOpacity>
             {isEditing && (
-              <TouchableOpacity style={styles.editAvatarButton}>
-                <Ionicons name="camera" size={16} color={Colors.white} />
-              </TouchableOpacity>
+              <View style={styles.editAvatarControls}>
+                <TouchableOpacity style={styles.editAvatarButton} onPress={handlePickAvatar}>
+                  <Ionicons name="camera" size={16} color={Colors.white} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.removeAvatarButton} onPress={handleRemoveAvatar}>
+                  <Ionicons name="trash" size={16} color={Colors.white} />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
           <Text style={styles.sectionLabel}>PERFIL PESSOAL</Text>
@@ -237,8 +322,18 @@ export default function SettingsScreen() {
         <View style={styles.biometryGrid}>
           <Card style={styles.biometryCard}>
             <Ionicons name="man-outline" size={24} color={Colors.primary} />
-            <Text style={styles.biometryValue}>{age}</Text>
-            <Text style={styles.biometryLabel}>ANOS DE IDADE</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.biometryInput}
+                value={formData.birthDate}
+                onChangeText={formatBirthDateInput}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+            ) : (
+              <Text style={styles.biometryValue}>{age}</Text>
+            )}
+            <Text style={styles.biometryLabel}>{isEditing ? 'NASCIMENTO' : 'ANOS DE IDADE'}</Text>
           </Card>
           <Card style={styles.biometryCard}>
             <Ionicons name="resize-outline" size={24} color={Colors.primary} />
@@ -341,7 +436,7 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
               <View style={[styles.menuIconCircle, { backgroundColor: '#FFEEED' }]}>
                 <Ionicons name="log-out-outline" size={20} color={Colors.warning} />
               </View>
@@ -437,6 +532,23 @@ const styles = StyleSheet.create({
     bottom: 5,
     right: 5,
     backgroundColor: Colors.primary,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  editAvatarControls: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  removeAvatarButton: {
+    backgroundColor: Colors.warning,
     width: 28,
     height: 28,
     borderRadius: 14,

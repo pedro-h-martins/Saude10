@@ -1,8 +1,16 @@
+import { ActivityLog } from '@/models/ActivityLog';
+import { BloodPressure } from '@/models/BloodPressure';
 import { Goal } from '@/models/Goal';
+import { HydrationLog } from '@/models/HydrationLog';
+import { PomodoroLog } from '@/models/PomodoroLog';
+import { Reminder } from '@/models/Reminder';
+import { SymptomLog } from '@/models/SymptomLog';
 import { UserProfile } from '@/models/UserProfile';
+import { WellnessLog } from '@/models/WellnessLog';
 import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
 import 'react-native-get-random-values';
+
 
 const ENCRYPTION_KEY_ID = 'realm_encryption_key_v1';
 
@@ -32,8 +40,19 @@ const PREDEFINED_GOALS = [
 ];
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal],
-  schemaVersion: 3,
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog],
+  schemaVersion: 16,
+  onMigration: (oldRealm, newRealm) => {
+    if (oldRealm.schemaVersion < 15) {
+      const newUsers = newRealm.objects('UserProfile');
+      for (let i = 0; i < newUsers.length; i++) {
+        const u: any = newUsers[i];
+        if (u && typeof u.avatarUri === 'undefined') {
+          u.avatarUri = null;
+        }
+      }
+    }
+  },
   onFirstOpen: (realm) => {
   },
 });

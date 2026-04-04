@@ -1,3 +1,7 @@
+import * as Location from 'expo-location';
+import { Pedometer } from 'expo-sensors';
+import { Platform } from 'react-native';
+
 export interface BMIData {
   value: number;
   category: string;
@@ -36,3 +40,35 @@ export function calculateBMI(weight: number, heightCm: number): BMIData {
     color,
   };
 }
+
+export async function requestActivityPermissions(): Promise<boolean> {
+  const { status: pedometerStatus } = await Pedometer.requestPermissionsAsync();
+  const { status: locationStatus } = await Location.requestForegroundPermissionsAsync();
+
+  return pedometerStatus === 'granted' && locationStatus === 'granted';
+}
+
+export function calculateDistance(steps: number, heightCm: number): number {
+  const heightM = heightCm / 100;
+  const strideLengthM = heightM * 0.4145;
+  const distanceM = steps * strideLengthM;
+  return Math.round(distanceM);
+}
+
+export async function fetchStepsForPeriod(start: Date, end: Date): Promise<number> {
+  const isAvailable = await Pedometer.isAvailableAsync();
+  if (!isAvailable) return 0;
+
+  if (Platform.OS === 'android') {
+    return 0;
+  }
+
+  try {
+    const result = await Pedometer.getStepCountAsync(start, end);
+    return result.steps;
+  } catch (e) {
+    console.error('Error fetching steps:', e);
+    return 0;
+  }
+}
+
