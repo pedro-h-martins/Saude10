@@ -32,8 +32,14 @@ export default function LoginScreen() {
     try {
       await signIn(emailValue, password);
       router.replace('/(tabs)');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      const isNetworkError = e && (e.message === 'Network request failed' || e.constructor.name === 'TypeError');
+      if (isNetworkError) {
+        Alert.alert('Modo Offline', 'Não foi possível conectar ao servidor. Você entrou usando o modo offline.');
+        router.replace('/(tabs)');
+        return;
+      }
       Alert.alert('Erro', 'Falha ao autenticar. Verifique suas credenciais.');
     } finally {
       setLoading(false);
