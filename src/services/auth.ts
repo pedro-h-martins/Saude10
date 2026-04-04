@@ -9,31 +9,56 @@ export type AuthResponse = {
 };
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
-  const res = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Login failed: ${res.status} ${text}`);
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Login failed: ${res.status} ${text}`);
+    }
+
+    const data = await res.json();
+
+    if (data.accessToken) {
+      await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, data.accessToken);
+    }
+    if (data.refreshToken) {
+      await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
+    }
+
+    return {
+      accessToken: data.accessToken ?? null,
+      refreshToken: data.refreshToken ?? null,
+      user: data.user ?? null,
+    };
+  } catch (e: any) {
+    const isNetworkError = e && (e.message === 'Network request failed' || e.constructor.name === 'TypeError');
+    if (isNetworkError) {
+      console.warn('Network unavailable — creating offline session fallback.');
+      
+      const id = `offline-${email}`;
+      const user = {
+        _id: id,
+        name: email.split('@')[0],
+        email,
+        birthDate: new Date(),
+        weight: 0,
+        height: 0,
+        updatedAt: new Date(),
+      };
+
+      await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, 'offline-token');
+      await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, 'offline-refresh');
+
+      return { accessToken: 'offline-token', refreshToken: 'offline-refresh', user, offline: true };
+    }
+
+    throw e;
   }
-
-  const data = await res.json();
-
-  if (data.accessToken) {
-    await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, data.accessToken);
-  }
-  if (data.refreshToken) {
-    await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
-  }
-
-  return {
-    accessToken: data.accessToken ?? null,
-    refreshToken: data.refreshToken ?? null,
-    user: data.user ?? null,
-  };
 }
 
 export async function signOut(): Promise<void> {
@@ -121,12 +146,19 @@ export async function authFetch(input: RequestInfo, init?: RequestInit): Promise
   return res;
 }
 
-export async function signUp(name: string, email: string, password: string): Promise<AuthResponse> {
+export async function signUp(
+  name: string,
+  email: string,
+  password: string,
+  birthDate: Date,
+  weight: number,
+  height: number
+): Promise<AuthResponse> {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, birthDate, weight, height }),
     });
 
     if (!res.ok) {
@@ -157,9 +189,9 @@ export async function signUp(name: string, email: string, password: string): Pro
         _id: id,
         name,
         email,
-        birthDate: new Date(),
-        weight: 0,
-        height: 0,
+        birthDate,
+        weight,
+        height,
         updatedAt: new Date(),
       };
 

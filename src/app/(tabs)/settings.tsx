@@ -46,11 +46,33 @@ export default function SettingsScreen() {
     email: '',
     weight: '',
     height: '',
+    birthDate: '',
   });
 
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [goalTitle, setGoalTitle] = useState('');
+
+  const formatDisplayDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatBirthDateInput = (text: string) => {
+    let cleaned = text.replace(/\D/g, '');
+    if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
+    
+    let formatted = cleaned;
+    if (cleaned.length > 2) {
+      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
+      if (cleaned.length > 4) {
+        formatted += `/${cleaned.slice(4, 8)}`;
+      }
+    }
+    setFormData(prev => ({ ...prev, birthDate: formatted }));
+  };
 
   useEffect(() => {
     if (user) {
@@ -59,6 +81,7 @@ export default function SettingsScreen() {
         email: user.email,
         weight: user.weight.toString(),
         height: user.height.toString(),
+        birthDate: formatDisplayDate(user.birthDate),
       });
     }
   }, [user, currentUser]);
@@ -134,12 +157,29 @@ export default function SettingsScreen() {
 
   const handleSave = () => {
     try {
+      const dateParts = formData.birthDate.split('/');
+      if (dateParts.length !== 3 || formData.birthDate.length !== 10) {
+        Alert.alert('Validação', 'Por favor informe a data de nascimento completa (DD/MM/AAAA).');
+        return;
+      }
+
+      const day = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]) - 1;
+      const year = parseInt(dateParts[2]);
+      const parsedDate = new Date(year, month, day);
+
+      if (isNaN(parsedDate.getTime()) || parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month || parsedDate.getDate() !== day) {
+        Alert.alert('Validação', 'Por favor informe uma data de nascimento válida.');
+        return;
+      }
+
       realm.write(() => {
         if (user) {
           user.name = formData.name;
           user.email = formData.email;
           user.weight = parseFloat(formData.weight) || 0;
           user.height = parseFloat(formData.height) || 0;
+          user.birthDate = parsedDate;
           user.updatedAt = new Date();
         }
       });
@@ -281,8 +321,18 @@ export default function SettingsScreen() {
         <View style={styles.biometryGrid}>
           <Card style={styles.biometryCard}>
             <Ionicons name="man-outline" size={24} color={Colors.primary} />
-            <Text style={styles.biometryValue}>{age}</Text>
-            <Text style={styles.biometryLabel}>ANOS DE IDADE</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.biometryInput}
+                value={formData.birthDate}
+                onChangeText={formatBirthDateInput}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+            ) : (
+              <Text style={styles.biometryValue}>{age}</Text>
+            )}
+            <Text style={styles.biometryLabel}>{isEditing ? 'NASCIMENTO' : 'ANOS DE IDADE'}</Text>
           </Card>
           <Card style={styles.biometryCard}>
             <Ionicons name="resize-outline" size={24} color={Colors.primary} />

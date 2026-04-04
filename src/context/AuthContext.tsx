@@ -9,7 +9,14 @@ type AuthContextType = {
   isAuthenticated: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
+  signUp: (
+    name: string,
+    email: string,
+    password: string,
+    birthDate: Date,
+    weight: number,
+    height: number
+  ) => Promise<void>;
   signInDev: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -73,8 +80,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err) {
         console.warn('Auth initialization error', err);
-        await authService.signOut();
-        setCurrentUser(null);
+        const tokens = await authService.getStoredTokens();
+        if (tokens.accessToken) {
+          const allUsers = realm.objects<UserProfile>('UserProfile');
+          if (allUsers.length > 0) {
+            setCurrentUser(allUsers[0]);
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -109,10 +121,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (name: string, email: string, password: string) => {
+  const signUp = async (
+    name: string,
+    email: string,
+    password: string,
+    birthDate: Date,
+    weight: number,
+    height: number
+  ) => {
     setLoading(true);
     try {
-      const res = await authService.signUp(name, email, password);
+      const res = await authService.signUp(name, email, password, birthDate, weight, height);
       const id = res.user?._id ?? `user-${Date.now()}`;
 
       realm.write(() => {
@@ -122,9 +141,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             _id: id,
             name: res.user?.name ?? name,
             email: res.user?.email ?? email,
-            birthDate: res.user?.birthDate ? new Date(res.user.birthDate) : new Date(),
-            weight: res.user?.weight ?? 0,
-            height: res.user?.height ?? 0,
+            birthDate: res.user?.birthDate ? new Date(res.user.birthDate) : birthDate,
+            weight: res.user?.weight ?? weight,
+            height: res.user?.height ?? height,
             updatedAt: new Date(),
           },
           Realm.UpdateMode.Modified
