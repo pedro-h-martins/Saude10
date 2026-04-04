@@ -1,8 +1,10 @@
 import { Card } from '@/components/Card';
+import { SymptomWidget } from '@/components/SymptomWidget';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useQuery } from "@/context/RealmProvider";
 import { BloodPressure } from '@/models/BloodPressure';
+import { SymptomLog } from '@/models/SymptomLog';
 import { WellnessLog } from '@/models/WellnessLog';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
@@ -45,9 +47,10 @@ const formatDate = (date: Date) => {
 };
 
 export default function Metrics() {
-  const [activeTab, setActiveTab] = useState<'pressure' | 'mood'>('pressure');
+  const [activeTab, setActiveTab] = useState<'pressure' | 'mood' | 'symptoms'>('pressure');
   const measurements = useQuery(BloodPressure).sorted('timestamp', true);
   const wellnessLogs = useQuery(WellnessLog).sorted('timestamp', true);
+  const symptomLogs = useQuery(SymptomLog).sorted('timestamp', true);
 
   const renderPressureItem = ({ item }: { item: BloodPressure }) => {
     const status = getBPStatus(item.systolic, item.diastolic);
@@ -120,9 +123,15 @@ export default function Metrics() {
         >
           <Text style={[styles.tabText, activeTab === 'mood' && styles.activeTabText]}>Humor</Text>
         </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeTab === 'symptoms' && styles.activeTabButton]}
+          onPress={() => setActiveTab('symptoms')}
+        >
+          <Text style={[styles.tabText, activeTab === 'symptoms' && styles.activeTabText]}>Sintomas</Text>
+        </TouchableOpacity>
       </View>
 
-      {activeTab === 'pressure' ? (
+      {activeTab === 'pressure' && (
         <FlatList<BloodPressure>
           data={measurements}
           keyExtractor={(item) => item._id.toHexString()}
@@ -134,7 +143,9 @@ export default function Metrics() {
             </View>
           }
         />
-      ) : (
+      )}
+
+      {activeTab === 'mood' && (
         <FlatList<WellnessLog>
           data={wellnessLogs}
           keyExtractor={(item) => item._id.toHexString()}
@@ -146,6 +157,35 @@ export default function Metrics() {
             </View>
           }
         />
+      )}
+
+      {activeTab === 'symptoms' && (
+        <>
+          <View style={styles.listContent}>
+            <SymptomWidget />
+          </View>
+          <FlatList<SymptomLog>
+            data={symptomLogs}
+            keyExtractor={(item) => item._id.toHexString()}
+            renderItem={({ item }: { item: SymptomLog }) => (
+              <Card style={styles.measurementCard}>
+                <View style={styles.cardHeader}>
+                  <Ionicons name={'medkit-outline' as any} size={20} color={Colors.primary} style={{ marginRight: 8 }} />
+                  <Text style={styles.dateText}>{formatDate(item.timestamp)}</Text>
+                </View>
+                <View style={{ marginTop: 4 }}>
+                  <Text style={styles.noteText}>&quot;{item.description}&quot;</Text>
+                </View>
+              </Card>
+            )}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={Typography.body}>Nenhum registro encontrado.</Text>
+              </View>
+            }
+          />
+        </>
       )}
     </SafeAreaView>
   );

@@ -4,6 +4,7 @@ import { Goal } from '@/models/Goal';
 import { HydrationLog } from '@/models/HydrationLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
 import { Reminder } from '@/models/Reminder';
+import { SymptomLog } from '@/models/SymptomLog';
 import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { createRealmContext, Realm } from '@realm/react';
@@ -39,8 +40,8 @@ const PREDEFINED_GOALS = [
 ];
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog],
-  schemaVersion: 15,
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog],
+  schemaVersion: 16,
   onMigration: (oldRealm, newRealm) => {
     if (oldRealm.schemaVersion < 15) {
       const newUsers = newRealm.objects('UserProfile');
