@@ -6,9 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface WelcomeProps {
   onLogin: () => void;
+  onCreateAccount?: () => void;
 }
 
-export function Welcome({ onLogin }: WelcomeProps) {
+export function Welcome({ onLogin, onCreateAccount }: WelcomeProps) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -36,6 +37,7 @@ export function Welcome({ onLogin }: WelcomeProps) {
 
           <TouchableOpacity
             style={styles.secondaryButton}
+            onPress={onCreateAccount}
           >
             <Text style={styles.secondaryButtonText}>Criar conta</Text>
           </TouchableOpacity>

@@ -40,40 +40,14 @@ const PREDEFINED_GOALS = [
 
 export const RealmContext = createRealmContext({
   schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog],
-  schemaVersion: 14,
+  schemaVersion: 15,
   onMigration: (oldRealm, newRealm) => {
-    if (oldRealm.schemaVersion < 13) {
-      const oldModels = oldRealm.schema.map(s => s.name);
-      
-      if (oldModels.includes('BloodPressure')) {
-        const oldBloodPressures = oldRealm.objects('BloodPressure');
-        const newBloodPressures = newRealm.objects<BloodPressure>('BloodPressure');
-
-        for (let i = 0; i < oldBloodPressures.length; i++) {
-          const oldBP = oldBloodPressures[i] as any;
-          const newBP = newBloodPressures[i];
-          
-          if (oldBP && newBP) {
-            newBP.timestamp = oldBP.createdAt || new Date();
-            newBP.userId = oldBP.userId ?? '';
-          }
-        }
-      }
-    }
-    if (oldRealm.schemaVersion < 6) {
-      const hasActivityLog = oldRealm.schema.some(s => s.name === 'ActivityLog');
-      
-      if (hasActivityLog) {
-        const oldLogs = oldRealm.objects('ActivityLog');
-        const newLogs = newRealm.objects<ActivityLog>('ActivityLog');
-
-        for (let i = 0; i < oldLogs.length; i++) {
-          const oldLog = oldLogs[i] as any;
-          const newLog = newLogs[i];
-          
-          if (oldLog && newLog && oldLog.distance < 100) { 
-             newLog.distance = oldLog.distance * 1000;
-          }
+    if (oldRealm.schemaVersion < 15) {
+      const newUsers = newRealm.objects('UserProfile');
+      for (let i = 0; i < newUsers.length; i++) {
+        const u: any = newUsers[i];
+        if (u && typeof u.avatarUri === 'undefined') {
+          u.avatarUri = null;
         }
       }
     }

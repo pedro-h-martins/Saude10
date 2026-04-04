@@ -8,6 +8,7 @@ export class UserProfile extends Realm.Object<UserProfile> {
   birthDate!: Date;
   weight!: number;
   height!: number;
+  avatarUri?: string;
   waterGoal?: number;
   currentGoalId?: string;
   goals!: Realm.List<Goal>;
@@ -23,6 +24,7 @@ export class UserProfile extends Realm.Object<UserProfile> {
       birthDate: 'date',
       weight: 'double',
       height: 'double',
+      avatarUri: 'string?',
       waterGoal: 'double?',
       currentGoalId: 'string?',
       goals: 'Goal[]',

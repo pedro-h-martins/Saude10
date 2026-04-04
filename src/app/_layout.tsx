@@ -20,12 +20,13 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isReady || authLoading) return;
 
-    const inAuthGroup = segments[0] === "welcome";
+    const authPages = ['welcome', 'login', 'signup'];
+    const inAuthGroup = authPages.includes(segments[0] ?? '');
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/welcome");
+      router.replace('/welcome');
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace("/(tabs)");
+      router.replace('/(tabs)');
     }
   }, [isAuthenticated, segments, isReady, authLoading, router]);
 
