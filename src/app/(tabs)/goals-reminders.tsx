@@ -1,6 +1,7 @@
 import { Card } from '@/components/Card';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useReminders } from '@/hooks/useReminders';
 import { Goal } from '@/models/Goal';
@@ -28,7 +29,8 @@ export default function GoalsRemindersScreen() {
   const realm = useRealm();
   const goals = useQuery(Goal);
   const users = useQuery(UserProfile);
-  const user = users[0];
+  const { currentUser } = useAuth();
+  const user = currentUser ?? users[0];
   const { reminders, addReminder, toggleReminder, deleteReminder } = useReminders();
 
   const [goalModalVisible, setGoalModalVisible] = useState(false);

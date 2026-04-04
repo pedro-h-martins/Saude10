@@ -9,6 +9,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   signInDev: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -108,6 +109,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signUp = async (name: string, email: string, password: string) => {
+    setLoading(true);
+    try {
+      const res = await authService.signUp(name, email, password);
+      const id = res.user?._id ?? `user-${Date.now()}`;
+
+      realm.write(() => {
+        realm.create(
+          'UserProfile',
+          {
+            _id: id,
+            name: res.user?.name ?? name,
+            email: res.user?.email ?? email,
+            birthDate: res.user?.birthDate ? new Date(res.user.birthDate) : new Date(),
+            weight: res.user?.weight ?? 0,
+            height: res.user?.height ?? 0,
+            updatedAt: new Date(),
+          },
+          Realm.UpdateMode.Modified
+        );
+      });
+
+      const user = realm.objectForPrimaryKey<UserProfile>('UserProfile', id);
+      setCurrentUser(user ?? null);
+    } catch (e) {
+      console.error('signUp error', e);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signInDev = async () => {
     setLoading(true);
     try {
@@ -148,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, isAuthenticated: !!currentUser, loading, signIn, signInDev, signOut }}>
+    <AuthContext.Provider value={{ currentUser, isAuthenticated: !!currentUser, loading, signIn, signUp, signInDev, signOut }}>
       {children}
     </AuthContext.Provider>
   );

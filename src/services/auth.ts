@@ -5,6 +5,7 @@ export type AuthResponse = {
   accessToken: string | null;
   refreshToken?: string | null;
   user?: any;
+  offline?: boolean;
 };
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
@@ -118,6 +119,58 @@ export async function authFetch(input: RequestInfo, init?: RequestInit): Promise
   }
 
   return res;
+}
+
+export async function signUp(name: string, email: string, password: string): Promise<AuthResponse> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Sign up failed: ${res.status} ${text}`);
+    }
+
+    const data = await res.json();
+
+    if (data.accessToken) {
+      await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, data.accessToken);
+    }
+    if (data.refreshToken) {
+      await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
+    }
+
+    return {
+      accessToken: data.accessToken ?? null,
+      refreshToken: data.refreshToken ?? null,
+      user: data.user ?? null,
+    };
+  } catch (e: any) {
+    const isNetworkError = e && (e.message === 'Network request failed' || e.constructor.name === 'TypeError');
+    if (isNetworkError) {
+      console.warn('Network unavailable — creating offline account fallback.');
+      const id = `offline-${Date.now()}`;
+      const user = {
+        _id: id,
+        name,
+        email,
+        birthDate: new Date(),
+        weight: 0,
+        height: 0,
+        updatedAt: new Date(),
+      };
+
+      await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, 'offline-token');
+      await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, 'offline-refresh');
+
+      return { accessToken: 'offline-token', refreshToken: 'offline-refresh', user, offline: true };
+    }
+
+    throw e;
+  }
 }
 
 export async function signInDev(): Promise<AuthResponse> {

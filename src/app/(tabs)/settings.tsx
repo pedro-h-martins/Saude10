@@ -34,7 +34,8 @@ const calculateAge = (birthDate: Date) => {
 export default function SettingsScreen() {
   const users = useQuery(UserProfile);
   const goals = useQuery(Goal);
-  const user = React.useMemo(() => (users.length > 0 ? users[0] : null), [users]);
+  const { currentUser } = useAuth();
+  const user = React.useMemo(() => currentUser ?? (users.length > 0 ? users[0] : null), [currentUser, users]);
   const realm = useRealm();
   const { signOut } = useAuth();
 
@@ -59,7 +60,7 @@ export default function SettingsScreen() {
         height: user.height.toString(),
       });
     }
-  }, [user]);
+  }, [user, currentUser]);
 
   const handleAddGoal = () => {
     if (goals.length >= 3) {
