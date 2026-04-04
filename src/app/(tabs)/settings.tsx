@@ -200,11 +200,11 @@ export default function SettingsScreen() {
       }
 
       const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsEditing: true, aspect: [1, 1] });
-      if (res.cancelled) return;
+      if (res.canceled) return;
 
       if (user) {
         realm.write(() => {
-          user.avatarUri = res.assets && res.assets[0] ? res.assets[0].uri : (res.uri as any);
+          user.avatarUri = res.assets && res.assets[0] ? res.assets[0].uri : undefined;
           user.updatedAt = new Date();
         });
         Alert.alert('Sucesso', 'Foto de perfil atualizada.');
@@ -231,6 +231,7 @@ export default function SettingsScreen() {
         email: user.email,
         weight: user.weight.toString(),
         height: user.height.toString(),
+        birthDate: formatDisplayDate(user.birthDate),
       });
     }
     setIsEditing(false);
