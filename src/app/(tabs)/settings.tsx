@@ -1,10 +1,13 @@
 import { Card } from '@/components/Card';
+import InputWithValidation from '@/components/InputWithValidation';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { Goal } from '@/models/Goal';
 import { UserProfile } from '@/models/UserProfile';
+import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
+import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
 import { Ionicons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
 import * as ImagePicker from 'expo-image-picker';
@@ -60,19 +63,7 @@ export default function SettingsScreen() {
     return `${day}/${month}/${year}`;
   };
 
-  const formatBirthDateInput = (text: string) => {
-    let cleaned = text.replace(/\D/g, '');
-    if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
-    
-    let formatted = cleaned;
-    if (cleaned.length > 2) {
-      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
-      if (cleaned.length > 4) {
-        formatted += `/${cleaned.slice(4, 8)}`;
-      }
-    }
-    setFormData(prev => ({ ...prev, birthDate: formatted }));
-  };
+  const formatBirthDateInput = (text: string) => setFormData(prev => ({ ...prev, birthDate: formatBirthDateFn(text) }));
 
   useEffect(() => {
     if (user) {
@@ -157,28 +148,29 @@ export default function SettingsScreen() {
 
   const handleSave = () => {
     try {
-      const dateParts = formData.birthDate.split('/');
-      if (dateParts.length !== 3 || formData.birthDate.length !== 10) {
-        Alert.alert('Validação', 'Por favor informe a data de nascimento completa (DD/MM/AAAA).');
+      const birthCheck = validateBirthDate(formData.birthDate);
+      if (!birthCheck.valid) {
+        Alert.alert('Validação', birthCheck.error || 'Data inválida');
+        return;
+      }
+      const w = validateWeight(formData.weight);
+      const h = validateHeight(formData.height);
+      if (!w.valid) {
+        Alert.alert('Validação', w.error || 'Peso inválido');
+        return;
+      }
+      if (!h.valid) {
+        Alert.alert('Validação', h.error || 'Altura inválida');
         return;
       }
 
-      const day = parseInt(dateParts[0]);
-      const month = parseInt(dateParts[1]) - 1;
-      const year = parseInt(dateParts[2]);
-      const parsedDate = new Date(year, month, day);
-
-      if (isNaN(parsedDate.getTime()) || parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month || parsedDate.getDate() !== day) {
-        Alert.alert('Validação', 'Por favor informe uma data de nascimento válida.');
-        return;
-      }
-
+      const parsedDate = birthCheck.date as Date;
       realm.write(() => {
         if (user) {
           user.name = formData.name;
           user.email = formData.email;
-          user.weight = parseFloat(formData.weight) || 0;
-          user.height = parseFloat(formData.height) || 0;
+          user.weight = w.value as number;
+          user.height = h.value as number;
           user.birthDate = parsedDate;
           user.updatedAt = new Date();
         }
@@ -322,32 +314,32 @@ export default function SettingsScreen() {
         <View style={styles.biometryGrid}>
           <Card style={styles.biometryCard}>
             <Ionicons name="man-outline" size={24} color={Colors.primary} />
-            {isEditing ? (
-              <TextInput
-                style={styles.biometryInput}
-                value={formData.birthDate}
-                onChangeText={formatBirthDateInput}
-                keyboardType="numeric"
-                maxLength={10}
-              />
-            ) : (
-              <Text style={styles.biometryValue}>{age}</Text>
-            )}
+                  {isEditing ? (
+                    <InputWithValidation
+                      style={styles.biometryInput}
+                      value={formData.birthDate}
+                      onChangeText={formatBirthDateInput}
+                      keyboardType="numeric"
+                      maxLength={10}
+                    />
+                  ) : (
+                    <Text style={styles.biometryValue}>{age}</Text>
+                  )}
             <Text style={styles.biometryLabel}>{isEditing ? 'NASCIMENTO' : 'ANOS DE IDADE'}</Text>
           </Card>
           <Card style={styles.biometryCard}>
             <Ionicons name="resize-outline" size={24} color={Colors.primary} />
             {isEditing ? (
-              <TextInput
+              <InputWithValidation
                 style={styles.biometryInput}
                 value={formData.height}
-                onChangeText={(text) => setFormData({ ...formData, height: text })}
+                onChangeText={(text) => setFormData({ ...formData, height: sanitizeNumberInput(text, 6) })}
                 keyboardType="numeric"
               />
             ) : (
               <Text style={styles.biometryValue}>{user.height.toFixed(2)}</Text>
             )}
-            <Text style={styles.biometryLabel}>ALTURA (M)</Text>
+            <Text style={styles.biometryLabel}>ALTURA (CM)</Text>
           </Card>
         </View>
 
@@ -356,10 +348,10 @@ export default function SettingsScreen() {
             <Ionicons name="scale-outline" size={24} color={Colors.white} />
           </View>
           {isEditing ? (
-            <TextInput
+            <InputWithValidation
               style={[styles.weightValue, { color: Colors.primary, backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 10 }]}
               value={formData.weight}
-              onChangeText={(text) => setFormData({ ...formData, weight: text })}
+              onChangeText={(text) => setFormData({ ...formData, weight: sanitizeNumberInput(text, 6) })}
               keyboardType="numeric"
             />
           ) : (
@@ -406,15 +398,14 @@ export default function SettingsScreen() {
           );
         })}
 
+        
         {goals.length === 0 && (
           <TouchableOpacity 
             style={styles.goalButton}
             onPress={handleAddGoal}
           >
             <Ionicons name="add-outline" size={18} color={Colors.primary} style={styles.goalIcon} />
-            <Text style={[styles.goalButtonText, { color: Colors.primary }]}>
-              Adicionar primeira meta
-            </Text>
+            <Text style={[styles.goalButtonText, { color: Colors.primary }]}>Adicionar primeira meta</Text>
           </TouchableOpacity>
         )}
 
@@ -437,7 +428,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
-              <View style={[styles.menuIconCircle, { backgroundColor: '#FFEEED' }]}>
+              <View style={[styles.menuIconCircle, { backgroundColor: '#FFEEED' }] }>
                 <Ionicons name="log-out-outline" size={20} color={Colors.warning} />
               </View>
               <Text style={[styles.menuItemText, { color: Colors.warning }]}>Sair da conta</Text>

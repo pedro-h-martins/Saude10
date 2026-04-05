@@ -1,5 +1,8 @@
+import InputWithValidation from '@/components/InputWithValidation';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
+import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -15,29 +18,37 @@ export default function SignupScreen() {
   const [birthDate, setBirthDate] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [birthError, setBirthError] = useState<string | null>(null);
+  const [weightError, setWeightError] = useState<string | null>(null);
+  const [heightError, setHeightError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const formatBirthDate = (text: string) => {
-    let cleaned = text.replace(/\D/g, '');
-    if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
-    
-    let formatted = cleaned;
-    if (cleaned.length > 2) {
-      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
-      if (cleaned.length > 4) {
-        formatted += `/${cleaned.slice(4, 8)}`;
-      }
-    }
-    setBirthDate(formatted);
-  };
+  const formatBirthDate = (text: string) => setBirthDate(formatBirthDateFn(text));
 
   const handleSignUp = async () => {
     const nameValue = name.trim();
     const emailValue = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     
-    const weightVal = parseFloat(weight.replace(',', '.'));
-    const heightVal = parseFloat(height.replace(',', '.'));
+    const birthCheck = validateBirthDate(birthDate);
+    if (!birthCheck.valid) {
+      Alert.alert('Validação', birthCheck.error || 'Data inválida');
+      return;
+    }
+
+    const w = validateWeight(weight);
+    const h = validateHeight(height);
+    if (!w.valid) {
+      Alert.alert('Validação', w.error || 'Peso inválido');
+      return;
+    }
+    if (!h.valid) {
+      Alert.alert('Validação', h.error || 'Altura inválida');
+      return;
+    }
+
+    const weightVal = w.value as number;
+    const heightVal = h.value as number;
 
     if (!nameValue) {
       Alert.alert('Validação', 'Por favor informe o nome.');
@@ -73,14 +84,6 @@ export default function SignupScreen() {
       return;
     }
 
-    if (!weight || isNaN(weightVal) || weightVal <= 0) {
-      Alert.alert('Validação', 'Por favor informe um peso válido.');
-      return;
-    }
-    if (!height || isNaN(heightVal) || heightVal <= 0) {
-      Alert.alert('Validação', 'Por favor informe uma altura válida.');
-      return;
-    }
     if (!password || password.length < 6) {
       Alert.alert('Validação', 'A senha deve ter pelo menos 6 caracteres.');
       return;
@@ -125,30 +128,48 @@ export default function SignupScreen() {
           />
 
           <View style={styles.row}>
-            <TextInput
-              style={[styles.input, { flex: 1, marginRight: 8 }]}
+            <InputWithValidation
+              containerStyle={{ flex: 1, marginRight: 8 }}
+              style={styles.input}
               placeholder="Data Nascimento (DD/MM/AAAA)"
               keyboardType="numeric"
               maxLength={10}
               value={birthDate}
               onChangeText={formatBirthDate}
+              onBlur={() => {
+                const r = validateBirthDate(birthDate);
+                setBirthError(r.valid ? null : r.error || 'Data inválida');
+              }}
+              error={birthError}
             />
           </View>
 
           <View style={styles.row}>
-            <TextInput
-              style={[styles.input, { flex: 1, marginRight: 8 }]}
+            <InputWithValidation
+              containerStyle={{ flex: 1, marginRight: 8 }}
+              style={styles.input}
               placeholder="Peso (kg)"
               keyboardType="numeric"
               value={weight}
-              onChangeText={setWeight}
+              onChangeText={(text) => setWeight(sanitizeNumberInput(text, 6))}
+              onBlur={() => {
+                const r = validateWeight(weight);
+                setWeightError(r.valid ? null : r.error || 'Peso inválido');
+              }}
+              error={weightError}
             />
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="Altura (m)"
+            <InputWithValidation
+              containerStyle={{ flex: 1 }}
+              style={styles.input}
+              placeholder="Altura (cm)"
               keyboardType="numeric"
               value={height}
-              onChangeText={setHeight}
+              onChangeText={(text) => setHeight(sanitizeNumberInput(text, 6))}
+              onBlur={() => {
+                const r = validateHeight(height);
+                setHeightError(r.valid ? null : r.error || 'Altura inválida');
+              }}
+              error={heightError}
             />
           </View>
 
