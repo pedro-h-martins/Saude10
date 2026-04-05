@@ -10,7 +10,13 @@ export interface BMIData {
 }
 
 export function calculateBMI(weight: number, heightCm: number): BMIData {
+  if (!weight || !heightCm || isNaN(weight) || isNaN(heightCm)) {
+    return { value: 0, category: 'Dados insuficientes', isIdeal: false, color: '#ccc' };
+  }
   const heightM = heightCm / 100;
+  if (heightM === 0) {
+    return { value: 0, category: 'Dados insuficientes', isIdeal: false, color: '#ccc' };
+  }
   const bmi = weight / (heightM * heightM);
   const roundedBmi = Math.round(bmi * 10) / 10;
 
@@ -49,6 +55,7 @@ export async function requestActivityPermissions(): Promise<boolean> {
 }
 
 export function calculateDistance(steps: number, heightCm: number): number {
+  if (!steps || !heightCm || isNaN(steps) || isNaN(heightCm)) return 0;
   const heightM = heightCm / 100;
   const strideLengthM = heightM * 0.4145;
   const distanceM = steps * strideLengthM;
