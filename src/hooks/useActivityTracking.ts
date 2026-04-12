@@ -12,7 +12,7 @@ export function useActivityTracking() {
   const realm = useRealm();
   const users = useQuery(UserProfile);
   const { currentUser } = useAuth();
-  const user = currentUser ?? (users.length > 0 ? users[0] : null);
+  const user = currentUser;
 
   const [steps, setSteps] = useState(0);
   const [distanceMeters, setDistanceMeters] = useState(0);

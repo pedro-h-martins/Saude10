@@ -84,6 +84,17 @@ export default function SignupScreen() {
       return;
     }
 
+    const now = new Date();
+    let age = now.getFullYear() - parsedDate.getFullYear();
+    const mm = now.getMonth() - parsedDate.getMonth();
+    if (mm < 0 || (mm === 0 && now.getDate() < parsedDate.getDate())) {
+      age--;
+    }
+    if (age <= 14) {
+      Alert.alert('Validação', 'É necessário ter mais de 14 anos para criar uma conta.');
+      return;
+    }
+
     if (!password || password.length < 6) {
       Alert.alert('Validação', 'A senha deve ter pelo menos 6 caracteres.');
       return;

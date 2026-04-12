@@ -1,45 +1,45 @@
-import { Card } from '@/components/Card';
+﻿import { Card } from '@/components/Card';
 import { WellnessRating } from '@/components/WellnessRating';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
-import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WellnessWidget = () => {
   const realm = useRealm();
+  const { currentUser: user } = useAuth();
+  
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const users = useQuery(UserProfile);
-  const { currentUser } = useAuth();
-  const user = currentUser ?? (users.length > 0 ? users[0] : null);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const { today, tomorrow } = useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    const tm = new Date(t);
+    tm.setDate(tm.getDate() + 1);
+    return { today: t, tomorrow: tm };
+  }, []);
 
-  const todayLogs = useQuery(WellnessLog).filtered(
-    'timestamp >= $0 AND timestamp < $1',
-    today,
-    tomorrow
+  const todayLogs = useQuery(WellnessLog, (collection) => 
+    collection.filtered('timestamp >= $0 AND timestamp < $1', today, tomorrow),
+    [today, tomorrow]
   );
 
   useEffect(() => {
-    if (todayLogs.length > 0) {
+    if (todayLogs.length > 0 && !isSubmitted && rating === 0) {
       const sorted = todayLogs.sorted('timestamp', true);
       const latest = sorted[0];
       setRating(latest.rating);
       setNote(latest.notes || '');
       setIsSubmitted(true);
     }
-  }, [todayLogs]);
+  }, [todayLogs, isSubmitted, rating]);
 
   const handleRatingChange = (newRating: number) => {
     setRating(newRating);
@@ -135,88 +135,18 @@ export const WellnessWidget = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    marginBottom: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.timerBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  titleSection: {
-    flex: 1,
-  },
-  title: {
-    ...Typography.h3,
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  subtitle: {
-    fontSize: 10,
-    color: Colors.textSecondary,
-    letterSpacing: 0.5,
-  },
-  content: {
-    alignItems: 'center',
-  },
-  noteContainer: {
-    width: '100%',
-    marginTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 16,
-  },
-  noteLabel: {
-    ...Typography.body,
-    fontSize: 14,
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  noteInput: {
-    width: '100%',
-    minHeight: 60,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    padding: 12,
-    ...Typography.body,
-    fontSize: 14,
-    color: Colors.text,
-    textAlignVertical: 'top',
-  },
-  submitButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    marginTop: 16,
-    width: '100%',
-    alignItems: 'center',
-  },
-  submittedButton: {
-    backgroundColor: Colors.accent,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-    letterSpacing: 1,
-  },
-  feedbackText: {
-    ...Typography.body,
-    marginTop: 8,
-    fontSize: 12,
-    color: Colors.accent,
-    fontWeight: '500',
-  },
+  container: { padding: 16, marginBottom: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  iconContainer: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.timerBackground, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  titleSection: { flex: 1 },
+  title: { ...Typography.h3, fontSize: 16, fontWeight: '700', color: Colors.text },
+  subtitle: { fontSize: 10, color: Colors.textSecondary, letterSpacing: 0.5 },
+  content: { alignItems: 'center' },
+  noteContainer: { width: '100%', marginTop: 16, borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 16 },
+  noteLabel: { ...Typography.body, fontSize: 14, color: Colors.text, marginBottom: 8 },
+  noteInput: { width: '100%', minHeight: 60, backgroundColor: '#F5F5F5', borderRadius: 8, padding: 12, ...Typography.body, fontSize: 14, color: Colors.text, textAlignVertical: 'top' },
+  submitButton: { backgroundColor: Colors.primary, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 25, marginTop: 16, width: '100%', alignItems: 'center' },
+  submittedButton: { backgroundColor: Colors.accent },
+  submitButtonText: { color: '#fff', fontWeight: '700', fontSize: 14, letterSpacing: 1 },
+  feedbackText: { ...Typography.body, marginTop: 8, fontSize: 12, color: Colors.accent, fontWeight: '500' }
 });
