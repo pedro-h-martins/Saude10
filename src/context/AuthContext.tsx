@@ -97,6 +97,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const res = await authService.login(email, password);
+
+      if (!res.user || res.offline) {
+        try {
+          await authService.signOut();
+        } catch {}
+        throw new Error('Authentication failed: profile not found. Please register.');
+      }
       const id = res.user?._id ?? `user-${Date.now()}`;
 
       realm.write(() => {
