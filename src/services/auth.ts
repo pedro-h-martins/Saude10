@@ -308,7 +308,6 @@ export async function changePassword(currentPassword: string, newPassword: strin
   } catch (e: any) {
     const isNetworkError = e && (e.message === 'Network request failed' || e.constructor.name === 'TypeError');
     if (isNetworkError) {
-      // Save pending change to be processed later
       const payload: PendingPwdPayload = { currentPassword, newPassword, queuedAt: new Date().toISOString() };
       await savePendingPasswordChange(payload);
       return { offline: true };
