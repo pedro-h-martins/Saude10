@@ -2,9 +2,8 @@ import { Card } from '@/components/Card';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useRealm } from '@/context/RealmProvider';
 import { SymptomLog } from '@/models/SymptomLog';
-import { UserProfile } from '@/models/UserProfile';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
 import React, { useState } from 'react';
@@ -14,7 +13,6 @@ export const SymptomWidget = () => {
   const realm = useRealm();
   const [description, setDescription] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const users = useQuery(UserProfile);
   const { currentUser } = useAuth();
   const user = currentUser;
 

@@ -1,4 +1,4 @@
-﻿import { Card } from '@/components/Card';
+import { Card } from '@/components/Card';
 import { WellnessRating } from '@/components/WellnessRating';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';

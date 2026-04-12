@@ -1,4 +1,4 @@
-import InputWithValidation from '@/components/InputWithValidation';
+import { InputWithValidation } from '@/components/InputWithValidation';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';

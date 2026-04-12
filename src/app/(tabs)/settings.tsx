@@ -1,11 +1,10 @@
 import { Card } from '@/components/Card';
-import InputWithValidation from '@/components/InputWithValidation';
+import { InputWithValidation } from '@/components/InputWithValidation';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { Goal } from '@/models/Goal';
-import { UserProfile } from '@/models/UserProfile';
 import { changePassword } from '@/services/auth';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
 import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
@@ -37,7 +36,6 @@ const calculateAge = (birthDate: Date) => {
 };
 
 export default function SettingsScreen() {
-  const users = useQuery(UserProfile);
   const goals = useQuery(Goal);
   const { currentUser } = useAuth();
   const user = React.useMemo(() => currentUser, [currentUser]);
