@@ -4,7 +4,6 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { HydrationLog } from '@/models/HydrationLog';
-import { UserProfile } from '@/models/UserProfile';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
 import React, { useMemo, useState } from 'react';
@@ -12,14 +11,18 @@ import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity,
 
 export const WaterWidget = () => {
   const realm = useRealm();
-  const users = useQuery(UserProfile);
-  const { currentUser } = useAuth();
-  const user = currentUser ?? (users.length > 0 ? users[0] : null);
+    const { currentUser } = useAuth();
+  const user = currentUser;
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
   
-  const logs = useQuery(HydrationLog).filtered('timestamp >= $0', today);
+  const logs = useQuery(HydrationLog, (collection) => 
+    collection.filtered('timestamp >= $0', today), [today]
+  );
   
   const currentIntake = useMemo(() => {
     return logs.reduce((acc, log) => acc + log.amount, 0);

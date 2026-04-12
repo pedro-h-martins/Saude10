@@ -1,8 +1,7 @@
 import { DEFAULT_METERS_PER_STEP } from '@/constants/defaults';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useRealm } from '@/context/RealmProvider';
 import { ActivityLog } from '@/models/ActivityLog';
-import { UserProfile } from '@/models/UserProfile';
 import { calculateDistance, fetchStepsForPeriod, requestActivityPermissions } from '@/utils/health';
 import { Pedometer } from 'expo-sensors';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -10,9 +9,8 @@ import { AppState, Platform } from 'react-native';
 
 export function useActivityTracking() {
   const realm = useRealm();
-  const users = useQuery(UserProfile);
   const { currentUser } = useAuth();
-  const user = currentUser ?? (users.length > 0 ? users[0] : null);
+  const user = currentUser;
 
   const [steps, setSteps] = useState(0);
   const [distanceMeters, setDistanceMeters] = useState(0);

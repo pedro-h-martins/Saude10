@@ -1,11 +1,11 @@
 import { Card } from '@/components/Card';
-import InputWithValidation from '@/components/InputWithValidation';
+import { InputWithValidation } from '@/components/InputWithValidation';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { Goal } from '@/models/Goal';
-import { UserProfile } from '@/models/UserProfile';
+import { changePassword } from '@/services/auth';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
 import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,10 +36,9 @@ const calculateAge = (birthDate: Date) => {
 };
 
 export default function SettingsScreen() {
-  const users = useQuery(UserProfile);
   const goals = useQuery(Goal);
   const { currentUser } = useAuth();
-  const user = React.useMemo(() => currentUser ?? (users.length > 0 ? users[0] : null), [currentUser, users]);
+  const user = React.useMemo(() => currentUser, [currentUser]);
   const realm = useRealm();
   const { signOut } = useAuth();
 
@@ -55,6 +54,12 @@ export default function SettingsScreen() {
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [goalTitle, setGoalTitle] = useState('');
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [pwdCurrent, setPwdCurrent] = useState('');
+  const [pwdNew, setPwdNew] = useState('');
+  const [pwdConfirm, setPwdConfirm] = useState('');
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const formatDisplayDate = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
@@ -144,7 +149,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const age = React.useMemo(() => (user ? calculateAge(user.birthDate) : 0), [user]);
+  const birthYear = React.useMemo(() => (user ? user.birthDate.getFullYear() : ''), [user]);
 
   const handleSave = () => {
     try {
@@ -165,6 +170,10 @@ export default function SettingsScreen() {
       }
 
       const parsedDate = birthCheck.date as Date;
+      if (calculateAge(parsedDate) <= 14) {
+        Alert.alert('Validação', 'É necessário ter mais de 14 anos para criar uma conta.');
+        return;
+      }
       realm.write(() => {
         if (user) {
           user.name = formData.name;
@@ -286,6 +295,12 @@ export default function SettingsScreen() {
                 placeholder="Email"
                 keyboardType="email-address"
               />
+              <TouchableOpacity style={styles.passwordChangeButton} onPress={() => setPasswordModalVisible(true)}>
+                <View style={styles.iconCircleSmall}>
+                  <Ionicons name="lock-closed" size={16} color={Colors.white} />
+                </View>
+                <Text style={styles.passwordChangeText}>Alterar senha</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <>
@@ -295,20 +310,6 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        {!isEditing && (
-          <Card style={styles.sectionCard}>
-            <TouchableOpacity style={styles.row}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="lock-closed-outline" size={20} color={Colors.primary} />
-              </View>
-              <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>SEGURANÇA</Text>
-                <Text style={styles.rowValue}>••••••••••••</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-            </TouchableOpacity>
-          </Card>
-        )}
 
         <Text style={styles.sectionTitle}>Biometria e Fisiologia</Text>
         <View style={styles.biometryGrid}>
@@ -323,9 +324,9 @@ export default function SettingsScreen() {
                       maxLength={10}
                     />
                   ) : (
-                    <Text style={styles.biometryValue}>{age}</Text>
+                    <Text style={styles.biometryValue}>{birthYear}</Text>
                   )}
-            <Text style={styles.biometryLabel}>{isEditing ? 'NASCIMENTO' : 'ANOS DE IDADE'}</Text>
+            <Text style={styles.biometryLabel}>{isEditing ? 'NASCIMENTO' : 'ANO DE NASCIMENTO'}</Text>
           </Card>
           <Card style={styles.biometryCard}>
             <Ionicons name="resize-outline" size={24} color={Colors.primary} />
@@ -476,6 +477,93 @@ export default function SettingsScreen() {
                 <Text style={styles.deleteGoalButtonText}>Excluir Meta</Text>
               </TouchableOpacity>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={passwordModalVisible}
+        onRequestClose={() => setPasswordModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Alterar Senha</Text>
+            <InputWithValidation
+              placeholder="Senha atual"
+              secureTextEntry
+              value={pwdCurrent}
+              onChangeText={(t) => setPwdCurrent(t)}
+              containerStyle={{ marginBottom: 12 }}
+            />
+            <InputWithValidation
+              placeholder="Nova senha"
+              secureTextEntry
+              value={pwdNew}
+              onChangeText={(t) => setPwdNew(t)}
+              containerStyle={{ marginBottom: 12 }}
+            />
+            <InputWithValidation
+              placeholder="Confirmar nova senha"
+              secureTextEntry
+              value={pwdConfirm}
+              onChangeText={(t) => setPwdConfirm(t)}
+              containerStyle={{ marginBottom: 8 }}
+            />
+            {pwdError ? <Text style={{ color: Colors.warning, marginBottom: 8 }}>{pwdError}</Text> : null}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setPasswordModalVisible(false);
+                  setPwdCurrent('');
+                  setPwdNew('');
+                  setPwdConfirm('');
+                  setPwdError(null);
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={async () => {
+                  setPwdError(null);
+                  if (!pwdCurrent) {
+                    setPwdError('Informe sua senha atual');
+                    return;
+                  }
+                  if (pwdNew.length < 6) {
+                    setPwdError('A nova senha deve ter ao menos 6 caracteres');
+                    return;
+                  }
+                  if (pwdNew !== pwdConfirm) {
+                    setPwdError('Confirmação não confere');
+                    return;
+                  }
+                  try {
+                    setIsChangingPassword(true);
+                    const res = await changePassword(pwdCurrent, pwdNew as string) as any;
+                    if (res && res.offline) {
+                      Alert.alert('Offline', 'Alteração de senha salva e será enviada quando online.');
+                    } else {
+                      Alert.alert('Sucesso', 'Senha atualizada com sucesso.');
+                    }
+                    setPasswordModalVisible(false);
+                    setPwdCurrent('');
+                    setPwdNew('');
+                    setPwdConfirm('');
+                  } catch (e: any) {
+                    console.error(e);
+                    setPwdError(e?.message || 'Não foi possível alterar a senha');
+                  } finally {
+                    setIsChangingPassword(false);
+                  }
+                }}
+              >
+                <Text style={styles.saveButtonText}>{isChangingPassword ? 'Atualizando...' : 'Atualizar'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -795,6 +883,30 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 20,
     ...Typography.body,
+  },
+  passwordChangeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginTop: 6,
+  },
+  iconCircleSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  passwordChangeText: {
+    ...Typography.body,
+    fontWeight: '600',
+    color: Colors.text,
   },
   modalButtons: {
     flexDirection: 'row',

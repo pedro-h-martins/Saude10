@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (profile) {
           const id = profile._id ?? `user-${Date.now()}`;
           realm.write(() => {
-            realm.create('UserProfile', {
+            realm.create(UserProfile, {
               _id: id,
               name: profile.name ?? profile.email ?? 'User',
               email: profile.email ?? '',
@@ -75,14 +75,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }, Realm.UpdateMode.Modified);
           });
 
-          const user = realm.objectForPrimaryKey<UserProfile>('UserProfile', id);
+          const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
           setCurrentUser(user ?? null);
         }
       } catch (err) {
         console.warn('Auth initialization error', err);
         const tokens = await authService.getStoredTokens();
         if (tokens.accessToken) {
-          const allUsers = realm.objects<UserProfile>('UserProfile');
+          const allUsers = realm.objects<UserProfile>(UserProfile);
           if (allUsers.length > 0) {
             setCurrentUser(allUsers[0]);
           }
@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const id = res.user?._id ?? `user-${Date.now()}`;
 
       realm.write(() => {
-        realm.create('UserProfile', {
+        realm.create(UserProfile, {
           _id: id,
           name: res.user?.name ?? email,
           email: res.user?.email ?? email,
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, Realm.UpdateMode.Modified);
       });
 
-      const user = realm.objectForPrimaryKey<UserProfile>('UserProfile', id);
+      const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
       setCurrentUser(user ?? null);
     } catch (e) {
       console.error('signIn error', e);
@@ -136,7 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       realm.write(() => {
         realm.create(
-          'UserProfile',
+          UserProfile,
           {
             _id: id,
             name: res.user?.name ?? name,
@@ -150,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       });
 
-      const user = realm.objectForPrimaryKey<UserProfile>('UserProfile', id);
+      const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
       setCurrentUser(user ?? null);
     } catch (e) {
       console.error('signUp error', e);
@@ -166,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await authService.signInDev();
       const id = res.user._id;
       realm.write(() => {
-        realm.create('UserProfile', {
+        realm.create(UserProfile, {
           _id: id,
           name: res.user.name,
           email: res.user.email,
@@ -176,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           updatedAt: new Date(),
         });
       });
-      const user = realm.objectForPrimaryKey<UserProfile>('UserProfile', id);
+      const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
       setCurrentUser(user ?? null);
     } catch (e) {
       console.error('signInDev error', e);

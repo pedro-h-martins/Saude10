@@ -7,7 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { BloodPressure } from '@/models/BloodPressure';
-import { UserProfile } from '@/models/UserProfile';
 import { calculateBMI } from '@/utils/health';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -74,9 +73,8 @@ const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFor
 
 export function Home() {
   const realm = useRealm();
-  const users = useQuery(UserProfile);
   const { currentUser } = useAuth();
-  const user = currentUser ?? (users.length > 0 ? users[0] : null);
+  const user = currentUser;
   const { steps, formattedDistance } = useActivityTracking();
   const router = useRouter();
   

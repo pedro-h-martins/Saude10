@@ -1,4 +1,4 @@
-import InputWithValidation from '@/components/InputWithValidation';
+import { InputWithValidation } from '@/components/InputWithValidation';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
@@ -81,6 +81,17 @@ export default function SignupScreen() {
 
     if (year < 1900 || year > new Date().getFullYear()) {
       Alert.alert('Validação', 'Por favor informe um ano de nascimento válido.');
+      return;
+    }
+
+    const now = new Date();
+    let age = now.getFullYear() - parsedDate.getFullYear();
+    const mm = now.getMonth() - parsedDate.getMonth();
+    if (mm < 0 || (mm === 0 && now.getDate() < parsedDate.getDate())) {
+      age--;
+    }
+    if (age <= 14) {
+      Alert.alert('Validação', 'É necessário ter mais de 14 anos para criar uma conta.');
       return;
     }
 
