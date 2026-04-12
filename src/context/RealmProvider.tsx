@@ -9,6 +9,8 @@ import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import 'react-native-get-random-values';
 
 
@@ -39,24 +41,6 @@ const PREDEFINED_GOALS = [
   { type: 'reduce-stress', title: 'Reduzir estresse' },
 ];
 
-export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog],
-  schemaVersion: 16,
-  onMigration: (oldRealm, newRealm) => {
-    if (oldRealm.schemaVersion < 15) {
-      const newUsers = newRealm.objects('UserProfile');
-      for (let i = 0; i < newUsers.length; i++) {
-        const u: any = newUsers[i];
-        if (u && typeof u.avatarUri === 'undefined') {
-          u.avatarUri = null;
-        }
-      }
-    }
-  },
-  onFirstOpen: (realm) => {
-  },
-});
-
 export const seedInitialGoals = (realm: Realm) => {
   const existingGoals = realm.objects(Goal);
   if (existingGoals.length === 0) {
@@ -74,4 +58,47 @@ export const seedInitialGoals = (realm: Realm) => {
   }
 };
 
+export const RealmContext = createRealmContext({
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog],
+  schemaVersion: 16,
+  onMigration: (oldRealm, newRealm) => {
+    if (oldRealm.schemaVersion < 15) {
+      const newUsers = newRealm.objects('UserProfile');
+      for (let i = 0; i < newUsers.length; i++) {
+        const u: any = newUsers[i];
+        if (u && typeof u.avatarUri === 'undefined') {
+          u.avatarUri = null;
+        }
+      }
+    }
+  },
+  onFirstOpen: (realm) => {
+    seedInitialGoals(realm);
+  },
+});
+
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;
+
+export function EncryptedDatabaseProvider({ children, fallback }: { children: React.ReactNode, fallback?: React.ReactElement | null }) {
+  const [encryptionKey, setEncryptionKey] = useState<Uint8Array | null>(null);
+
+  useEffect(() => {
+    getEncryptionKey()
+      .then(setEncryptionKey)
+      .catch(console.error);
+  }, []);
+
+  if (!encryptionKey) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <RealmProvider encryptionKey={encryptionKey} fallback={fallback}>
+      {children}
+    </RealmProvider>
+  );
+}

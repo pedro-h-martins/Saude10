@@ -16,7 +16,7 @@ export const SymptomWidget = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const users = useQuery(UserProfile);
   const { currentUser } = useAuth();
-  const user = currentUser ?? (users.length > 0 ? users[0] : null);
+  const user = currentUser;
 
   const handleChange = (text: string) => {
     setDescription(text);
