@@ -1,5 +1,7 @@
 import { API_BASE_URL, AUTH_ACCESS_TOKEN_KEY, AUTH_PENDING_PWD_CHANGE_KEY, AUTH_REFRESH_TOKEN_KEY, AUTH_USER_ID_KEY } from '@/constants/config';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+import { initFirebase, isNativeFirebaseAvailable, webHasGoogleServicesJson } from './firebase';
 
 export type AuthResponse = {
   accessToken: string | null;
@@ -10,6 +12,32 @@ export type AuthResponse = {
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
   try {
+    await initFirebase();
+    const tryFirebase = isNativeFirebaseAvailable() || (Platform.OS === 'web' && (await webHasGoogleServicesJson()));
+    if (tryFirebase) {
+      try {
+        if (Platform.OS === 'web') {
+          const authModule = await import('firebase/auth');
+          const { getAuth, signInWithEmailAndPassword } = authModule;
+          const auth = getAuth();
+          const cred = await signInWithEmailAndPassword(auth, email, password);
+          const idToken = await cred.user.getIdToken();
+          await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, idToken);
+          return { accessToken: idToken, user: cred.user };
+        } else {
+          const rnAuth = await import('@react-native-firebase/auth');
+          const rnAuthAny = rnAuth as any;
+          const auth = rnAuthAny.default ? rnAuthAny.default() : rnAuthAny();
+          const cred = await auth.signInWithEmailAndPassword(email, password);
+          const idToken = await cred.user.getIdToken();
+          await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, idToken);
+          return { accessToken: idToken, user: cred.user };
+        }
+      } catch (e) {
+        console.warn('Firebase auth failed, falling back to backend auth:', e);
+      }
+    }
+
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -160,6 +188,34 @@ export async function signUp(
   height: number
 ): Promise<AuthResponse> {
   try {
+    await initFirebase();
+    const tryFirebase = isNativeFirebaseAvailable() || (Platform.OS === 'web' && (await webHasGoogleServicesJson()));
+    if (tryFirebase) {
+      try {
+        if (Platform.OS === 'web') {
+          const authModule = await import('firebase/auth');
+          const { getAuth, createUserWithEmailAndPassword, updateProfile } = authModule;
+          const auth = getAuth();
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(cred.user, { displayName: name });
+          const idToken = await cred.user.getIdToken();
+          await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, idToken);
+          return { accessToken: idToken, user: cred.user };
+        } else {
+          const rnAuth = await import('@react-native-firebase/auth');
+          const rnAuthAny = rnAuth as any;
+          const auth = rnAuthAny.default ? rnAuthAny.default() : rnAuthAny();
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          try { await cred.user.updateProfile({ displayName: name }); } catch { /* ignore */ }
+          const idToken = await cred.user.getIdToken();
+          await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, idToken);
+          return { accessToken: idToken, user: cred.user };
+        }
+      } catch (e) {
+        console.warn('Firebase signUp failed, falling back to backend:', e);
+      }
+    }
+
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
