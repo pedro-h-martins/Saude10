@@ -60,17 +60,8 @@ export const seedInitialGoals = (realm: Realm) => {
 
 export const RealmContext = createRealmContext({
   schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog],
-  schemaVersion: 16,
+  schemaVersion: 20,
   onMigration: (oldRealm, newRealm) => {
-    if (oldRealm.schemaVersion < 15) {
-      const newUsers = newRealm.objects('UserProfile');
-      for (let i = 0; i < newUsers.length; i++) {
-        const u: any = newUsers[i];
-        if (u && typeof u.avatarUri === 'undefined') {
-          u.avatarUri = null;
-        }
-      }
-    }
   },
   onFirstOpen: (realm) => {
     seedInitialGoals(realm);
