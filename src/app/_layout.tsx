@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import 'react-native-get-random-values';
+import { useSync } from '@/hooks/useSync';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -26,7 +27,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+
 function RootLayoutContent() {
+  useSync();
   return (
     <AuthGuard>
       <Stack>

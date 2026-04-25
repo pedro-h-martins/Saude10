@@ -4,8 +4,9 @@ import { WaterWidget } from '@/components/WaterWidget';
 import { WellnessWidget } from '@/components/WellnessWidget';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useQuery } from '@/context/RealmProvider';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
+import { useSync } from '@/hooks/useSync';
 import { BloodPressure } from '@/models/BloodPressure';
 import { calculateBMI } from '@/utils/health';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -72,11 +73,11 @@ const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFor
 );
 
 export function Home() {
-  const realm = useRealm();
   const { currentUser } = useAuth();
   const user = currentUser;
   const { steps, formattedDistance } = useActivityTracking();
   const router = useRouter();
+  const { save } = useSync();
   
   const bpLogs = useQuery(BloodPressure).sorted('timestamp', true);
   const lastBP = bpLogs.length > 0 ? bpLogs[0] : null;
@@ -100,14 +101,13 @@ export function Home() {
       return;
     }
 
-    realm.write(() => {
-      realm.create(BloodPressure, {
-        _id: new Realm.BSON.ObjectId(),
-        systolic: parseInt(systolic),
-        diastolic: parseInt(diastolic),
-        timestamp: date,
-        userId: user._id,
-      });
+    const newId = new Realm.BSON.ObjectId();
+    save('BloodPressure', newId.toHexString(), {
+      _id: newId,
+      systolic: parseInt(systolic),
+      diastolic: parseInt(diastolic),
+      timestamp: date,
+      userId: user._id,
     });
 
     setModalVisible(false);

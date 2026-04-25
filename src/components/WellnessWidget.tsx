@@ -3,7 +3,8 @@ import { WellnessRating } from '@/components/WellnessRating';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useQuery } from '@/context/RealmProvider';
+import { useSync } from '@/hooks/useSync';
 import { WellnessLog } from '@/models/WellnessLog';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
@@ -11,8 +12,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WellnessWidget = () => {
-  const realm = useRealm();
   const { currentUser: user } = useAuth();
+  const { save } = useSync();
   
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState('');
@@ -62,22 +63,15 @@ export const WellnessWidget = () => {
       return;
     }
 
-    realm.write(() => {
-      const existingToday = todayLogs.sorted('timestamp', true)[0];
-      
-      if (existingToday) {
-        existingToday.rating = rating;
-        existingToday.notes = note;
-        existingToday.timestamp = new Date();
-      } else {
-        realm.create(WellnessLog, {
-          _id: new Realm.BSON.ObjectId(),
-          rating: rating,
-          notes: note,
-          timestamp: new Date(),
-          userId: user._id,
-        });
-      }
+    const existingToday = todayLogs.sorted('timestamp', true)[0];
+    const logId = existingToday ? existingToday._id : new Realm.BSON.ObjectId();
+    
+    save('WellnessLog', logId.toHexString(), {
+      _id: logId,
+      rating: rating,
+      notes: note,
+      timestamp: new Date(),
+      userId: user._id,
     });
 
     setIsSubmitted(true);

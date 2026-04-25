@@ -25,13 +25,22 @@ export async function login(email: string, password: string): Promise<AuthRespon
           await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, idToken);
           return { accessToken: idToken, user: cred.user };
         } else {
-          const rnAuth = await import('@react-native-firebase/auth');
-          const rnAuthAny = rnAuth as any;
-          const auth = rnAuthAny.default ? rnAuthAny.default() : rnAuthAny();
-          const cred = await auth.signInWithEmailAndPassword(email, password);
-          const idToken = await cred.user.getIdToken();
+          const { getAuth, signInWithEmailAndPassword, getIdToken } = await import('@react-native-firebase/auth');
+          const auth = getAuth();
+          const cred = await signInWithEmailAndPassword(auth, email, password);
+          const idToken = await getIdToken(cred.user);
           await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, idToken);
-          return { accessToken: idToken, user: cred.user };
+          await SecureStore.setItemAsync(AUTH_USER_ID_KEY, cred.user.uid);
+          const user = {
+            _id: cred.user.uid,
+            name: cred.user.displayName ?? email,
+            email: cred.user.email ?? email,
+            birthDate: new Date(),
+            weight: 0,
+            height: 0,
+            updatedAt: new Date(),
+          };
+          return { accessToken: idToken, user };
         }
       } catch (e) {
         console.warn('Firebase auth failed, falling back to backend auth:', e);
@@ -202,16 +211,28 @@ export async function signUp(
           await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, idToken);
           return { accessToken: idToken, user: cred.user };
         } else {
-          const rnAuth = await import('@react-native-firebase/auth');
-          const rnAuthAny = rnAuth as any;
-          const auth = rnAuthAny.default ? rnAuthAny.default() : rnAuthAny();
-          const cred = await auth.createUserWithEmailAndPassword(email, password);
-          try { await cred.user.updateProfile({ displayName: name }); } catch { /* ignore */ }
-          const idToken = await cred.user.getIdToken();
+          const { getAuth, createUserWithEmailAndPassword, updateProfile, getIdToken } = await import('@react-native-firebase/auth');
+          const auth = getAuth();
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          try { await updateProfile(cred.user, { displayName: name }); } catch { /* ignore */ }
+          const idToken = await getIdToken(cred.user);
           await SecureStore.setItemAsync(AUTH_ACCESS_TOKEN_KEY, idToken);
-          return { accessToken: idToken, user: cred.user };
+          await SecureStore.setItemAsync(AUTH_USER_ID_KEY, cred.user.uid);
+          const user = {
+            _id: cred.user.uid,
+            name: name,
+            email: cred.user.email ?? email,
+            birthDate,
+            weight,
+            height,
+            updatedAt: new Date(),
+          };
+          return { accessToken: idToken, user };
         }
-      } catch (e) {
+      } catch (e: any) {
+        if (e?.code === 'auth/email-already-in-use' || e?.message?.includes('email-already-in-use')) {
+          throw e;
+        }
         console.warn('Firebase signUp failed, falling back to backend:', e);
       }
     }

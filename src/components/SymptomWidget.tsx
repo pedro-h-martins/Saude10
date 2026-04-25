@@ -2,19 +2,18 @@ import { Card } from '@/components/Card';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
-import { useRealm } from '@/context/RealmProvider';
-import { SymptomLog } from '@/models/SymptomLog';
+import { useSync } from '@/hooks/useSync';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const SymptomWidget = () => {
-  const realm = useRealm();
   const [description, setDescription] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { currentUser } = useAuth();
   const user = currentUser;
+  const { save } = useSync();
 
   const handleChange = (text: string) => {
     setDescription(text);
@@ -32,13 +31,12 @@ export const SymptomWidget = () => {
       return;
     }
 
-    realm.write(() => {
-      realm.create(SymptomLog, {
-        _id: new Realm.BSON.ObjectId(),
-        description: description.trim(),
-        timestamp: new Date(),
-        userId: user._id,
-      });
+    const newId = new Realm.BSON.ObjectId();
+    save('SymptomLog', newId.toHexString(), {
+      _id: newId,
+      description: description.trim(),
+      timestamp: new Date(),
+      userId: user._id,
     });
 
     setIsSubmitted(true);

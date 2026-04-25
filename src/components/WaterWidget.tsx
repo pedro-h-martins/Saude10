@@ -2,7 +2,8 @@ import { Card } from '@/components/Card';
 import { ProgressCircle } from '@/components/ProgressCircle';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useQuery } from '@/context/RealmProvider';
+import { useSync } from '@/hooks/useSync';
 import { HydrationLog } from '@/models/HydrationLog';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
@@ -10,9 +11,9 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WaterWidget = () => {
-  const realm = useRealm();
-    const { currentUser } = useAuth();
+  const { currentUser } = useAuth();
   const user = currentUser;
+  const { save } = useSync();
   
   const today = useMemo(() => {
     const d = new Date();
@@ -41,13 +42,12 @@ export const WaterWidget = () => {
       return;
     }
 
-    realm.write(() => {
-      realm.create(HydrationLog, {
-        _id: new Realm.BSON.ObjectId(),
-        amount,
-        timestamp: new Date(),
-        userId: user._id,
-      });
+    const newId = new Realm.BSON.ObjectId();
+    save('HydrationLog', newId.toHexString(), {
+      _id: newId,
+      amount,
+      timestamp: new Date(),
+      userId: user._id,
     });
   };
 
@@ -61,24 +61,21 @@ export const WaterWidget = () => {
       return;
     }
 
-    realm.write(() => {
-      realm.create(HydrationLog, {
-        _id: new Realm.BSON.ObjectId(),
-        amount: -amountToRemove,
-        timestamp: new Date(),
-        userId: user._id,
-      });
+    const newId = new Realm.BSON.ObjectId();
+    save('HydrationLog', newId.toHexString(), {
+      _id: newId,
+      amount: -amountToRemove,
+      timestamp: new Date(),
+      userId: user._id,
     });
   };
 
   const handleUpdateGoal = () => {
     const goalValue = parseInt(newGoal);
     if (!isNaN(goalValue) && goalValue > 0) {
-      realm.write(() => {
-        if (user) {
-          user.waterGoal = goalValue;
-        }
-      });
+      if (user) {
+        save('UserProfile', user._id, { waterGoal: goalValue });
+      }
       setModalVisible(false);
     }
   };

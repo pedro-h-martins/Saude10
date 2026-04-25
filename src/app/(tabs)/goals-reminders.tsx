@@ -4,6 +4,7 @@ import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useReminders } from '@/hooks/useReminders';
+import { useSync } from '@/hooks/useSync';
 import { Goal } from '@/models/Goal';
 import { Reminder } from '@/models/Reminder';
 import { UserProfile } from '@/models/UserProfile';
@@ -32,6 +33,7 @@ export default function GoalsRemindersScreen() {
   const { currentUser } = useAuth();
   const user = currentUser ?? users[0];
   const { reminders, addReminder, toggleReminder, deleteReminder } = useReminders();
+  const { save, remove } = useSync();
 
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
@@ -55,18 +57,24 @@ export default function GoalsRemindersScreen() {
     }
 
     try {
-      realm.write(() => {
-        const newGoal = realm.create(Goal, {
-          _id: new Realm.BSON.ObjectId(),
-          title: newGoalTitle,
-          type: 'custom',
-          startDate: new Date(),
-          isActive: true,
-        });
-        if (user) {
-          user.goals.push(newGoal);
-        }
+      const newGoalId = new Realm.BSON.ObjectId();
+      save('Goal', newGoalId.toHexString(), {
+        _id: newGoalId,
+        title: newGoalTitle,
+        type: 'custom',
+        startDate: new Date(),
+        isActive: true,
       });
+
+      if (user) {
+        realm.write(() => {
+          const newGoal = realm.objectForPrimaryKey(Goal, newGoalId);
+          if (newGoal && user) {
+             user.goals.push(newGoal);
+             save('UserProfile', user._id, { goals: user.goals });
+          }
+        });
+      }
       setNewGoalTitle('');
       setGoalModalVisible(false);
     } catch (error) {
@@ -98,7 +106,13 @@ export default function GoalsRemindersScreen() {
   const confirmDeleteGoal = (goal: Goal) => {
     Alert.alert('Excluir Meta', 'Tem certeza que deseja excluir esta meta?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: () => realm.write(() => realm.delete(goal)) },
+      { text: 'Excluir', style: 'destructive', onPress: () => {
+        if (user) {
+          const updatedGoals = user.goals.filter(g => g._id.toHexString() !== goal._id.toHexString());
+          save('UserProfile', user._id, { goals: updatedGoals });
+        }
+        remove('Goal', goal._id.toHexString());
+      } },
     ]);
   };
 

@@ -11,6 +11,7 @@ import { validateBirthDate, validateHeight, validateWeight } from '@/utils/valid
 import { Ionicons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
 import * as ImagePicker from 'expo-image-picker';
+import { useSync } from '@/hooks/useSync';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -41,6 +42,7 @@ export default function SettingsScreen() {
   const user = React.useMemo(() => currentUser, [currentUser]);
   const realm = useRealm();
   const { signOut } = useAuth();
+  const { save } = useSync();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -108,6 +110,10 @@ export default function SettingsScreen() {
           text: 'Excluir',
           style: 'destructive',
           onPress: () => {
+            if (user) {
+              const updatedGoals = user.goals.filter(g => g._id.toHexString() !== goal._id.toHexString());
+              save('UserProfile', user._id, { goals: updatedGoals });
+            }
             realm.write(() => {
               realm.delete(goal);
             });
@@ -125,22 +131,29 @@ export default function SettingsScreen() {
     }
 
     try {
-      realm.write(() => {
-        if (editingGoal) {
-          editingGoal.title = goalTitle;
-        } else {
-          const newGoal = realm.create(Goal, {
-            _id: new Realm.BSON.ObjectId(),
-            title: goalTitle,
-            type: 'custom',
-            startDate: new Date(),
-            isActive: true,
-          });
-          if (user) {
-            user.goals.push(newGoal);
+      const isNew = !editingGoal;
+      const newGoalId = isNew ? new Realm.BSON.ObjectId() : editingGoal!._id;
+      
+      const goalData = {
+        _id: newGoalId,
+        title: goalTitle,
+        type: 'custom',
+        startDate: new Date(),
+        isActive: true,
+      };
+
+      save('Goal', newGoalId.toHexString(), goalData);
+      
+      if (isNew && user) {
+        realm.write(() => {
+          const newGoal = realm.objectForPrimaryKey(Goal, newGoalId);
+          if (newGoal && user) {
+             user.goals.push(newGoal);
+             save('UserProfile', user._id, { goals: user.goals });
           }
-        }
-      });
+        });
+      }
+      
       setGoalModalVisible(false);
       setGoalTitle('');
     } catch (error) {
@@ -174,16 +187,17 @@ export default function SettingsScreen() {
         Alert.alert('Validação', 'É necessário ter mais de 14 anos para criar uma conta.');
         return;
       }
-      realm.write(() => {
-        if (user) {
-          user.name = formData.name;
-          user.email = formData.email;
-          user.weight = w.value as number;
-          user.height = h.value as number;
-          user.birthDate = parsedDate;
-          user.updatedAt = new Date();
-        }
-      });
+
+      if (user) {
+        save('UserProfile', user._id, {
+          name: formData.name,
+          email: formData.email,
+          weight: w.value as number,
+          height: h.value as number,
+          birthDate: parsedDate,
+          updatedAt: new Date(),
+        });
+      }
       setIsEditing(false);
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
     } catch (error) {
@@ -204,9 +218,9 @@ export default function SettingsScreen() {
       if (res.canceled) return;
 
       if (user) {
-        realm.write(() => {
-          user.avatarUri = res.assets && res.assets[0] ? res.assets[0].uri : undefined;
-          user.updatedAt = new Date();
+        save('UserProfile', user._id, {
+          avatarUri: res.assets && res.assets[0] ? res.assets[0].uri : null,
+          updatedAt: new Date(),
         });
         Alert.alert('Sucesso', 'Foto de perfil atualizada.');
       }
@@ -218,9 +232,9 @@ export default function SettingsScreen() {
 
   const handleRemoveAvatar = () => {
     if (!user) return;
-    realm.write(() => {
-      (user as any).avatarUri = null;
-      user.updatedAt = new Date();
+    save('UserProfile', user._id, {
+      avatarUri: null,
+      updatedAt: new Date(),
     });
     Alert.alert('Removido', 'Foto de perfil removida.');
   };
@@ -381,9 +395,7 @@ export default function SettingsScreen() {
                   if (isEditing) {
                     handleEditGoal(goal);
                   } else {
-                    realm.write(() => {
-                      goal.isActive = !goal.isActive;
-                    });
+                    save('Goal', goal._id.toHexString(), { isActive: !goal.isActive });
                   }
                 }}
               >

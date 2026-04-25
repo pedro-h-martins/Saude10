@@ -108,9 +108,19 @@ export default function SignupScreen() {
     try {
       await signUp(nameValue, emailValue, password, parsedDate, weightVal, heightVal);
       router.replace('/(tabs)');
-    } catch (e) {
+    } catch (e: any) {
       console.error('signUp error', e);
-      Alert.alert('Erro', 'Falha ao criar conta.');
+      const isEmailInUse =
+        e?.code === 'auth/email-already-in-use' ||
+        e?.message?.includes('email-already-in-use');
+      if (isEmailInUse) {
+        Alert.alert(
+          'E-mail já cadastrado',
+          'Este endereço de e-mail já está em uso. Por favor, faça login ou utilize outro e-mail.',
+        );
+      } else {
+        Alert.alert('Erro', 'Falha ao criar conta. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
