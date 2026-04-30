@@ -1,5 +1,6 @@
 import { Card } from '@/components/Card';
 import { ProgressCircle } from '@/components/ProgressCircle';
+import ShareProgressButton from '@/components/ShareProgressButton';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@/context/RealmProvider';
@@ -32,6 +33,13 @@ export const WaterWidget = () => {
   const defaultGoal = user?.weight ? Math.round(user.weight * 35) : 2000;
   const targetGoal = user?.waterGoal || defaultGoal;
   const progress = Math.min(currentIntake / targetGoal, 1);
+
+  const shareMessage = useMemo(() => {
+    if (currentIntake >= targetGoal) {
+      return `Bati minha meta de água hoje: bebi ${currentIntake}ml de ${targetGoal}ml.`;
+    }
+    return `Hoje já bebi ${currentIntake}ml de ${targetGoal}ml de água. Continuo cuidando da minha hidratação.`;
+  }, [currentIntake, targetGoal]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [newGoal, setNewGoal] = useState(targetGoal.toString());
@@ -123,6 +131,7 @@ export const WaterWidget = () => {
                 <Text style={[styles.addButtonText, { color: '#2196F3' }]}>500ml</Text>
               </TouchableOpacity>
             </View>
+            <ShareProgressButton compact message={shareMessage} buttonStyle={styles.shareButton} />
           </View>
         </Card>
       </TouchableOpacity>
@@ -216,6 +225,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 20,
     gap: 8,
+  },
+  shareButton: {
+    marginTop: 16,
+    alignSelf: 'flex-start',
   },
   addButton: {
     flexDirection: 'row',

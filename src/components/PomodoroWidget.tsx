@@ -1,3 +1,4 @@
+import ShareProgressButton from '@/components/ShareProgressButton';
 import { Colors } from '@/constants/Colors';
 import { usePomodoro } from '@/hooks/usePomodoro';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -18,6 +19,12 @@ export const PomodoroWidget: React.FC = () => {
   } = usePomodoro();
 
   const primaryColor = mode === 'focus' ? Colors.primary : Colors.accent;
+
+  const shareMessage = isRunning
+    ? mode === 'focus'
+      ? `Estou em uma sessão de foco Pomodoro. Faltam ${formatTime(timeLeft)}.`
+      : `Estou em uma pausa Pomodoro. Faltam ${formatTime(timeLeft)}.`
+    : `Estou pronto para iniciar uma sessão Pomodoro.${mode === 'focus' ? ' Hora de focar!' : ' Hora da pausa!'}`;
 
   return (
     <Card style={styles.halfCard}>
@@ -57,6 +64,7 @@ export const PomodoroWidget: React.FC = () => {
             />
           </TouchableOpacity>
         </View>
+        <ShareProgressButton compact message={shareMessage} buttonStyle={styles.shareButton} />
       </View>
     </Card>
   );
@@ -108,5 +116,9 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     backgroundColor: '#F8FAFC',
-  }
+  },
+  shareButton: {
+    marginTop: 16,
+    alignSelf: 'center',
+  },
 });
