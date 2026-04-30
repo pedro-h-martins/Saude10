@@ -1,5 +1,6 @@
 import { Card } from '@/components/Card';
 import { PomodoroWidget } from '@/components/PomodoroWidget';
+import ShareProgressButton from '@/components/ShareProgressButton';
 import { WaterWidget } from '@/components/WaterWidget';
 import { WellnessWidget } from '@/components/WellnessWidget';
 import { Colors } from '@/constants/Colors';
@@ -154,6 +155,9 @@ export function Home() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
         <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
+        <ShareProgressButton
+          message={`Bati minha meta de passos hoje! Dei ${steps.toLocaleString()} passos.`}
+        />
         <WellnessWidget />
         <WaterWidget />
         

@@ -5,7 +5,6 @@ import { HydrationLog } from '@/models/HydrationLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
 import { Reminder } from '@/models/Reminder';
 import { SymptomLog } from '@/models/SymptomLog';
-import { SyncQueue } from '@/models/SyncQueue';
 import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { createRealmContext, Realm } from '@realm/react';
@@ -60,7 +59,7 @@ export const seedInitialGoals = (realm: Realm) => {
 };
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog, SyncQueue],
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog],
   schemaVersion: 21
 });
 

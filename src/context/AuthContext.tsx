@@ -4,7 +4,7 @@ import * as authService from '@/services/auth';
 import { AUTH_USER_ID_KEY } from '@/constants/config';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { tryRemoteRead, tryRemoteWrite } from '@/sync/SyncService';
+import { saveEntity, tryRemoteRead } from '@/sync/SyncService';
 import { isOnline } from '@/utils/network';
 import { Realm } from '@realm/react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -113,16 +113,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (profile) {
           const id = profile._id ?? `user-${Date.now()}`;
+          const profileData = {
+            _id: id,
+            name: profile.name ?? profile.email ?? 'User',
+            email: profile.email ?? '',
+            birthDate: profile.birthDate ? new Date(profile.birthDate) : new Date(),
+            weight: profile.weight ?? 0,
+            height: profile.height ?? 0,
+            updatedAt: new Date(),
+          };
+
           realm.write(() => {
-            realm.create(UserProfile, {
-              _id: id,
-              name: profile.name ?? profile.email ?? 'User',
-              email: profile.email ?? '',
-              birthDate: profile.birthDate ? new Date(profile.birthDate) : new Date(),
-              weight: profile.weight ?? 0,
-              height: profile.height ?? 0,
-              updatedAt: new Date(),
-            }, Realm.UpdateMode.Modified);
+            realm.create(UserProfile, profileData, Realm.UpdateMode.Modified);
           });
 
           const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
@@ -163,18 +165,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const localProfile = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
+      const profileData = {
+        _id: id,
+        name: remoteProfile?.name ?? localProfile?.name ?? res.user?.name ?? email,
+        email: remoteProfile?.email ?? localProfile?.email ?? res.user?.email ?? email,
+        birthDate: remoteProfile?.birthDate ? new Date(remoteProfile.birthDate.seconds ? remoteProfile.birthDate.toDate() : remoteProfile.birthDate) : (localProfile?.birthDate ?? (res.user?.birthDate ? new Date(res.user.birthDate) : new Date())),
+        weight: remoteProfile?.weight ?? localProfile?.weight ?? res.user?.weight ?? 0,
+        height: remoteProfile?.height ?? localProfile?.height ?? res.user?.height ?? 0,
+        updatedAt: new Date(),
+      };
 
-      realm.write(() => {
-        realm.create(UserProfile, {
-          _id: id,
-          name: remoteProfile?.name ?? localProfile?.name ?? res.user?.name ?? email,
-          email: remoteProfile?.email ?? localProfile?.email ?? res.user?.email ?? email,
-          birthDate: remoteProfile?.birthDate ? new Date(remoteProfile.birthDate.seconds ? remoteProfile.birthDate.toDate() : remoteProfile.birthDate) : (localProfile?.birthDate ?? (res.user?.birthDate ? new Date(res.user.birthDate) : new Date())),
-          weight: remoteProfile?.weight ?? localProfile?.weight ?? res.user?.weight ?? 0,
-          height: remoteProfile?.height ?? localProfile?.height ?? res.user?.height ?? 0,
-          updatedAt: new Date(),
-        }, Realm.UpdateMode.Modified);
-      });
+      await saveEntity(realm, 'UserProfile', id, profileData, id);
 
       const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
       setCurrentUser(user ?? null);
@@ -209,20 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedAt: new Date(),
       };
 
-      realm.write(() => {
-        realm.create(UserProfile, profileData, Realm.UpdateMode.Modified);
-      });
-
-      if (await isOnline()) {
-        try {
-          const payload = { ...profileData };
-          delete (payload as any)._id;
-          await tryRemoteWrite(`users/${id}/UserProfile`, id, payload);
-        } catch (e) {
-          console.warn('Failed to sync new profile to Firestore', e);
-        }
-      }
-
+      await saveEntity(realm, 'UserProfile', id, profileData, id);
       const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
       setCurrentUser(user ?? null);
     } catch (e) {

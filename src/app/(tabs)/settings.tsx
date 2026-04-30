@@ -1,9 +1,11 @@
 import { Card } from '@/components/Card';
 import { InputWithValidation } from '@/components/InputWithValidation';
+import ShareProgressButton from '@/components/ShareProgressButton';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useSync } from '@/hooks/useSync';
 import { Goal } from '@/models/Goal';
 import { changePassword } from '@/services/auth';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
@@ -11,7 +13,6 @@ import { validateBirthDate, validateHeight, validateWeight } from '@/utils/valid
 import { Ionicons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
 import * as ImagePicker from 'expo-image-picker';
-import { useSync } from '@/hooks/useSync';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -407,6 +408,14 @@ export default function SettingsScreen() {
                 />
                 <Text style={[styles.goalText, isSelected && styles.goalTextActive]}>{goal.title}</Text>
               </TouchableOpacity>
+              {!isEditing && (
+                <ShareProgressButton
+                  compact
+                  title="Compartilhar meta"
+                  message={`Minha meta ativa no SaudeIO: ${goal.title}`}
+                  buttonStyle={styles.shareActionButton}
+                />
+              )}
             </View>
           );
         })}
@@ -864,6 +873,10 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 5,
     marginLeft: 10,
+  },
+  shareActionButton: {
+    marginLeft: 12,
+    backgroundColor: Colors.primary,
   },
   modalOverlay: {
     flex: 1,

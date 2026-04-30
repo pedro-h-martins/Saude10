@@ -1,9 +1,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { useRealm } from '@/context/RealmProvider';
-import { processSyncQueue, saveEntity, deleteEntity } from '@/sync/SyncService';
-import { isOnline } from '@/utils/network';
-import { useCallback, useEffect } from 'react';
-import { AppState, Platform } from 'react-native';
+import { deleteEntity, saveEntity } from '@/sync/SyncService';
+import { useCallback } from 'react';
 
 export function useSync() {
   const realm = useRealm();
@@ -24,34 +22,6 @@ export function useSync() {
     },
     [realm, currentUser]
   );
-
-  useEffect(() => {
-    if (!currentUser || Platform.OS === 'web') return;
-
-    let syncInterval: ReturnType<typeof setInterval>;
-
-    const runSync = async () => {
-      const online = await isOnline();
-      if (online) {
-        await processSyncQueue(realm, currentUser._id);
-      }
-    };
-
-    runSync();
-
-    syncInterval = setInterval(runSync, 60000);
-
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      if (nextAppState === 'active') {
-        runSync();
-      }
-    });
-
-    return () => {
-      clearInterval(syncInterval);
-      subscription.remove();
-    };
-  }, [realm, currentUser]);
 
   return { save, remove };
 }
