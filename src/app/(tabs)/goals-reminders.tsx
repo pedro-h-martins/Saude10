@@ -5,9 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useReminders } from '@/hooks/useReminders';
 import { useSync } from '@/hooks/useSync';
+import { getNextOccurrenceLabel, getWorkoutRecurrenceLabel, getWorkoutStatusText, isWorkoutCompleted, useWorkouts } from '@/hooks/useWorkouts';
 import { Goal } from '@/models/Goal';
 import { Reminder } from '@/models/Reminder';
 import { UserProfile } from '@/models/UserProfile';
+import { Workout } from '@/models/Workout';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerChangeEvent } from '@react-native-community/datetimepicker';
 import { Realm } from '@realm/react';
@@ -33,6 +35,7 @@ export default function GoalsRemindersScreen() {
   const { currentUser } = useAuth();
   const user = currentUser ?? users[0];
   const { reminders, addReminder, toggleReminder, deleteReminder } = useReminders();
+  const { workouts, toggleWorkoutCompleted } = useWorkouts();
   const { save, remove } = useSync();
 
   const [goalModalVisible, setGoalModalVisible] = useState(false);
@@ -44,6 +47,8 @@ export default function GoalsRemindersScreen() {
   const [reminderTime, setReminderTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [reminderType, setReminderType] = useState<Reminder['type']>('custom');
+  const [workoutModalVisible, setWorkoutModalVisible] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
 
   const onTimeChange = (event: DateTimePickerChangeEvent, selectedDate: Date) => {
     setShowTimePicker(Platform.OS === 'ios');
@@ -123,6 +128,38 @@ export default function GoalsRemindersScreen() {
     ]);
   };
 
+  const openWorkoutDetail = (workout: Workout) => {
+    setSelectedWorkout(workout);
+    setWorkoutModalVisible(true);
+  };
+
+  const handleToggleSelectedWorkout = async () => {
+    if (!selectedWorkout) return;
+
+    await toggleWorkoutCompleted(selectedWorkout._id);
+  };
+
+  const renderWorkoutItem = (item: Workout) => {
+    const statusText = getWorkoutStatusText(item);
+    const recurrenceLabel = getWorkoutRecurrenceLabel(item);
+    const nextOccurrenceLabel = item.isRecurring ? getNextOccurrenceLabel(item) : null;
+    const completed = isWorkoutCompleted(item);
+
+    return (
+      <TouchableOpacity key={item._id.toHexString()} onPress={() => openWorkoutDetail(item)}>
+        <Card style={styles.itemCard}>
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemTitle}>{item.title}</Text>
+            <Text style={styles.itemSubtitle}>{recurrenceLabel}</Text>
+            <Text style={styles.itemSubtitle}>{statusText}</Text>
+            {nextOccurrenceLabel ? <Text style={styles.itemSubtitle}>{nextOccurrenceLabel}</Text> : null}
+          </View>
+          <Ionicons name={completed ? 'checkmark-circle-outline' : 'ellipse-outline'} size={22} color={completed ? Colors.primary : Colors.textSecondary} />
+        </Card>
+      </TouchableOpacity>
+    );
+  };
+
   const renderGoalItem = (item: Goal) => (
     <Card key={item._id.toHexString()} style={styles.itemCard}>
       <View style={styles.itemInfo}>
@@ -182,7 +219,19 @@ export default function GoalsRemindersScreen() {
           goals.map(goal => renderGoalItem(goal))
         )}
 
-        <View style={[styles.sectionHeader, { marginTop: 30 }]}>
+        <View style={[styles.sectionHeader, { marginTop: 30 }]}> 
+          <Text style={styles.sectionTitle}>Treinos Pré-definidos</Text>
+        </View>
+
+        {workouts.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Nenhum treino disponível.</Text>
+          </View>
+        ) : (
+          workouts.map(workout => renderWorkoutItem(workout))
+        )}
+
+        <View style={[styles.sectionHeader, { marginTop: 30 }]}> 
           <Text style={styles.sectionTitle}>Lembretes Customizados</Text>
           <TouchableOpacity 
             style={styles.addButton} 
@@ -222,6 +271,43 @@ export default function GoalsRemindersScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, styles.saveBtn]} onPress={handleAddGoal}>
                 <Text style={styles.saveBtnText}>Adicionar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Workout Detail Modal */}
+      <Modal visible={workoutModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{selectedWorkout?.title ?? 'Detalhes do Treino'}</Text>
+            {selectedWorkout ? (
+              <>
+                <Text style={styles.workoutSubtitle}>{getWorkoutRecurrenceLabel(selectedWorkout)}</Text>
+                <Text style={styles.workoutSubtitle}>{getWorkoutStatusText(selectedWorkout)}</Text>
+                {selectedWorkout.isRecurring ? (
+                  <Text style={styles.workoutDetailText}>{getNextOccurrenceLabel(selectedWorkout)}</Text>
+                ) : null}
+                <Text style={styles.modalText}>{selectedWorkout.instructions}</Text>
+              </>
+            ) : null}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setWorkoutModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>Fechar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.saveBtn, (!selectedWorkout || isWorkoutCompleted(selectedWorkout)) && styles.disabledBtn]}
+                onPress={handleToggleSelectedWorkout}
+                disabled={!selectedWorkout || isWorkoutCompleted(selectedWorkout)}
+              >
+                <Text style={styles.saveBtnText}>
+                  {selectedWorkout
+                    ? isWorkoutCompleted(selectedWorkout)
+                      ? 'Treino concluído'
+                      : 'Marcar como concluído'
+                    : 'Concluir'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -319,5 +405,9 @@ const styles = StyleSheet.create({
   typeBtnActive: { backgroundColor: Colors.primary },
   typeBtnText: { fontSize: 13, color: Colors.text },
   typeBtnTextActive: { color: Colors.white, fontWeight: '600' },
+  workoutSubtitle: { ...Typography.caption, color: Colors.textSecondary, marginBottom: 8 },
+  workoutDetailText: { ...Typography.body, color: Colors.textSecondary, marginBottom: 16, lineHeight: 20 },
+  modalText: { ...Typography.body, color: Colors.textSecondary, marginBottom: 16, lineHeight: 20 },
+  disabledBtn: { opacity: 0.6 },
 });
 

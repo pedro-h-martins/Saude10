@@ -14,6 +14,7 @@ const SYNC_ENTITY_TYPES = [
   'Reminder',
   'SymptomLog',
   'WellnessLog',
+  'Workout',
 ];
 
 let activeListeners: (() => void)[] = [];
