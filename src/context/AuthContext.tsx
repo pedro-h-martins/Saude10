@@ -1,13 +1,13 @@
+import { AUTH_USER_ID_KEY } from '@/constants/config';
 import { useRealm } from '@/context/RealmProvider';
 import { UserProfile } from '@/models/UserProfile';
 import * as authService from '@/services/auth';
-import { AUTH_USER_ID_KEY } from '@/constants/config';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
-import { saveEntity, tryRemoteRead } from '@/sync/SyncService';
+import { cleanupSyncListeners, initializeSyncListeners, saveEntity, tryRemoteRead } from '@/sync/SyncService';
 import { isOnline } from '@/utils/network';
 import { Realm } from '@realm/react';
+import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
 type AuthContextType = {
   currentUser: UserProfile | null;
@@ -41,8 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (Platform.OS !== 'web') {
           try {
-            const { getAuth } = await import('@react-native-firebase/auth');
-            const auth = getAuth();
+            const [{ getAuth }, { getApp }] = await Promise.all([
+              import('@react-native-firebase/auth'),
+              import('@react-native-firebase/app'),
+            ]);
+            const auth = getAuth(getApp());
             const firebaseUser = auth.currentUser;
             if (firebaseUser) {
               const storedId = await SecureStore.getItemAsync(AUTH_USER_ID_KEY);
@@ -78,9 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (tokens.refreshToken && tokens.refreshToken !== 'offline-token') {
             try {
               const refreshed = await authService.refreshTokens();
-              profile = refreshed.user ?? null;
-
-              if (!profile && refreshed.accessToken) {
+              if (refreshed.accessToken) {
                 try {
                   profile = await authService.fetchProfile(refreshed.accessToken);
                 } catch {
@@ -145,15 +146,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })();
   }, [realm]);
 
+  useEffect(() => {
+    if (!currentUser?._id) {
+      cleanupSyncListeners();
+      return;
+    }
+
+    (async () => {
+      await initializeSyncListeners(realm, currentUser._id);
+    })();
+
+    return () => {
+      cleanupSyncListeners();
+    };
+  }, [realm, currentUser?._id]);
+
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
       const res = await authService.login(email, password);
 
-      if (!res.user && !res.offline) {
+      if (!res.user) {
         throw new Error('Authentication failed: profile not found. Please register.');
       }
-      const id = res.user?._id ?? `user-${Date.now()}`;
+      const id = res.user._id ?? `user-${Date.now()}`;
       
       let remoteProfile: any = null;
       if (await isOnline()) {

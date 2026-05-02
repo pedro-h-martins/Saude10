@@ -1,10 +1,13 @@
+import 'react-native-get-random-values';
 import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
+import { FeedbackSurvey } from '@/models/FeedbackSurvey';
 import { Goal } from '@/models/Goal';
 import { HydrationLog } from '@/models/HydrationLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
 import { Reminder } from '@/models/Reminder';
 import { SymptomLog } from '@/models/SymptomLog';
+import { SyncQueueItem } from '@/models/SyncQueueItem';
 import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { Workout } from '@/models/Workout';
@@ -12,7 +15,8 @@ import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import 'react-native-get-random-values';
+
+
 
 
 const ENCRYPTION_KEY_ID = 'realm_encryption_key_v1';
@@ -125,8 +129,8 @@ export const seedPredefinedWorkouts = (realm: Realm) => {
 };
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog, Workout],
-  schemaVersion: 22
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog, Workout, FeedbackSurvey, SyncQueueItem],
+  schemaVersion: 23
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;

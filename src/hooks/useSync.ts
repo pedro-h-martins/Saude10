@@ -9,16 +9,14 @@ export function useSync() {
 
   const save = useCallback(
     async (entityType: string, entityId: string, data: any) => {
-      if (!currentUser) return;
-      await saveEntity(realm, entityType, entityId, data, currentUser._id);
+      await saveEntity(realm, entityType, entityId, data, currentUser?._id ?? null);
     },
     [realm, currentUser]
   );
 
   const remove = useCallback(
     async (entityType: string, entityId: string) => {
-      if (!currentUser) return;
-      await deleteEntity(realm, entityType, entityId, currentUser._id);
+      await deleteEntity(realm, entityType, entityId, currentUser?._id ?? null);
     },
     [realm, currentUser]
   );

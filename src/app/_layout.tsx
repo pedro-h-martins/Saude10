@@ -1,10 +1,12 @@
+import 'react-native-get-random-values';
+import FeedbackSurveyPrompt from '@/components/FeedbackSurveyPrompt';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { EncryptedDatabaseProvider } from "@/context/RealmProvider";
+import { useSync } from '@/hooks/useSync';
 import { Stack, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
-import 'react-native-get-random-values';
-import { useSync } from '@/hooks/useSync';
+
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -37,13 +39,14 @@ function RootLayoutContent() {
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
       </Stack>
+      <FeedbackSurveyPrompt />
     </AuthGuard>
   );
 }
 
 export default function RootLayout() {
   return (
-    <EncryptedDatabaseProvider 
+    <EncryptedDatabaseProvider
       fallback={
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" />

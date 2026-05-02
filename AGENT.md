@@ -15,6 +15,7 @@ Project priorities
 - Primary data store (online): Firebase (Firestore/Auth or Realtime where used).
 - Secondary/local store: Realm (local-first for offline, as fallback/sync layer).
 - Architecture: SOLID principles + Clean Architecture (entities → use-cases → repositories → data-sources → presentation).
+- React Native files that depend on `react-native-get-random-values` must import `import 'react-native-get-random-values';` as the very first statement in the file.
 
 Capabilities
 - Read repository context and propose code changes, tests, and CI updates.
