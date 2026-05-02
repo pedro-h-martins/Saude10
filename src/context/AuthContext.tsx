@@ -170,6 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Authentication failed: profile not found. Please register.');
       }
       const id = res.user._id ?? `user-${Date.now()}`;
+      await SecureStore.setItemAsync(AUTH_USER_ID_KEY, id).catch(() => null);
       
       let remoteProfile: any = null;
       if (await isOnline()) {
@@ -215,6 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await authService.signUp(name, email, password, birthDate, weight, height);
       const id = res.user?._id ?? `user-${Date.now()}`;
+      await SecureStore.setItemAsync(AUTH_USER_ID_KEY, id).catch(() => null);
 
       const profileData = {
         _id: id,
@@ -265,8 +267,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     setLoading(true);
+    cleanupSyncListeners();
     try {
       await authService.signOut();
+      await SecureStore.deleteItemAsync(AUTH_USER_ID_KEY).catch(() => null);
       setCurrentUser(null);
     } catch (e) {
       console.error('signOut error', e);

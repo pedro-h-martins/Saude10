@@ -1,5 +1,5 @@
 import { getApp } from '@react-native-firebase/app';
-import { EmailAuthProvider, getAuth } from '@react-native-firebase/auth';
+import { signOut as authSignOut, createUserWithEmailAndPassword, EmailAuthProvider, getAuth, getIdToken, reauthenticateWithCredential, signInWithEmailAndPassword, updatePassword, updateProfile } from '@react-native-firebase/auth';
 import * as SecureStore from 'expo-secure-store';
 
 const ACCESS_TOKEN_KEY = 'auth_access_token';
@@ -16,9 +16,9 @@ function getFirebaseAuth() {
 
 export async function login(email: string, password: string) {
   const auth = getFirebaseAuth();
-  const result = await auth.signInWithEmailAndPassword(email, password);
+  const result = await signInWithEmailAndPassword(auth, email, password);
   const firebaseUser = result.user;
-  const accessToken = await firebaseUser.getIdToken();
+  const accessToken = await getIdToken(firebaseUser);
   await storeTokens({ accessToken, refreshToken: null });
 
   return {
@@ -35,14 +35,14 @@ export async function login(email: string, password: string) {
 
 export async function signUp(name: string, email: string, password: string, birthDate: Date, weight: number, height: number) {
   const auth = getFirebaseAuth();
-  const result = await auth.createUserWithEmailAndPassword(email, password);
+  const result = await createUserWithEmailAndPassword(auth, email, password);
   const firebaseUser = result.user;
 
   if (firebaseUser.displayName !== name) {
-    await firebaseUser.updateProfile({ displayName: name });
+    await updateProfile(firebaseUser, { displayName: name });
   }
 
-  const accessToken = await firebaseUser.getIdToken();
+  const accessToken = await getIdToken(firebaseUser);
   await storeTokens({ accessToken, refreshToken: null });
 
   return {
@@ -59,7 +59,7 @@ export async function signUp(name: string, email: string, password: string, birt
 
 export async function signOut() {
   const auth = getFirebaseAuth();
-  await auth.signOut();
+  await authSignOut(auth);
   await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY).catch(() => null);
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY).catch(() => null);
 }
@@ -86,8 +86,8 @@ export async function changePassword(currentPassword: string, newPassword: strin
   }
 
   const credential = EmailAuthProvider.credential(user.email, currentPassword);
-  await user.reauthenticateWithCredential(credential);
-  await user.updatePassword(newPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
   return { success: true };
 }
 
@@ -107,7 +107,7 @@ export async function refreshTokens(): Promise<StoredTokens> {
     return { accessToken: null, refreshToken: null };
   }
 
-  const accessToken = await firebaseUser.getIdToken(true);
+  const accessToken = await getIdToken(firebaseUser, true);
   await storeTokens({ accessToken, refreshToken: null });
 
   return {
