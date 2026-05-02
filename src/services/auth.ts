@@ -1,5 +1,5 @@
 import { getApp } from '@react-native-firebase/app';
-import { getAuth } from '@react-native-firebase/auth';
+import { EmailAuthProvider, getAuth } from '@react-native-firebase/auth';
 import * as SecureStore from 'expo-secure-store';
 
 const ACCESS_TOKEN_KEY = 'auth_access_token';
@@ -75,6 +75,20 @@ export async function signInDev() {
       height: 170,
     },
   };
+}
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+
+  if (!user || !user.email) {
+    throw new Error('Usuário não autenticado');
+  }
+
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await user.reauthenticateWithCredential(credential);
+  await user.updatePassword(newPassword);
+  return { success: true };
 }
 
 export async function getStoredTokens(): Promise<StoredTokens> {

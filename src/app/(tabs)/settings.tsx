@@ -8,10 +8,12 @@ import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
 import { Goal } from '@/models/Goal';
 import { changePassword } from '@/services/auth';
+import { EXPORT_CATEGORIES, exportHealthData, type ExportCategoryKey } from '@/services/exportData';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
 import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
 import { Ionicons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
+import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
@@ -63,6 +65,8 @@ export default function SettingsScreen() {
   const [pwdConfirm, setPwdConfirm] = useState('');
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [selectedExportCategories, setSelectedExportCategories] = useState<ExportCategoryKey[]>(EXPORT_CATEGORIES.map((category) => category.key));
+  const [isExporting, setIsExporting] = useState(false);
 
   const formatDisplayDate = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
@@ -204,6 +208,34 @@ export default function SettingsScreen() {
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar as alterações.');
       console.error(error);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) {
+      return;
+    }
+
+    if (selectedExportCategories.length === 0) {
+      Alert.alert('Selecione categorias', 'Escolha pelo menos uma categoria para exportar.');
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      const directory = await FileSystem.Directory.pickDirectoryAsync();
+      if (!directory) {
+        Alert.alert('Exportação cancelada', 'Nenhuma pasta selecionada.');
+        return;
+      }
+
+      const { uri } = await exportHealthData(realm, user._id, selectedExportCategories, directory.uri);
+      Alert.alert('Exportado', `Arquivo salvo em:\n${uri}`);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível exportar seus dados.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -429,6 +461,39 @@ export default function SettingsScreen() {
             <Ionicons name="add-outline" size={18} color={Colors.primary} style={styles.goalIcon} />
             <Text style={[styles.goalButtonText, { color: Colors.primary }]}>Adicionar primeira meta</Text>
           </TouchableOpacity>
+        )}
+
+        {!isEditing && (
+          <View style={styles.exportSection}>
+            <Text style={styles.sectionTitle}>Exportar dados</Text>
+            <Text style={styles.sectionSubtitle}>Selecione as categorias que deseja incluir no arquivo JSON.</Text>
+            {EXPORT_CATEGORIES.map((category) => {
+              const selected = selectedExportCategories.includes(category.key);
+              return (
+                <TouchableOpacity
+                  key={category.key}
+                  style={[styles.exportCategoryRow, selected && styles.exportCategoryRowSelected]}
+                  onPress={() => {
+                    setSelectedExportCategories((prev) =>
+                      prev.includes(category.key)
+                        ? prev.filter((item) => item !== category.key)
+                        : [...prev, category.key]
+                    );
+                  }}
+                >
+                  <Ionicons
+                    name={selected ? 'checkbox' : 'square-outline'}
+                    size={20}
+                    color={selected ? Colors.primary : Colors.textSecondary}
+                  />
+                  <Text style={[styles.exportCategoryText, selected && styles.exportCategoryTextSelected]}>{category.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity style={styles.exportButton} onPress={handleExportData} disabled={isExporting}>
+              <Text style={styles.exportButtonText}>{isExporting ? 'Exportando...' : 'Exportar dados selecionados'}</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {!isEditing && (
@@ -788,6 +853,50 @@ const styles = StyleSheet.create({
   goalButtonActive: {
     borderColor: Colors.primary,
     backgroundColor: '#F0F7FF',
+  },
+  exportSection: {
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  exportCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 10,
+    backgroundColor: '#FAFAFA',
+  },
+  exportCategoryRowSelected: {
+    backgroundColor: '#E9F5FF',
+    borderColor: Colors.primary,
+  },
+  exportCategoryText: {
+    ...Typography.body,
+    color: Colors.text,
+    marginLeft: 12,
+  },
+  exportCategoryTextSelected: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  exportButton: {
+    marginTop: 8,
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  exportButtonText: {
+    ...Typography.body,
+    color: Colors.white,
+    fontWeight: '700',
   },
   dot: {
     width: 10,
