@@ -1,14 +1,18 @@
-import { collection, deleteDoc, doc, getDoc, getFirestore, onSnapshot, setDoc } from '@react-native-firebase/firestore';
+import 'react-native-get-random-values';
+import { SyncQueueItem } from '@/models/SyncQueueItem';
+import { getUserEntityCollection, getUserEntityDocRef } from '@/services/firebase';
+import { isOnline } from '@/utils/network';
+import { deleteDoc, getDoc, onSnapshot, setDoc } from '@react-native-firebase/firestore';
 import { Realm } from '@realm/react';
-import { Platform } from 'react-native';
 
-const TIMEOUT_MS = 10000;
-const MAX_RETRIES = 3;
+
+
 const SYNC_ENTITY_TYPES = [
   'UserProfile',
   'Goal',
   'ActivityLog',
   'BloodPressure',
+  'FeedbackSurvey',
   'HydrationLog',
   'PomodoroLog',
   'Reminder',
@@ -17,160 +21,186 @@ const SYNC_ENTITY_TYPES = [
   'Workout',
 ];
 
-let activeListeners: (() => void)[] = [];
+const listeners: (() => void)[] = [];
 
-async function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function isSyncSupported() {
-  return Platform.OS !== 'web';
-}
-
-function normalizeFirestoreValue(value: any): any {
-  if (value === null || value === undefined) {
+function normalizeValue(value: unknown): unknown {
+  if (value instanceof Date) {
     return value;
   }
 
-  if (typeof value?.toDate === 'function') {
-    return value.toDate();
-  }
-
   if (Array.isArray(value)) {
-    return value.map(normalizeFirestoreValue);
+    return value.map(normalizeValue);
   }
 
-  if (typeof value === 'object') {
-    return normalizeFirestoreData(value);
+  if (value && typeof value === 'object') {
+    const converted: Record<string, unknown> = {};
+
+    if ('toDate' in value && typeof (value as any).toDate === 'function') {
+      return (value as any).toDate();
+    }
+
+    if (value instanceof Realm.BSON.ObjectId) {
+      return value.toHexString();
+    }
+
+    for (const [key, innerValue] of Object.entries(value as Record<string, unknown>)) {
+      converted[key] = normalizeValue(innerValue);
+    }
+    return converted;
   }
 
   return value;
 }
 
-function normalizeFirestoreData(data: any): any {
-  if (data === null || data === undefined) {
+function normalizeDataForFirestore(data: any) {
+  if (!data || typeof data !== 'object') {
     return data;
   }
 
-  if (Array.isArray(data)) {
-    return data.map(normalizeFirestoreValue);
+  const converted: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (key === '_id') {
+      continue;
+    }
+    converted[key] = normalizeValue(value);
+  }
+  return converted;
+}
+
+const OBJECT_ID_ENTITY_TYPES = new Set([
+  'Goal',
+  'ActivityLog',
+  'BloodPressure',
+  'FeedbackSurvey',
+  'HydrationLog',
+  'PomodoroLog',
+  'Reminder',
+  'SymptomLog',
+  'WellnessLog',
+  'Workout',
+]);
+
+function buildRemoteDocRef(userId: string, entityType: string, entityId: string) {
+  return getUserEntityDocRef(userId, entityType, entityId);
+}
+
+function getRealmPrimaryKey(entityType: string, entityId: string) {
+  if (!OBJECT_ID_ENTITY_TYPES.has(entityType)) {
+    return entityId;
   }
 
-  if (typeof data !== 'object') {
-    return data;
+  return typeof entityId === 'string' ? new Realm.BSON.ObjectId(entityId) : entityId;
+}
+
+function createPendingSync(
+  realm: Realm,
+  userId: string,
+  entityType: string,
+  entityId: string,
+  operation: 'set' | 'delete',
+  payload?: any
+) {
+  realm.write(() => {
+    realm.create(
+      SyncQueueItem,
+      {
+        _id: new Realm.BSON.ObjectId(),
+        userId,
+        entityType,
+        entityId,
+        operation,
+        payload: payload ? normalizeDataForFirestore(payload) : null,
+        status: 'pending',
+        attempts: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      Realm.UpdateMode.Modified
+    );
+  });
+}
+
+function clearPendingSync(realm: Realm, userId: string, entityType: string, entityId: string, operation: 'set' | 'delete') {
+  const pending = realm
+    .objects<SyncQueueItem>(SyncQueueItem)
+    .filtered('userId == $0 AND entityType == $1 AND entityId == $2 AND operation == $3', userId, entityType, entityId, operation);
+
+  if (pending.length === 0) {
+    return;
   }
 
-  return Object.entries(data).reduce((acc, [key, value]) => {
-    acc[key] = normalizeFirestoreValue(value);
-    return acc;
-  }, {} as Record<string, any>);
+  realm.write(() => {
+    realm.delete(pending);
+  });
 }
 
-function buildPrimaryKey(entityType: string, entityId: string) {
-  return entityType === 'UserProfile' ? entityId : new Realm.BSON.ObjectId(entityId);
-}
-
-function applyRemoteDocument(realm: Realm, entityType: string, docId: string, data: any) {
-  const normalized = normalizeFirestoreData(data);
-  realm.create(entityType, { ...normalized, _id: buildPrimaryKey(entityType, docId) }, Realm.UpdateMode.Modified);
-}
-
-function removeRemoteDocument(realm: Realm, entityType: string, docId: string) {
-  const primaryKey = buildPrimaryKey(entityType, docId);
-  const existing = realm.objectForPrimaryKey(entityType, primaryKey);
-  if (existing) {
-    realm.delete(existing);
+async function flushPendingQueue(realm: Realm, userId: string) {
+  if (!(await isOnline())) {
+    return;
   }
-}
 
-function subscribeToCollection(realm: Realm, userId: string, entityType: string) {
-  const db = getFirestore();
-  const collectionRef = collection(db, `users/${userId}/${entityType}`);
+  const pending = realm
+    .objects<SyncQueueItem>(SyncQueueItem)
+    .filtered('userId == $0 AND status == $1', userId, 'pending');
 
-  const unsubscribe = onSnapshot(
-    collectionRef,
-    (snapshot) => {
+  const toDelete: Realm.Object[] = [];
+
+  for (const item of pending) {
+    try {
+      const ref = buildRemoteDocRef(userId, item.entityType, item.entityId);
+      if (item.operation === 'set') {
+        await setDoc(ref, item.payload ?? {}, { merge: true });
+      } else {
+        await deleteDoc(ref);
+      }
+
+      toDelete.push(item as unknown as Realm.Object);
+    } catch (error) {
+      console.warn('[SyncService] pending queue item sync failed', error);
       realm.write(() => {
-        snapshot.docChanges().forEach((change) => {
-          const docId = change.doc.id;
-          if (change.type === 'removed') {
-            removeRemoteDocument(realm, entityType, docId);
-          } else {
-            applyRemoteDocument(realm, entityType, docId, change.doc.data());
-          }
-        });
+        item.attempts += 1;
+        item.status = item.attempts >= 3 ? 'failed' : 'pending';
+        item.updatedAt = new Date();
       });
+    }
+  }
+
+  if (toDelete.length > 0) {
+    realm.write(() => {
+      realm.delete(toDelete);
+    });
+  }
+}
+
+function mergeRemoteDocument(realm: Realm, entityType: string, entityId: string, data: Record<string, unknown>) {
+  realm.create(
+    entityType,
+    {
+      _id: getRealmPrimaryKey(entityType, entityId),
+      ...data,
     },
-    (error) => {
-      console.warn(`[SyncService] Firestore listener failed for ${entityType}`, error);
-    }
+    Realm.UpdateMode.Modified
   );
-
-  return unsubscribe;
 }
 
-export async function tryRemoteRead(collection_: string, docId: string, retries = 0): Promise<any | null> {
-  if (!isSyncSupported()) return null;
+export async function tryRemoteRead(collectionPath: string, entityId: string) {
+  if (!collectionPath || !entityId) {
+    throw new Error('Remote read requires a collection path and entity id');
+  }
 
-  try {
-    const db = getFirestore();
-    const ref = doc(collection(db, collection_), docId);
-    const promise = getDoc(ref);
-    const timeoutPromise = new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Timeout')), TIMEOUT_MS));
-    const snapshot = await Promise.race([promise, timeoutPromise]);
+  const segments = collectionPath.split('/');
+  if (segments.length !== 3 || segments[0] !== 'users') {
+    throw new Error('Unsupported collection path: ' + collectionPath);
+  }
 
-    if (snapshot.exists) {
-      return snapshot.data();
-    }
-    return null;
-  } catch {
-    if (retries < MAX_RETRIES) {
-      const backoff = Math.pow(2, retries) * 1000;
-      await wait(backoff);
-      return tryRemoteRead(collection_, docId, retries + 1);
-    }
+  const [, userId, entityType] = segments;
+  const snapshot = await getDoc(buildRemoteDocRef(userId, entityType, entityId));
+
+  if (!snapshot.exists()) {
     return null;
   }
-}
 
-export async function tryRemoteWrite(collection_: string, docId: string, data: any, retries = 0): Promise<boolean> {
-  if (!isSyncSupported()) return false;
-
-  try {
-    const db = getFirestore();
-    const ref = doc(collection(db, collection_), docId);
-    const promise = setDoc(ref, data, { merge: true });
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), TIMEOUT_MS));
-    await Promise.race([promise, timeoutPromise]);
-    return true;
-  } catch {
-    if (retries < MAX_RETRIES) {
-      const backoff = Math.pow(2, retries) * 1000;
-      await wait(backoff);
-      return tryRemoteWrite(collection_, docId, data, retries + 1);
-    }
-    return false;
-  }
-}
-
-export async function tryRemoteDelete(collection_: string, docId: string, retries = 0): Promise<boolean> {
-  if (!isSyncSupported()) return false;
-
-  try {
-    const db = getFirestore();
-    const ref = doc(collection(db, collection_), docId);
-    const promise = deleteDoc(ref);
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), TIMEOUT_MS));
-    await Promise.race([promise, timeoutPromise]);
-    return true;
-  } catch {
-    if (retries < MAX_RETRIES) {
-      const backoff = Math.pow(2, retries) * 1000;
-      await wait(backoff);
-      return tryRemoteDelete(collection_, docId, retries + 1);
-    }
-    return false;
-  }
+  return normalizeValue(snapshot.data());
 }
 
 export async function saveEntity(
@@ -179,60 +209,109 @@ export async function saveEntity(
   entityId: string,
   data: any,
   userId: string | null
-): Promise<void> {
-  const payload = { ...data };
-  if (payload._id) delete payload._id;
+) {
+  const payload = {
+    ...data,
+    _id: getRealmPrimaryKey(entityType, entityId),
+    updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+  };
 
   realm.write(() => {
-    realm.create(entityType, { ...data, _id: buildPrimaryKey(entityType, entityId) }, Realm.UpdateMode.Modified);
+    realm.create(entityType, payload, Realm.UpdateMode.Modified);
   });
 
-  if (!userId || !isSyncSupported()) {
+  if (!userId) {
     return;
   }
 
-  const success = await tryRemoteWrite(`users/${userId}/${entityType}`, entityId, payload);
-  if (!success) {
-    console.warn(`[SyncService] Remote write failed for ${entityType}/${entityId}. Firestore offline persistence will retry when possible.`);
-  }
-}
+  const remotePayload = normalizeDataForFirestore(payload);
 
-export async function deleteEntity(
-  realm: Realm,
-  entityType: string,
-  entityId: string,
-  userId: string | null
-): Promise<void> {
-  realm.write(() => {
-    const existing = realm.objectForPrimaryKey(entityType, buildPrimaryKey(entityType, entityId));
-    if (existing) {
-      realm.delete(existing);
+  if (await isOnline()) {
+    try {
+      await setDoc(buildRemoteDocRef(userId, entityType, entityId), remotePayload, { merge: true });
+      clearPendingSync(realm, userId, entityType, entityId, 'set');
+      return;
+    } catch (error) {
+      console.warn('[SyncService] Remote save failed, queueing locally', error);
     }
-  });
-
-  if (!userId || !isSyncSupported()) {
-    return;
   }
 
-  const success = await tryRemoteDelete(`users/${userId}/${entityType}`, entityId);
-  if (!success) {
-    console.warn(`[SyncService] Remote delete failed for ${entityType}/${entityId}. Firestore offline persistence will retry when possible.`);
-  }
+  createPendingSync(realm, userId, entityType, entityId, 'set', payload);
 }
 
-export function initializeSyncListeners(realm: Realm, userId: string) {
-  if (!isSyncSupported()) {
+export async function deleteEntity(realm: Realm, entityType: string, entityId: string, userId: string | null) {
+  const primaryKey = getRealmPrimaryKey(entityType, entityId);
+  const localObject = realm.objectForPrimaryKey(entityType, primaryKey);
+
+  if (localObject) {
+    realm.write(() => {
+      realm.delete(localObject);
+    });
+  }
+
+  if (!userId) {
     return;
   }
 
+  if (await isOnline()) {
+    try {
+      await deleteDoc(buildRemoteDocRef(userId, entityType, entityId));
+      clearPendingSync(realm, userId, entityType, entityId, 'delete');
+      return;
+    } catch (error) {
+      console.warn('[SyncService] Remote delete failed, queueing locally', error);
+    }
+  }
+
+  createPendingSync(realm, userId, entityType, entityId, 'delete');
+}
+
+export async function initializeSyncListeners(realm: Realm, userId: string) {
   cleanupSyncListeners();
 
-  SYNC_ENTITY_TYPES.forEach((entityType) => {
-    activeListeners.push(subscribeToCollection(realm, userId, entityType));
-  });
+  try {
+    for (const entityType of SYNC_ENTITY_TYPES) {
+      const collection = getUserEntityCollection(userId, entityType);
+      const unsubscribe = onSnapshot(
+        collection,
+        (snapshot) => {
+          if (!snapshot) {
+            return;
+          }
+          realm.write(() => {
+            snapshot.docChanges().forEach((change) => {
+              const normalized = normalizeValue(change.doc.data() ?? {}) as Record<string, unknown>;
+              if (change.type === 'removed') {
+                const existing = realm.objectForPrimaryKey(entityType, getRealmPrimaryKey(entityType, change.doc.id));
+                if (existing) {
+                  realm.delete(existing);
+                }
+                return;
+              }
+
+              mergeRemoteDocument(realm, entityType, change.doc.id, normalized);
+            });
+          });
+        },
+        (error) => {
+          console.warn(`[SyncService] snapshot listener failed for ${entityType}:`, error);
+        }
+      );
+
+      listeners.push(unsubscribe);
+    }
+
+    if (await isOnline()) {
+      await flushPendingQueue(realm, userId);
+    }
+  } catch (error) {
+    console.warn('[SyncService] initializeSyncListeners failed', error);
+  }
 }
 
 export function cleanupSyncListeners() {
-  activeListeners.forEach((unsubscribe) => unsubscribe());
-  activeListeners = [];
+  while (listeners.length > 0) {
+    const unsubscribe = listeners.shift();
+    unsubscribe?.();
+  }
 }
