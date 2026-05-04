@@ -1,11 +1,9 @@
-import 'react-native-get-random-values';
 import { SyncQueueItem } from '@/models/SyncQueueItem';
 import { getUserEntityCollection, getUserEntityDocRef } from '@/services/firebase';
 import { isOnline } from '@/utils/network';
 import { deleteDoc, getDoc, onSnapshot, setDoc } from '@react-native-firebase/firestore';
 import { Realm } from '@realm/react';
-
-
+import 'react-native-get-random-values';
 
 const SYNC_ENTITY_TYPES = [
   'UserProfile',
@@ -19,6 +17,7 @@ const SYNC_ENTITY_TYPES = [
   'SymptomLog',
   'WellnessLog',
   'Workout',
+  'ProgressPhoto',
 ];
 
 const listeners: (() => void)[] = [];
@@ -59,7 +58,7 @@ function normalizeDataForFirestore(data: any) {
 
   const converted: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
-    if (key === '_id') {
+    if (key === '_id' || key === 'localUri') {
       continue;
     }
     converted[key] = normalizeValue(value);
@@ -78,6 +77,7 @@ const OBJECT_ID_ENTITY_TYPES = new Set([
   'SymptomLog',
   'WellnessLog',
   'Workout',
+  'ProgressPhoto',
 ]);
 
 function buildRemoteDocRef(userId: string, entityType: string, entityId: string) {
@@ -134,6 +134,18 @@ function clearPendingSync(realm: Realm, userId: string, entityType: string, enti
   });
 }
 
+function markProgressPhotoSynced(realm: Realm, entityId: string) {
+  const photo = realm.objectForPrimaryKey('ProgressPhoto', new Realm.BSON.ObjectId(entityId));
+  if (!photo) {
+    return;
+  }
+
+  realm.write(() => {
+    (photo as any).status = 'synced';
+    (photo as any).updatedAt = new Date();
+  });
+}
+
 async function flushPendingQueue(realm: Realm, userId: string) {
   if (!(await isOnline())) {
     return;
@@ -150,6 +162,9 @@ async function flushPendingQueue(realm: Realm, userId: string) {
       const ref = buildRemoteDocRef(userId, item.entityType, item.entityId);
       if (item.operation === 'set') {
         await setDoc(ref, item.payload ?? {}, { merge: true });
+        if (item.entityType === 'ProgressPhoto') {
+          markProgressPhotoSynced(realm, item.entityId);
+        }
       } else {
         await deleteDoc(ref);
       }
@@ -172,15 +187,65 @@ async function flushPendingQueue(realm: Realm, userId: string) {
   }
 }
 
+function getRealmSchema(realm: Realm, entityType: string) {
+  return realm.schema.find((schema) => schema.name === entityType);
+}
+
+function isPropertyOptional(property: any) {
+  if (typeof property === 'string') {
+    return property.endsWith('?');
+  }
+  if (property && typeof property === 'object') {
+    if (typeof property.type === 'string') {
+      return property.type.endsWith('?');
+    }
+    return property.optional === true;
+  }
+  return false;
+}
+
+function hasDefaultProperty(property: any) {
+  return property && typeof property === 'object' && property.default !== undefined;
+}
+
+function hasRequiredRealmFields(realm: Realm, entityType: string, data: Record<string, unknown>) {
+  const schema = getRealmSchema(realm, entityType);
+  if (!schema) {
+    return true;
+  }
+
+  for (const [key, property] of Object.entries(schema.properties)) {
+    if (key === '_id') {
+      continue;
+    }
+    if (isPropertyOptional(property) || hasDefaultProperty(property)) {
+      continue;
+    }
+    if (!Object.prototype.hasOwnProperty.call(data, key)) {
+      return false;
+    }
+    const value = data[key];
+    if (value === undefined || value === null) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function mergeRemoteDocument(realm: Realm, entityType: string, entityId: string, data: Record<string, unknown>) {
-  realm.create(
-    entityType,
-    {
-      _id: getRealmPrimaryKey(entityType, entityId),
-      ...data,
-    },
-    Realm.UpdateMode.Modified
-  );
+  const payload = {
+    _id: getRealmPrimaryKey(entityType, entityId),
+    ...data,
+  };
+
+  const existing = realm.objectForPrimaryKey(entityType, payload._id);
+  if (!existing && !hasRequiredRealmFields(realm, entityType, data)) {
+    console.warn(`[SyncService] Skipping remote ${entityType} ${entityId} due to missing required fields`, data);
+    return;
+  }
+
+  realm.create(entityType, payload, Realm.UpdateMode.Modified);
 }
 
 export async function tryRemoteRead(collectionPath: string, entityId: string) {
@@ -229,6 +294,9 @@ export async function saveEntity(
   if (await isOnline()) {
     try {
       await setDoc(buildRemoteDocRef(userId, entityType, entityId), remotePayload, { merge: true });
+      if (entityType === 'ProgressPhoto') {
+        markProgressPhotoSynced(realm, entityId);
+      }
       clearPendingSync(realm, userId, entityType, entityId, 'set');
       return;
     } catch (error) {

@@ -28,6 +28,7 @@ Integrations & tools (recommended)
 - CI: GitHub Actions (or existing CI in this repo).
 - Linting: ESLint + TypeScript rules.
 - Type checking: `tsc`.
+- Use `npx expo install` for Expo-native package dependencies.
 - Look for update documentation on the web
 
 - Static checks:
