@@ -46,6 +46,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="progress-photos"
+        options={{
+          title: 'FOTOS',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="image-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'PERFIL',

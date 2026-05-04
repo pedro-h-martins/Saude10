@@ -2,6 +2,7 @@ import { AUTH_USER_ID_KEY } from '@/constants/config';
 import { useRealm } from '@/context/RealmProvider';
 import { UserProfile } from '@/models/UserProfile';
 import * as authService from '@/services/auth';
+import { getFirebaseAuth } from '@/services/firebase';
 import { cleanupSyncListeners, initializeSyncListeners, saveEntity, tryRemoteRead } from '@/sync/SyncService';
 import { isOnline } from '@/utils/network';
 import { Realm } from '@realm/react';
@@ -41,16 +42,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (Platform.OS !== 'web') {
           try {
-            const [{ getAuth }, { getApp }] = await Promise.all([
-              import('@react-native-firebase/auth'),
-              import('@react-native-firebase/app'),
-            ]);
-            const auth = getAuth(getApp());
+            const auth = getFirebaseAuth();
             const firebaseUser = auth.currentUser;
             if (firebaseUser) {
               const storedId = await SecureStore.getItemAsync(AUTH_USER_ID_KEY);
               const uid = storedId ?? firebaseUser.uid;
-              
+
               let remoteProfile: any = null;
               if (await isOnline()) {
                 try {
