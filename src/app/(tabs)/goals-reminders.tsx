@@ -1,4 +1,5 @@
 import { Card } from '@/components/Card';
+import { StretchSection } from '@/components/StretchSection';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
@@ -230,6 +231,8 @@ export default function GoalsRemindersScreen() {
         ) : (
           workouts.map(workout => renderWorkoutItem(workout))
         )}
+
+        <StretchSection />
 
         <View style={[styles.sectionHeader, { marginTop: 30 }]}> 
           <Text style={styles.sectionTitle}>Lembretes Customizados</Text>
