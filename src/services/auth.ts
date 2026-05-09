@@ -1,9 +1,7 @@
 import { getApp } from '@react-native-firebase/app';
 import { signOut as authSignOut, createUserWithEmailAndPassword, EmailAuthProvider, getAuth, getIdToken, reauthenticateWithCredential, signInWithEmailAndPassword, updatePassword, updateProfile } from '@react-native-firebase/auth';
 import * as SecureStore from 'expo-secure-store';
-
-const ACCESS_TOKEN_KEY = 'auth_access_token';
-const REFRESH_TOKEN_KEY = 'auth_refresh_token';
+import { AUTH_ACCESS_TOKEN_KEY as ACCESS_TOKEN_KEY, API_BASE_URL, AUTH_PENDING_PWD_CHANGE_KEY, AUTH_REFRESH_TOKEN_KEY as REFRESH_TOKEN_KEY } from '../constants/config';
 
 export type StoredTokens = {
   accessToken: string | null;
@@ -200,7 +198,7 @@ export async function processPendingPasswordChange(): Promise<boolean> {
   }
 }
 
-export async function changePassword(currentPassword: string, newPassword: string): Promise<{ offline?: boolean }>
+export async function changePasswordRemote(currentPassword: string, newPassword: string): Promise<{ offline?: boolean }>
 {
   try {
     const tokens = await getStoredTokens();
