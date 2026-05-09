@@ -60,7 +60,6 @@ export const seedInitialGoals = (realm: Realm) => {
       });
     });
   }
-};
 
 const getNextDateAt = (hour: number, minute: number) => {
   const next = new Date();
