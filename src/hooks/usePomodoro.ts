@@ -1,4 +1,5 @@
-import { useRealm } from '@/context/RealmProvider';
+
+import { useSync } from '@/hooks/useSync';
 import { Realm } from '@realm/react';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -10,7 +11,7 @@ const BREAK_TIME = 5 * 60;
 export type TimerMode = 'focus' | 'break';
 
 export const usePomodoro = () => {
-  const realm = useRealm();
+  const { save } = useSync();
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(FOCUS_TIME);
   const [isRunning, setIsRunning] = useState(false);
@@ -18,15 +19,14 @@ export const usePomodoro = () => {
   const lastTimestamp = useRef<number | null>(null);
 
   const saveLog = useCallback((type: TimerMode, duration: number) => {
-    realm.write(() => {
-      realm.create('PomodoroLog', {
-        _id: new Realm.BSON.ObjectId(),
-        type,
-        duration,
-        completedAt: new Date(),
-      });
+    const newId = new Realm.BSON.ObjectId();
+    save('PomodoroLog', newId.toHexString(), {
+      _id: newId,
+      type,
+      duration,
+      completedAt: new Date(),
     });
-  }, [realm]);
+  }, [save]);
 
   const switchMode = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

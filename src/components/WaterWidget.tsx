@@ -1,8 +1,10 @@
 import { Card } from '@/components/Card';
 import { ProgressCircle } from '@/components/ProgressCircle';
+import ShareProgressButton from '@/components/ShareProgressButton';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useQuery } from '@/context/RealmProvider';
+import { useSync } from '@/hooks/useSync';
 import { HydrationLog } from '@/models/HydrationLog';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
@@ -10,9 +12,9 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WaterWidget = () => {
-  const realm = useRealm();
-    const { currentUser } = useAuth();
+  const { currentUser } = useAuth();
   const user = currentUser;
+  const { save } = useSync();
   
   const today = useMemo(() => {
     const d = new Date();
@@ -32,6 +34,13 @@ export const WaterWidget = () => {
   const targetGoal = user?.waterGoal || defaultGoal;
   const progress = Math.min(currentIntake / targetGoal, 1);
 
+  const shareMessage = useMemo(() => {
+    if (currentIntake >= targetGoal) {
+      return `Bati minha meta de água hoje: bebi ${currentIntake}ml de ${targetGoal}ml. #Saude10`;
+    }
+    return `Hoje já bebi ${currentIntake}ml de ${targetGoal}ml de água. Continuo cuidando da minha hidratação. #Saude10`;
+  }, [currentIntake, targetGoal]);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [newGoal, setNewGoal] = useState(targetGoal.toString());
 
@@ -41,13 +50,12 @@ export const WaterWidget = () => {
       return;
     }
 
-    realm.write(() => {
-      realm.create(HydrationLog, {
-        _id: new Realm.BSON.ObjectId(),
-        amount,
-        timestamp: new Date(),
-        userId: user._id,
-      });
+    const newId = new Realm.BSON.ObjectId();
+    save('HydrationLog', newId.toHexString(), {
+      _id: newId,
+      amount,
+      timestamp: new Date(),
+      userId: user._id,
     });
   };
 
@@ -61,24 +69,21 @@ export const WaterWidget = () => {
       return;
     }
 
-    realm.write(() => {
-      realm.create(HydrationLog, {
-        _id: new Realm.BSON.ObjectId(),
-        amount: -amountToRemove,
-        timestamp: new Date(),
-        userId: user._id,
-      });
+    const newId = new Realm.BSON.ObjectId();
+    save('HydrationLog', newId.toHexString(), {
+      _id: newId,
+      amount: -amountToRemove,
+      timestamp: new Date(),
+      userId: user._id,
     });
   };
 
   const handleUpdateGoal = () => {
     const goalValue = parseInt(newGoal);
     if (!isNaN(goalValue) && goalValue > 0) {
-      realm.write(() => {
-        if (user) {
-          user.waterGoal = goalValue;
-        }
-      });
+      if (user) {
+        save('UserProfile', user._id, { waterGoal: goalValue });
+      }
       setModalVisible(false);
     }
   };
@@ -126,6 +131,7 @@ export const WaterWidget = () => {
                 <Text style={[styles.addButtonText, { color: '#2196F3' }]}>500ml</Text>
               </TouchableOpacity>
             </View>
+            <ShareProgressButton compact message={shareMessage} buttonStyle={styles.shareButton} />
           </View>
         </Card>
       </TouchableOpacity>
@@ -219,6 +225,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 20,
     gap: 8,
+  },
+  shareButton: {
+    marginTop: 16,
+    alignSelf: 'flex-start',
   },
   addButton: {
     flexDirection: 'row',

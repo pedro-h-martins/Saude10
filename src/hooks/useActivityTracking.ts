@@ -1,6 +1,7 @@
 import { DEFAULT_METERS_PER_STEP } from '@/constants/defaults';
 import { useAuth } from '@/context/AuthContext';
 import { useRealm } from '@/context/RealmProvider';
+import { useSync } from '@/hooks/useSync';
 import { ActivityLog } from '@/models/ActivityLog';
 import { calculateDistance, fetchStepsForPeriod, requestActivityPermissions } from '@/utils/health';
 import { Pedometer } from 'expo-sensors';
@@ -11,6 +12,7 @@ export function useActivityTracking() {
   const realm = useRealm();
   const { currentUser } = useAuth();
   const user = currentUser;
+  const { save } = useSync();
 
   const [steps, setSteps] = useState(0);
   const [distanceMeters, setDistanceMeters] = useState(0);
@@ -33,23 +35,17 @@ export function useActivityTracking() {
     setSteps(totalSteps);
     setDistanceMeters(estimatedDistanceMeters);
 
-    realm.write(() => {
-      const existingLog = realm.objects(ActivityLog).filtered('date == $0', dateStr)[0];
-      if (existingLog) {
-        existingLog.steps = totalSteps;
-        existingLog.distance = estimatedDistanceMeters;
-        existingLog.updatedAt = new Date();
-      } else {
-        realm.create(ActivityLog, {
-          _id: new Realm.BSON.ObjectId(),
-          date: dateStr,
-          steps: totalSteps,
-          distance: estimatedDistanceMeters,
-          updatedAt: new Date(),
-        });
-      }
+    const existingLog = realm.objects(ActivityLog).filtered('date == $0', dateStr)[0];
+    const logId = existingLog ? existingLog._id : new Realm.BSON.ObjectId();
+
+    save('ActivityLog', logId.toHexString(), {
+      _id: logId,
+      date: dateStr,
+      steps: totalSteps,
+      distance: estimatedDistanceMeters,
+      updatedAt: new Date(),
     });
-  }, [realm, user]);
+  }, [realm, user, save]);
 
   const updateAndroidSteps = useCallback((newStepsSinceStart: number) => {
     const totalSteps = lastBaseSteps.current + newStepsSinceStart;
@@ -59,23 +55,17 @@ export function useActivityTracking() {
     setSteps(totalSteps);
     setDistanceMeters(estimatedDistanceMeters);
 
-    realm.write(() => {
-      const existingLog = realm.objects(ActivityLog).filtered('date == $0', dateStr)[0];
-      if (existingLog) {
-        existingLog.steps = totalSteps;
-        existingLog.distance = estimatedDistanceMeters;
-        existingLog.updatedAt = new Date();
-      } else {
-        realm.create(ActivityLog, {
-          _id: new Realm.BSON.ObjectId(),
-          date: dateStr,
-          steps: totalSteps,
-          distance: estimatedDistanceMeters,
-          updatedAt: new Date(),
-        });
-      }
+    const existingLog = realm.objects(ActivityLog).filtered('date == $0', dateStr)[0];
+    const logId = existingLog ? existingLog._id : new Realm.BSON.ObjectId();
+
+    save('ActivityLog', logId.toHexString(), {
+      _id: logId,
+      date: dateStr,
+      steps: totalSteps,
+      distance: estimatedDistanceMeters,
+      updatedAt: new Date(),
     });
-  }, [realm, user]);
+  }, [realm, user, save]);
 
   useEffect(() => {
     let subscription: Pedometer.PedometerResult | any = null;

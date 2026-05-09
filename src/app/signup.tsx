@@ -108,9 +108,19 @@ export default function SignupScreen() {
     try {
       await signUp(nameValue, emailValue, password, parsedDate, weightVal, heightVal);
       router.replace('/(tabs)');
-    } catch (e) {
+    } catch (e: any) {
       console.error('signUp error', e);
-      Alert.alert('Erro', 'Falha ao criar conta.');
+      const isEmailInUse =
+        e?.code === 'auth/email-already-in-use' ||
+        e?.message?.includes('email-already-in-use');
+      if (isEmailInUse) {
+        Alert.alert(
+          'E-mail já cadastrado',
+          'Este endereço de e-mail já está em uso. Por favor, faça login ou utilize outro e-mail.',
+        );
+      } else {
+        Alert.alert('Erro', 'Falha ao criar conta. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -125,6 +135,7 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Nome"
+            placeholderTextColor={Colors.textSecondary}
             value={name}
             onChangeText={setName}
           />
@@ -132,6 +143,7 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor={Colors.textSecondary}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -187,6 +199,7 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Senha"
+            placeholderTextColor={Colors.textSecondary}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -195,6 +208,7 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Confirmar senha"
+            placeholderTextColor={Colors.textSecondary}
             secureTextEntry
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -218,7 +232,7 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1 },
   inner: { padding: 24, flex: 1, justifyContent: 'center' },
   title: { fontSize: 32, fontWeight: '800', color: Colors.primary, marginBottom: 24 },
-  input: { backgroundColor: '#F5F7FA', padding: 14, borderRadius: 12, marginBottom: 12 },
+  input: { backgroundColor: '#F5F7FA', padding: 14, borderRadius: 12, marginBottom: 12, color: Colors.text },
   row: { flexDirection: 'row', marginBottom: 0 },
   button: { backgroundColor: Colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontWeight: '700' },

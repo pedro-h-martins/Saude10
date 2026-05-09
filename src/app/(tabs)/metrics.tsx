@@ -1,10 +1,13 @@
 import { Card } from '@/components/Card';
+import EvolutionCharts from '@/components/EvolutionCharts';
 import { SymptomWidget } from '@/components/SymptomWidget';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useQuery } from "@/context/RealmProvider";
+import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
 import { SymptomLog } from '@/models/SymptomLog';
+import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
@@ -48,9 +51,14 @@ const formatDate = (date: Date) => {
 
 export default function Metrics() {
   const [activeTab, setActiveTab] = useState<'pressure' | 'mood' | 'symptoms'>('pressure');
+  const [selectedMetric, setSelectedMetric] = useState<'weight' | 'steps'>('steps');
+  const [rangeDays, setRangeDays] = useState<number>(7);
   const measurements = useQuery(BloodPressure).sorted('timestamp', true);
   const wellnessLogs = useQuery(WellnessLog).sorted('timestamp', true);
   const symptomLogs = useQuery(SymptomLog).sorted('timestamp', true);
+  const activityLogs = useQuery(ActivityLog).sorted('date', true);
+  const userProfiles = useQuery(UserProfile);
+  const userProfile = userProfiles && userProfiles.length > 0 ? userProfiles[0] : null;
 
   const renderPressureItem = ({ item }: { item: BloodPressure }) => {
     const status = getBPStatus(item.systolic, item.diastolic);
@@ -109,6 +117,57 @@ export default function Metrics() {
         <Text style={Typography.h1}>Suas Métricas</Text>
         <Text style={Typography.caption}>Acompanhe seu progresso diário</Text>
       </View>
+
+      {/* Evolution charts selector */}
+      <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+          <TouchableOpacity onPress={() => setSelectedMetric('weight')} style={[styles.smallSelector, selectedMetric === 'weight' && styles.smallSelectorActive]}>
+            <Text style={[styles.smallSelectorText, selectedMetric === 'weight' && styles.smallSelectorTextActive]}>Peso</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setSelectedMetric('steps')} style={[styles.smallSelector, selectedMetric === 'steps' && styles.smallSelectorActive]}>
+            <Text style={[styles.smallSelectorText, selectedMetric === 'steps' && styles.smallSelectorTextActive]}>Média de passos</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {[7, 15, 30].map((d) => (
+            <TouchableOpacity key={d} onPress={() => setRangeDays(d)} style={[styles.rangeButton, rangeDays === d && styles.rangeButtonActive]}>
+              <Text style={[styles.rangeText, rangeDays === d && styles.rangeTextActive]}>{d} dias</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Build data for chart */}
+      {(() => {
+        if (selectedMetric === 'steps') {
+          // build last N days of steps
+          const days: { date: string; value: number }[] = [];
+          for (let i = rangeDays - 1; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().slice(0, 10);
+            const found = activityLogs.find((a: any) => (a.date || '').startsWith(key));
+            days.push({ date: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), value: found ? found.steps : 0 });
+          }
+          return <EvolutionCharts title={`Média de passos (${rangeDays}d)`} data={days} />;
+        }
+
+        if (selectedMetric === 'weight') {
+          // no weight history model — show current weight if present
+          const data: { date: string; value: number }[] = [];
+          if (userProfile && typeof userProfile.weight === 'number') {
+            for (let i = rangeDays - 1; i >= 0; i--) {
+              const d = new Date();
+              d.setDate(d.getDate() - i);
+              data.push({ date: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), value: Math.round(userProfile.weight) });
+            }
+          }
+          return <EvolutionCharts title={`Peso (${rangeDays}d)`} data={data} />;
+        }
+
+        return null;
+      })()}
 
       <View style={styles.tabContainer}>
         <TouchableOpacity 
@@ -299,5 +358,45 @@ const styles = StyleSheet.create({
     marginTop: 100,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  smallSelector: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  smallSelectorActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  smallSelectorText: {
+    ...Typography.body,
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  smallSelectorTextActive: {
+    color: '#fff',
+  },
+  rangeButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  rangeButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  rangeText: {
+    ...Typography.body,
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  rangeTextActive: {
+    color: '#fff',
   },
 });

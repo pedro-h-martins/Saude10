@@ -1,17 +1,21 @@
+import 'react-native-get-random-values';
 import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
+import { FeedbackSurvey } from '@/models/FeedbackSurvey';
 import { Goal } from '@/models/Goal';
 import { HydrationLog } from '@/models/HydrationLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
+import { ProgressPhoto } from '@/models/ProgressPhoto';
 import { Reminder } from '@/models/Reminder';
 import { SymptomLog } from '@/models/SymptomLog';
+import { SyncQueueItem } from '@/models/SyncQueueItem';
 import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
+import { Workout } from '@/models/Workout';
 import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import 'react-native-get-random-values';
 
 
 const ENCRYPTION_KEY_ID = 'realm_encryption_key_v1';
@@ -56,28 +60,89 @@ export const seedInitialGoals = (realm: Realm) => {
       });
     });
   }
+
+const getNextDateAt = (hour: number, minute: number) => {
+  const next = new Date();
+  next.setHours(hour, minute, 0, 0);
+  if (next <= new Date()) {
+    next.setDate(next.getDate() + 1);
+  }
+  return next;
+};
+
+const getNextWeekdayAt = (weekday: number, hour: number, minute: number) => {
+  const today = new Date();
+  const next = new Date(today);
+  const delta = (weekday + 7 - today.getDay()) % 7 || 7;
+  next.setDate(today.getDate() + delta);
+  next.setHours(hour, minute, 0, 0);
+  return next;
+};
+
+const PREDEFINED_WORKOUTS = [
+  {
+    title: 'Caminhada matinal',
+    instructions: 'Caminhe por 20 minutos em ritmo confortável. Respire profundamente e alongue as pernas antes e depois.',
+    isPredefined: true,
+    isRecurring: true,
+    recurrenceRule: 'daily' as const,
+    nextOccurrence: getNextDateAt(7, 0),
+  },
+  {
+    title: 'Treino de força rápida',
+    instructions: 'Faça 3 séries de 12 agachamentos, 10 flexões e 15 abdominais. Descanse 30 segundos entre as séries.',
+    isPredefined: true,
+    isRecurring: true,
+    recurrenceRule: 'weekly' as const,
+    nextOccurrence: getNextWeekdayAt(1, 18, 0),
+  },
+  {
+    title: 'Alongamento noturno',
+    instructions: 'Realize alongamentos suaves para pescoço, ombros, costas e pernas por 10 minutos antes de dormir.',
+    isPredefined: true,
+    isRecurring: true,
+    recurrenceRule: 'daily' as const,
+    nextOccurrence: getNextDateAt(20, 0),
+  },
+];
+
+export const seedPredefinedWorkouts = (realm: Realm) => {
+  const existingWorkouts = realm.objects(Workout);
+  if (existingWorkouts.length === 0) {
+    realm.write(() => {
+      PREDEFINED_WORKOUTS.forEach((workout) => {
+        realm.create(Workout, {
+          _id: new Realm.BSON.ObjectId(),
+          title: workout.title,
+          instructions: workout.instructions,
+          isPredefined: workout.isPredefined,
+          isRecurring: workout.isRecurring,
+          recurrenceRule: workout.recurrenceRule,
+          nextOccurrence: workout.nextOccurrence,
+          createdAt: new Date(),
+        });
+      });
+    });
+  }
 };
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, WellnessLog, SymptomLog],
-  schemaVersion: 16,
-  onMigration: (oldRealm, newRealm) => {
-    if (oldRealm.schemaVersion < 15) {
-      const newUsers = newRealm.objects('UserProfile');
-      for (let i = 0; i < newUsers.length; i++) {
-        const u: any = newUsers[i];
-        if (u && typeof u.avatarUri === 'undefined') {
-          u.avatarUri = null;
-        }
-      }
-    }
-  },
-  onFirstOpen: (realm) => {
-    seedInitialGoals(realm);
-  },
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog],
+  schemaVersion: 25
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;
+
+function SeedRealmData() {
+  const realm = useRealm();
+
+  useEffect(() => {
+    seedInitialGoals(realm);
+    seedPredefinedWorkouts(realm);
+  }, [realm]);
+
+  return null;
+}
 
 export function EncryptedDatabaseProvider({ children, fallback }: { children: React.ReactNode, fallback?: React.ReactElement | null }) {
   const [encryptionKey, setEncryptionKey] = useState<Uint8Array | null>(null);
@@ -98,6 +163,7 @@ export function EncryptedDatabaseProvider({ children, fallback }: { children: Re
 
   return (
     <RealmProvider encryptionKey={encryptionKey} fallback={fallback}>
+      <SeedRealmData />
       {children}
     </RealmProvider>
   );

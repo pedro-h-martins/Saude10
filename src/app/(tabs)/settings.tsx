@@ -1,15 +1,19 @@
 import { Card } from '@/components/Card';
 import { InputWithValidation } from '@/components/InputWithValidation';
+import ShareProgressButton from '@/components/ShareProgressButton';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useSync } from '@/hooks/useSync';
 import { Goal } from '@/models/Goal';
 import { changePassword } from '@/services/auth';
+import { EXPORT_CATEGORIES, exportHealthData, type ExportCategoryKey } from '@/services/exportData';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
 import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
 import { Ionicons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
+import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
@@ -23,7 +27,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const calculateAge = (birthDate: Date) => {
   const today = new Date();
@@ -36,11 +40,13 @@ const calculateAge = (birthDate: Date) => {
 };
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const goals = useQuery(Goal);
   const { currentUser } = useAuth();
   const user = React.useMemo(() => currentUser, [currentUser]);
   const realm = useRealm();
   const { signOut } = useAuth();
+  const { save } = useSync();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -60,6 +66,8 @@ export default function SettingsScreen() {
   const [pwdConfirm, setPwdConfirm] = useState('');
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [selectedExportCategories, setSelectedExportCategories] = useState<ExportCategoryKey[]>(EXPORT_CATEGORIES.map((category) => category.key));
+  const [isExporting, setIsExporting] = useState(false);
 
   const formatDisplayDate = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
@@ -108,6 +116,10 @@ export default function SettingsScreen() {
           text: 'Excluir',
           style: 'destructive',
           onPress: () => {
+            if (user) {
+              const updatedGoals = user.goals.filter(g => g._id.toHexString() !== goal._id.toHexString());
+              save('UserProfile', user._id, { goals: updatedGoals });
+            }
             realm.write(() => {
               realm.delete(goal);
             });
@@ -125,22 +137,29 @@ export default function SettingsScreen() {
     }
 
     try {
-      realm.write(() => {
-        if (editingGoal) {
-          editingGoal.title = goalTitle;
-        } else {
-          const newGoal = realm.create(Goal, {
-            _id: new Realm.BSON.ObjectId(),
-            title: goalTitle,
-            type: 'custom',
-            startDate: new Date(),
-            isActive: true,
-          });
-          if (user) {
-            user.goals.push(newGoal);
+      const isNew = !editingGoal;
+      const newGoalId = isNew ? new Realm.BSON.ObjectId() : editingGoal!._id;
+      
+      const goalData = {
+        _id: newGoalId,
+        title: goalTitle,
+        type: 'custom',
+        startDate: new Date(),
+        isActive: true,
+      };
+
+      save('Goal', newGoalId.toHexString(), goalData);
+      
+      if (isNew && user) {
+        realm.write(() => {
+          const newGoal = realm.objectForPrimaryKey(Goal, newGoalId);
+          if (newGoal && user) {
+             user.goals.push(newGoal);
+             save('UserProfile', user._id, { goals: user.goals });
           }
-        }
-      });
+        });
+      }
+      
       setGoalModalVisible(false);
       setGoalTitle('');
     } catch (error) {
@@ -174,21 +193,50 @@ export default function SettingsScreen() {
         Alert.alert('Validação', 'É necessário ter mais de 14 anos para criar uma conta.');
         return;
       }
-      realm.write(() => {
-        if (user) {
-          user.name = formData.name;
-          user.email = formData.email;
-          user.weight = w.value as number;
-          user.height = h.value as number;
-          user.birthDate = parsedDate;
-          user.updatedAt = new Date();
-        }
-      });
+
+      if (user) {
+        save('UserProfile', user._id, {
+          name: formData.name,
+          email: formData.email,
+          weight: w.value as number,
+          height: h.value as number,
+          birthDate: parsedDate,
+          updatedAt: new Date(),
+        });
+      }
       setIsEditing(false);
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar as alterações.');
       console.error(error);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) {
+      return;
+    }
+
+    if (selectedExportCategories.length === 0) {
+      Alert.alert('Selecione categorias', 'Escolha pelo menos uma categoria para exportar.');
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      const directory = await FileSystem.Directory.pickDirectoryAsync();
+      if (!directory) {
+        Alert.alert('Exportação cancelada', 'Nenhuma pasta selecionada.');
+        return;
+      }
+
+      const { uri } = await exportHealthData(realm, user._id, selectedExportCategories, directory.uri);
+      Alert.alert('Exportado', `Arquivo salvo em:\n${uri}`);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível exportar seus dados.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -204,9 +252,9 @@ export default function SettingsScreen() {
       if (res.canceled) return;
 
       if (user) {
-        realm.write(() => {
-          user.avatarUri = res.assets && res.assets[0] ? res.assets[0].uri : undefined;
-          user.updatedAt = new Date();
+        save('UserProfile', user._id, {
+          avatarUri: res.assets && res.assets[0] ? res.assets[0].uri : null,
+          updatedAt: new Date(),
         });
         Alert.alert('Sucesso', 'Foto de perfil atualizada.');
       }
@@ -218,9 +266,9 @@ export default function SettingsScreen() {
 
   const handleRemoveAvatar = () => {
     if (!user) return;
-    realm.write(() => {
-      (user as any).avatarUri = null;
-      user.updatedAt = new Date();
+    save('UserProfile', user._id, {
+      avatarUri: null,
+      updatedAt: new Date(),
     });
     Alert.alert('Removido', 'Foto de perfil removida.');
   };
@@ -248,7 +296,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity onPress={isEditing ? handleCancel : undefined}>
           <Ionicons name={isEditing ? "close" : "arrow-back"} size={24} color={Colors.text} />
         </TouchableOpacity>
@@ -381,9 +429,7 @@ export default function SettingsScreen() {
                   if (isEditing) {
                     handleEditGoal(goal);
                   } else {
-                    realm.write(() => {
-                      goal.isActive = !goal.isActive;
-                    });
+                    save('Goal', goal._id.toHexString(), { isActive: !goal.isActive });
                   }
                 }}
               >
@@ -395,6 +441,14 @@ export default function SettingsScreen() {
                 />
                 <Text style={[styles.goalText, isSelected && styles.goalTextActive]}>{goal.title}</Text>
               </TouchableOpacity>
+              {!isEditing && (
+                <ShareProgressButton
+                  compact
+                  title="Compartilhar meta"
+                  message={`Minha meta ativa no Saude10: ${goal.title}`}
+                  buttonStyle={styles.shareActionButton}
+                />
+              )}
             </View>
           );
         })}
@@ -408,6 +462,39 @@ export default function SettingsScreen() {
             <Ionicons name="add-outline" size={18} color={Colors.primary} style={styles.goalIcon} />
             <Text style={[styles.goalButtonText, { color: Colors.primary }]}>Adicionar primeira meta</Text>
           </TouchableOpacity>
+        )}
+
+        {!isEditing && (
+          <View style={styles.exportSection}>
+            <Text style={styles.sectionTitle}>Exportar dados</Text>
+            <Text style={styles.sectionSubtitle}>Selecione as categorias que deseja incluir no arquivo JSON.</Text>
+            {EXPORT_CATEGORIES.map((category) => {
+              const selected = selectedExportCategories.includes(category.key);
+              return (
+                <TouchableOpacity
+                  key={category.key}
+                  style={[styles.exportCategoryRow, selected && styles.exportCategoryRowSelected]}
+                  onPress={() => {
+                    setSelectedExportCategories((prev) =>
+                      prev.includes(category.key)
+                        ? prev.filter((item) => item !== category.key)
+                        : [...prev, category.key]
+                    );
+                  }}
+                >
+                  <Ionicons
+                    name={selected ? 'checkbox' : 'square-outline'}
+                    size={20}
+                    color={selected ? Colors.primary : Colors.textSecondary}
+                  />
+                  <Text style={[styles.exportCategoryText, selected && styles.exportCategoryTextSelected]}>{category.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity style={styles.exportButton} onPress={handleExportData} disabled={isExporting}>
+              <Text style={styles.exportButtonText}>{isExporting ? 'Exportando...' : 'Exportar dados selecionados'}</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {!isEditing && (
@@ -768,6 +855,50 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     backgroundColor: '#F0F7FF',
   },
+  exportSection: {
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  exportCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 10,
+    backgroundColor: '#FAFAFA',
+  },
+  exportCategoryRowSelected: {
+    backgroundColor: '#E9F5FF',
+    borderColor: Colors.primary,
+  },
+  exportCategoryText: {
+    ...Typography.body,
+    color: Colors.text,
+    marginLeft: 12,
+  },
+  exportCategoryTextSelected: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  exportButton: {
+    marginTop: 8,
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  exportButtonText: {
+    ...Typography.body,
+    color: Colors.white,
+    fontWeight: '700',
+  },
   dot: {
     width: 10,
     height: 10,
@@ -852,6 +983,10 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 5,
     marginLeft: 10,
+  },
+  shareActionButton: {
+    marginLeft: 12,
+    backgroundColor: Colors.primary,
   },
   modalOverlay: {
     flex: 1,

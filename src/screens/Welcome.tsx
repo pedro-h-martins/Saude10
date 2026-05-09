@@ -2,7 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface WelcomeProps {
   onLogin: () => void;
@@ -10,10 +10,11 @@ interface WelcomeProps {
 }
 
 export function Welcome({ onLogin, onCreateAccount }: WelcomeProps) {
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingBottom: 50 + insets.bottom }] }>
         <View style={styles.branding}>
           <View style={styles.logoRow}>
             <MaterialCommunityIcons name="heart-plus" size={32} color={Colors.primary} />
@@ -27,7 +28,7 @@ export function Welcome({ onLogin, onCreateAccount }: WelcomeProps) {
           <Text style={[styles.welcomeTitle, styles.brandName]}>Saúde10</Text>
         </View>
 
-        <View style={styles.buttonContainer}>
+        <View style={[styles.buttonContainer, { marginBottom: 20 + insets.bottom }]}>
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={onLogin}

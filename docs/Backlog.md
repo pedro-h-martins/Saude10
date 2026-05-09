@@ -16,21 +16,20 @@
 
 # SPRINT 2
 
-| 10 | RF-19 | Média | Escanear código de barras dos alimentos. | 7 | 2 |
+| 10 | RF-23 | Média | Modo offline para certas funcionalidades | 5 | 2 |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| 11 | RF-23 | Média | Modo offline para certas funcionalidades | 5 | 2 |
-| 12 | RF-12 | Média | Gráficos mostrando evolução de pesos, medidas, média dos passos, horas de sono e caloria consumidas e gastas | 6 | 2 |
-| 13 | RF-16 | Média | Treinos pré-definidos com instruções de texto e que se possa marcar como concluído. | 4 | 2 |
-| 14 | RF-25 | Média | Animações de alongamento, com timer para cada alongamento. | 5 | 2 |
-| 15 | RF-14 | Média | Fotos periódicas para acompanhar evolução física. | 5 | 2 |
-| 16 | RF-24 | Média | Compartilhar meu progresso em redes sociais para me engajar com outros. | 5 | 2 |
-| 17 | RF-29 | Média | Realizar pesquisas periódicas para realizar feedback para reparar bugs e melhorar a experiência do aplicativo. | 3 | 2 |
-| 18 | RF-30 | Média | Exportar os dados do usuário.  | 2 | 2 |
+| 11 | RF-12 | Média | Gráficos mostrando evolução de pesos, medidas, média dos passos, horas de sono e caloria consumidas e gastas | 6 | 2 |
+| 12 | RF-16 | Média | Treinos pré-definidos com instruções de texto e que se possa marcar como concluído. | 4 | 2 |
+| 13 | RF-25 | Média | Animações de alongamento, com timer para cada alongamento. | 5 | 2 |
+| 14 | RF-14 | Média | Fotos periódicas para acompanhar evolução física. | 5 | 2 |
+| 15 | RF-24 | Média | Compartilhar meu progresso em redes sociais para me engajar com outros. | 5 | 2 |
+| 16 | RF-29 | Média | Realizar pesquisas periódicas para realizar feedback para reparar bugs e melhorar a experiência do aplicativo. | 3 | 2 |
+| 17 | RF-30 | Média | Exportar os dados do usuário.  | 2 | 2 |
 
 # SPRINT 3
-
-| 19 | RF-9 | Média | Definir metas personalizadas | 2 | 3 |
+| 18 | RF-12 | Média | Registrar alimentação do usuário, com adição manual .  | 2 | 2 |
 | :---- | :---- | :---- | :---- | :---- | :---- |
+| 19 | RF-9 | Média | Definir metas personalizadas | 2 | 3 |
 | 20 | RF-21 | Baixa | Playlist de músicas relaxantes para poder escutar quando meditar ou dormir. | 2 | 3 |
 | 21 | RF-26 | Baixa | Relatório semanal por e-mail, contendo atividades do usuário. | 4 | 3 |
 | 22 | RF-20 | Baixa | Calcular hidratação baseada em atividade | 3 | 3 |

@@ -1,11 +1,13 @@
 import { Card } from '@/components/Card';
 import { PomodoroWidget } from '@/components/PomodoroWidget';
+import ShareProgressButton from '@/components/ShareProgressButton';
 import { WaterWidget } from '@/components/WaterWidget';
 import { WellnessWidget } from '@/components/WellnessWidget';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useQuery } from '@/context/RealmProvider';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
+import { useSync } from '@/hooks/useSync';
 import { BloodPressure } from '@/models/BloodPressure';
 import { calculateBMI } from '@/utils/health';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -15,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DashboardHeader = ({ avatarUri, onAvatarPress }: { avatarUri?: string | null; onAvatarPress?: () => void }) => (
   <View style={styles.header}>
@@ -72,11 +75,11 @@ const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFor
 );
 
 export function Home() {
-  const realm = useRealm();
   const { currentUser } = useAuth();
   const user = currentUser;
   const { steps, formattedDistance } = useActivityTracking();
   const router = useRouter();
+  const { save } = useSync();
   
   const bpLogs = useQuery(BloodPressure).sorted('timestamp', true);
   const lastBP = bpLogs.length > 0 ? bpLogs[0] : null;
@@ -100,14 +103,13 @@ export function Home() {
       return;
     }
 
-    realm.write(() => {
-      realm.create(BloodPressure, {
-        _id: new Realm.BSON.ObjectId(),
-        systolic: parseInt(systolic),
-        diastolic: parseInt(diastolic),
-        timestamp: date,
-        userId: user._id,
-      });
+    const newId = new Realm.BSON.ObjectId();
+    save('BloodPressure', newId.toHexString(), {
+      _id: newId,
+      systolic: parseInt(systolic),
+      diastolic: parseInt(diastolic),
+      timestamp: date,
+      userId: user._id,
     });
 
     setModalVisible(false);
@@ -152,8 +154,18 @@ export function Home() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
+        {(() => {
+          const insets = useSafeAreaInsets();
+          return (
+            <View style={{ paddingTop: insets.top }}>
+              <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
+            </View>
+          );
+        })()}
         <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
+        <ShareProgressButton
+          message={`Bati minha meta de passos hoje! Dei ${steps.toLocaleString()} passos. #Saude10`}
+        />
         <WellnessWidget />
         <WaterWidget />
         
