@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DashboardHeader = ({ avatarUri, onAvatarPress }: { avatarUri?: string | null; onAvatarPress?: () => void }) => (
   <View style={styles.header}>
@@ -153,10 +154,17 @@ export function Home() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
+        {(() => {
+          const insets = useSafeAreaInsets();
+          return (
+            <View style={{ paddingTop: insets.top }}>
+              <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
+            </View>
+          );
+        })()}
         <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
         <ShareProgressButton
-          message={`Bati minha meta de passos hoje! Dei ${steps.toLocaleString()} passos.`}
+          message={`Bati minha meta de passos hoje! Dei ${steps.toLocaleString()} passos. #Saude10`}
         />
         <WellnessWidget />
         <WaterWidget />

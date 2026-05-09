@@ -6,6 +6,7 @@ import { useSync } from '@/hooks/useSync';
 import { Stack, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -54,7 +55,9 @@ export default function RootLayout() {
       }
     >
       <AuthProvider>
-        <RootLayoutContent />
+        <SafeAreaProvider>
+          <RootLayoutContent />
+        </SafeAreaProvider>
       </AuthProvider>
     </EncryptedDatabaseProvider>
   );

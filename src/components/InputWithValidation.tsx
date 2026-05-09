@@ -8,9 +8,14 @@ type Props = TextInputProps & {
 };
 
 export const InputWithValidation: React.FC<Props> = ({ error, containerStyle, ...props }) => {
+  const placeholderColor = props.placeholderTextColor ?? Colors.textSecondary;
   return (
     <View style={[styles.container, containerStyle]}>
-      <TextInput {...props} style={[styles.input, props.style]} />
+      <TextInput
+        {...props}
+        placeholderTextColor={placeholderColor}
+        style={[styles.input, props.style]}
+      />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
@@ -22,6 +27,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
     padding: 14,
     borderRadius: 12,
+    color: Colors.text,
   },
   errorText: { color: Colors.warning, marginTop: 6, fontSize: 12 },
 });

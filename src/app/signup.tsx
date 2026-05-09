@@ -135,6 +135,7 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Nome"
+            placeholderTextColor={Colors.textSecondary}
             value={name}
             onChangeText={setName}
           />
@@ -142,6 +143,7 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor={Colors.textSecondary}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -197,6 +199,7 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Senha"
+            placeholderTextColor={Colors.textSecondary}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -205,6 +208,7 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Confirmar senha"
+            placeholderTextColor={Colors.textSecondary}
             secureTextEntry
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -228,7 +232,7 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1 },
   inner: { padding: 24, flex: 1, justifyContent: 'center' },
   title: { fontSize: 32, fontWeight: '800', color: Colors.primary, marginBottom: 24 },
-  input: { backgroundColor: '#F5F7FA', padding: 14, borderRadius: 12, marginBottom: 12 },
+  input: { backgroundColor: '#F5F7FA', padding: 14, borderRadius: 12, marginBottom: 12, color: Colors.text },
   row: { flexDirection: 'row', marginBottom: 0 },
   button: { backgroundColor: Colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontWeight: '700' },
