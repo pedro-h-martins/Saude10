@@ -77,7 +77,7 @@ export async function signInDev() {
   };
 }
 
-export async function changePassword(currentPassword: string, newPassword: string) {
+export async function changePasswordAuth(currentPassword: string, newPassword: string) {
   const auth = getFirebaseAuth();
   const user = auth.currentUser;
 
