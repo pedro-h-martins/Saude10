@@ -26,7 +26,9 @@ const ShareProgressButton = ({
     }
   };
 
-  const iconColor = compact ? Colors.primary : Colors.primary;
+  const flattenedStyle = StyleSheet.flatten(buttonStyle) as { backgroundColor?: string } | undefined;
+  const hasColoredBg = !!(flattenedStyle && flattenedStyle.backgroundColor && flattenedStyle.backgroundColor !== Colors.white && flattenedStyle.backgroundColor !== 'transparent');
+  const iconColor = hasColoredBg ? Colors.white : Colors.primary;
 
   return (
     <TouchableOpacity
@@ -35,7 +37,7 @@ const ShareProgressButton = ({
       activeOpacity={0.75}
     >
       <Ionicons name="share-social-outline" size={compact ? 18 : 20} color={iconColor} />
-      {!compact && <Text style={styles.label}>{buttonLabel}</Text>}
+      {!compact && <Text style={[styles.label, hasColoredBg && { color: Colors.white }]}>{buttonLabel}</Text>}
     </TouchableOpacity>
   );
 };

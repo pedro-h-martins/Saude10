@@ -36,9 +36,9 @@ export const WaterWidget = () => {
 
   const shareMessage = useMemo(() => {
     if (currentIntake >= targetGoal) {
-      return `Bati minha meta de água hoje: bebi ${currentIntake}ml de ${targetGoal}ml.`;
+      return `Bati minha meta de água hoje: bebi ${currentIntake}ml de ${targetGoal}ml. #Saude10`;
     }
-    return `Hoje já bebi ${currentIntake}ml de ${targetGoal}ml de água. Continuo cuidando da minha hidratação.`;
+    return `Hoje já bebi ${currentIntake}ml de ${targetGoal}ml de água. Continuo cuidando da minha hidratação. #Saude10`;
   }, [currentIntake, targetGoal]);
 
   const [modalVisible, setModalVisible] = useState(false);

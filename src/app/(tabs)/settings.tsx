@@ -27,7 +27,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const calculateAge = (birthDate: Date) => {
   const today = new Date();
@@ -40,6 +40,7 @@ const calculateAge = (birthDate: Date) => {
 };
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const goals = useQuery(Goal);
   const { currentUser } = useAuth();
   const user = React.useMemo(() => currentUser, [currentUser]);
@@ -295,7 +296,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity onPress={isEditing ? handleCancel : undefined}>
           <Ionicons name={isEditing ? "close" : "arrow-back"} size={24} color={Colors.text} />
         </TouchableOpacity>
@@ -444,7 +445,7 @@ export default function SettingsScreen() {
                 <ShareProgressButton
                   compact
                   title="Compartilhar meta"
-                  message={`Minha meta ativa no SaudeIO: ${goal.title}`}
+                  message={`Minha meta ativa no Saude10: ${goal.title}`}
                   buttonStyle={styles.shareActionButton}
                 />
               )}
