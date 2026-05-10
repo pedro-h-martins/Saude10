@@ -1,8 +1,9 @@
+import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
 import { FeedbackSurvey } from '@/models/FeedbackSurvey';
 import { Realm } from '@realm/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const SURVEY_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -18,6 +19,9 @@ export function useFeedbackSurvey() {
   const { save } = useSync();
   const [visible, setVisible] = useState(false);
   const [hasTriggered, setHasTriggered] = useState(false);
+  const [authDelayPassed, setAuthDelayPassed] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { isAuthenticated } = useAuth();
 
   const lastSurvey = surveys.length > 0 ? surveys[0] : null;
 
@@ -27,11 +31,41 @@ export function useFeedbackSurvey() {
   }, [lastSurvey]);
 
   useEffect(() => {
-    if (!hasTriggered && shouldPrompt) {
+    // Start a 60s timer after the user becomes authenticated before prompting.
+    if (isAuthenticated && !authDelayPassed && !hasTriggered) {
+      // clear any existing timeout first
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current as any);
+      }
+      timeoutRef.current = setTimeout(() => {
+        setAuthDelayPassed(true);
+        timeoutRef.current = null;
+      }, 60_000);
+    }
+
+    // If user logs out, reset the delay flag and clear timer
+    if (!isAuthenticated) {
+      setAuthDelayPassed(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current as any);
+        timeoutRef.current = null;
+      }
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current as any);
+        timeoutRef.current = null;
+      }
+    };
+  }, [isAuthenticated, authDelayPassed, hasTriggered]);
+
+  useEffect(() => {
+    if (!hasTriggered && shouldPrompt && authDelayPassed) {
       setVisible(true);
       setHasTriggered(true);
     }
-  }, [hasTriggered, shouldPrompt]);
+  }, [hasTriggered, shouldPrompt, authDelayPassed]);
 
   const submitSurvey = useCallback(
     async (payload: SurveyPayload) => {
