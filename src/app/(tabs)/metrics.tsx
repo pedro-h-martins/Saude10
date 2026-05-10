@@ -128,7 +128,6 @@ export default function Metrics() {
         <Text style={Typography.caption}>Acompanhe seu progresso diário</Text>
       </View>
 
-      {/* Evolution charts selector */}
       <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
           <TouchableOpacity onPress={() => setSelectedMetric('weight')} style={[styles.smallSelector, selectedMetric === 'weight' && styles.smallSelectorActive]}>
@@ -148,10 +147,8 @@ export default function Metrics() {
         </View>
       </View>
 
-      {/* Build data for chart */}
       {(() => {
         if (selectedMetric === 'steps') {
-          // build last N days of steps
           const days: { date: string; value: number }[] = [];
           for (let i = rangeDays - 1; i >= 0; i--) {
             const d = new Date();
@@ -164,7 +161,6 @@ export default function Metrics() {
         }
 
         if (selectedMetric === 'weight') {
-          // no weight history model — show current weight if present
           const data: { date: string; value: number }[] = [];
           if (userProfile && typeof userProfile.weight === 'number') {
             for (let i = rangeDays - 1; i >= 0; i--) {

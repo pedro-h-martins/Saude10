@@ -31,9 +31,7 @@ export function useFeedbackSurvey() {
   }, [lastSurvey]);
 
   useEffect(() => {
-    // Start a 60s timer after the user becomes authenticated before prompting.
     if (isAuthenticated && !authDelayPassed && !hasTriggered) {
-      // clear any existing timeout first
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current as any);
       }
@@ -43,7 +41,6 @@ export function useFeedbackSurvey() {
       }, 60_000);
     }
 
-    // If user logs out, reset the delay flag and clear timer
     if (!isAuthenticated) {
       setAuthDelayPassed(false);
       if (timeoutRef.current) {

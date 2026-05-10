@@ -45,7 +45,6 @@ export default function EvolutionCharts({ title = 'Gráficos de Evolução', dat
       <Text style={Typography.h3}>{title}</Text>
       <View style={{ marginTop: 8 }}>
         <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
-          {/* grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
             <Line
               key={i}
