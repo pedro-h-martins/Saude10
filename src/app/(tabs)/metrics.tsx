@@ -53,6 +53,16 @@ export default function Metrics() {
   const [activeTab, setActiveTab] = useState<'pressure' | 'mood' | 'symptoms'>('pressure');
   const [selectedMetric, setSelectedMetric] = useState<'weight' | 'steps'>('steps');
   const [rangeDays, setRangeDays] = useState<number>(7);
+
+  const getRangeLabel = (d: number) => {
+    if (d === 7) return '7 dias';
+    if (d === 15) return '15 dias';
+    if (d === 30) return '30 dias';
+    if (d === 90) return '3 meses';
+    if (d === 180) return '6 meses';
+    if (d === 365) return '12 meses';
+    return `${d}d`;
+  };
   const measurements = useQuery(BloodPressure).sorted('timestamp', true);
   const wellnessLogs = useQuery(WellnessLog).sorted('timestamp', true);
   const symptomLogs = useQuery(SymptomLog).sorted('timestamp', true);
@@ -129,10 +139,10 @@ export default function Metrics() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {[7, 15, 30].map((d) => (
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {[7, 15, 30, 90, 180, 365].map((d) => (
             <TouchableOpacity key={d} onPress={() => setRangeDays(d)} style={[styles.rangeButton, rangeDays === d && styles.rangeButtonActive]}>
-              <Text style={[styles.rangeText, rangeDays === d && styles.rangeTextActive]}>{d} dias</Text>
+              <Text style={[styles.rangeText, rangeDays === d && styles.rangeTextActive]}>{getRangeLabel(d)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -150,7 +160,7 @@ export default function Metrics() {
             const found = activityLogs.find((a: any) => (a.date || '').startsWith(key));
             days.push({ date: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), value: found ? found.steps : 0 });
           }
-          return <EvolutionCharts title={`Média de passos (${rangeDays}d)`} data={days} />;
+          return <EvolutionCharts title={`Média de passos (${getRangeLabel(rangeDays)})`} data={days} />;
         }
 
         if (selectedMetric === 'weight') {
@@ -163,7 +173,7 @@ export default function Metrics() {
               data.push({ date: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), value: Math.round(userProfile.weight) });
             }
           }
-          return <EvolutionCharts title={`Peso (${rangeDays}d)`} data={data} />;
+          return <EvolutionCharts title={`Peso (${getRangeLabel(rangeDays)})`} data={data} />;
         }
 
         return null;
