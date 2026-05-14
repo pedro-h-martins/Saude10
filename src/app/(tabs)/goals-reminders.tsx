@@ -256,7 +256,6 @@ export default function GoalsRemindersScreen() {
         )}
       </ScrollView>
 
-      {/* Goal Modal */}
       <Modal visible={goalModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -280,7 +279,6 @@ export default function GoalsRemindersScreen() {
         </View>
       </Modal>
 
-      {/* Workout Detail Modal */}
       <Modal visible={workoutModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -317,7 +315,6 @@ export default function GoalsRemindersScreen() {
         </View>
       </Modal>
 
-      {/* Reminder Modal */}
       <Modal visible={reminderModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>

@@ -3,56 +3,59 @@
 Aplicativo móvel de saúde e bem-estar desenvolvido com React Native + Expo. Fornece ferramentas e rastreamento para hábitos saudáveis.
 
 ## Principais features
-- Pomodoro e histórico de sessões
-- Registro e acompanhamento de hidratação (Water tracker)
-- Monitoramento de atividade e métricas (sensores / localização)
-- Lembretes e notificações
-- Registro de pressão arterial e outros logs de saúde
-- Persistência local com Realm
+- Autenticação e gerenciamento de usuários (Firebase Auth)
+- Sincronização online-first com Firebase (Firestore) e fallback/local queue em Realm
+- Acompanhamento de metas e hábitos (criação/edição/remoção)
+- Registro de hidratação (Water tracker) com lembretes
+- Registro de sintomas, pressão arterial e outros logs de saúde
+- Upload e gerenciamento de fotos de progresso
+- Widgets integrados: Pomodoro, Monitor de água, Wellness rating
+- Lembretes e notificações locais
 
 ## Tecnologias
-- Expo (SDK) + expo-router
-- React Native
-- Banco de dados Realm (`@realm/react`)
+- Expo + React Native + `expo-router`
+- TypeScript
+- Firebase (Auth, Firestore) — via `@react-native-firebase/*` e `firebase` quando aplicável
+- Realm (`@realm/react`) para persistência local e fila de sincronização
 
 ## Pré-requisitos
 - Node.js (recomenda-se v22+)
 - npm
-- Expo CLI (`npm install -g expo-cli`) — ou usar `npx expo` conforme preferência
-- Para builds nativos/Android: JDK e Android Studio (SDK/Emulador)
+- Expo CLI (usar via `npx expo` ou instalar globalmente)
+- Android Studio + Android SDK + JDK para builds Android (Windows: configurar `ANDROID_HOME` / `ANDROID_SDK_ROOT`)
+- Conta Firebase configurada e `android/app/google-services.json` presente no repositório para builds Android nativos
 
 ## Instalação (desenvolvimento)
 Clone o repositório e instale dependências:
 
 ```bash
 git clone <repo-url>
-cd projeto-sus-gerson
+cd Saude10
 npm install
 ```
+Se for usar Firebase nativo no Android, confirme que `android/app/google-services.json` está presente (forneça-o a partir do console Firebase ou do repositório privado da equipe).
 
-Inicie o Metro/Expo:
+Inicie o Metro/Expo em modo desenvolvimento:
 
 ```bash
 npm run start
 ```
 
-Para rodar em Android (emulador ou dispositivo conectado):
+Comandos úteis (conferir `package.json`):
 
 ```bash
-npm run android
+npm run android    # expo run:android — build/instala no emulador ou dispositivo
+npm run ios        # expo run:ios (macOS)
+npm run web        # rodar no navegador
+npm run lint       # rodar linter
+npm run reset-project  # script local de reset (use com cuidado)
 ```
 
-Executar como web:
+Observações:
+- O projeto adota política online-first: a camada de sincronização tenta gravar no Firebase e, em caso de falha, persiste localmente em Realm para posterior sincronização.
+- Para limpar cache do Expo, use `expo start -c`.
 
-```bash
-npm run web
-```
-
-Scripts úteis (ver também [package.json](package.json))
-- `start` — iniciar Expo
-- `android` — executar no Android
-- `web` — executar no navegador
-- `lint` — rodar linter
+Scripts e comandos adicionais podem ser verificados em [package.json](package.json).
 
 ## Notas Android e permissões
 - Package id definido em [app.json](app.json) como `com.pedromartins.sus`.

@@ -126,6 +126,71 @@ export const seedPredefinedWorkouts = (realm: Realm) => {
   }
 };
 
+const getNextDateAt = (hour: number, minute: number) => {
+  const next = new Date();
+  next.setHours(hour, minute, 0, 0);
+  if (next <= new Date()) {
+    next.setDate(next.getDate() + 1);
+  }
+  return next;
+};
+
+const getNextWeekdayAt = (weekday: number, hour: number, minute: number) => {
+  const today = new Date();
+  const next = new Date(today);
+  const delta = (weekday + 7 - today.getDay()) % 7 || 7;
+  next.setDate(today.getDate() + delta);
+  next.setHours(hour, minute, 0, 0);
+  return next;
+};
+
+const PREDEFINED_WORKOUTS = [
+  {
+    title: 'Caminhada matinal',
+    instructions: 'Caminhe por 20 minutos em ritmo confortável. Respire profundamente e alongue as pernas antes e depois.',
+    isPredefined: true,
+    isRecurring: true,
+    recurrenceRule: 'daily' as const,
+    nextOccurrence: getNextDateAt(7, 0),
+  },
+  {
+    title: 'Treino de força rápida',
+    instructions: 'Faça 3 séries de 12 agachamentos, 10 flexões e 15 abdominais. Descanse 30 segundos entre as séries.',
+    isPredefined: true,
+    isRecurring: true,
+    recurrenceRule: 'weekly' as const,
+    nextOccurrence: getNextWeekdayAt(1, 18, 0),
+  },
+  {
+    title: 'Alongamento noturno',
+    instructions: 'Realize alongamentos suaves para pescoço, ombros, costas e pernas por 10 minutos antes de dormir.',
+    isPredefined: true,
+    isRecurring: true,
+    recurrenceRule: 'daily' as const,
+    nextOccurrence: getNextDateAt(20, 0),
+  },
+];
+
+export const seedPredefinedWorkouts = (realm: Realm) => {
+  const existingWorkouts = realm.objects(Workout);
+  if (existingWorkouts.length === 0) {
+    realm.write(() => {
+      PREDEFINED_WORKOUTS.forEach((workout) => {
+        realm.create(Workout, {
+          _id: new Realm.BSON.ObjectId(),
+          title: workout.title,
+          instructions: workout.instructions,
+          isPredefined: workout.isPredefined,
+          isRecurring: workout.isRecurring,
+          recurrenceRule: workout.recurrenceRule,
+          nextOccurrence: workout.nextOccurrence,
+          createdAt: new Date(),
+        });
+      });
+    });
+  }
+};
+
 export const RealmContext = createRealmContext({
   schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog],
   schemaVersion: 25

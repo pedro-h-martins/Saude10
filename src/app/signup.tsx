@@ -5,7 +5,8 @@ import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/uti
 import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SignupScreen() {
@@ -128,7 +129,12 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.scrollContent}
+        enableOnAndroid={true}
+        extraScrollHeight={Platform.OS === 'android' ? 80 : 20}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.inner}>
           <Text style={styles.title}>Criar conta</Text>
 
@@ -222,7 +228,7 @@ export default function SignupScreen() {
             <Text style={styles.linkText}>Já tem uma conta? Entrar</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
