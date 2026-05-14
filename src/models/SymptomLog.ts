@@ -5,6 +5,7 @@ export class SymptomLog extends Realm.Object<SymptomLog> {
   description!: string;
   timestamp!: Date;
   userId!: string;
+  updatedAt!: Date;
 
   static schema: Realm.ObjectSchema = {
     name: 'SymptomLog',
@@ -14,6 +15,7 @@ export class SymptomLog extends Realm.Object<SymptomLog> {
       description: 'string',
       timestamp: 'date',
       userId: 'string',
+      updatedAt: 'date',
     },
   };
 }

@@ -13,7 +13,8 @@ type Props = {
 };
 
 const { width } = Dimensions.get('window');
-const CHART_WIDTH = Math.min(600, width - 64);
+const CHART_PADDING = 12;
+const CHART_WIDTH = Math.min(600, width - 64 - CHART_PADDING * 2);
 const CHART_HEIGHT = 120;
 
 export default function EvolutionCharts({ title = 'Gráficos de Evolução', data }: Props) {
@@ -43,7 +44,7 @@ export default function EvolutionCharts({ title = 'Gráficos de Evolução', dat
   return (
     <Card style={styles.card}>
       <Text style={Typography.h3}>{title}</Text>
-      <View style={{ marginTop: 8 }}>
+      <View style={{ marginTop: 8, paddingHorizontal: CHART_PADDING, overflow: 'hidden' }}>
         <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
           {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
             <Line

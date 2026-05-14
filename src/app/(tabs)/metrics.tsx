@@ -6,12 +6,13 @@ import { Typography } from '@/constants/Typography';
 import { useQuery } from "@/context/RealmProvider";
 import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
+import { MealLog } from '@/models/MealLog';
 import { SymptomLog } from '@/models/SymptomLog';
 import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const getMoodConfig = (rating: number) => {
@@ -39,18 +40,32 @@ const getBPStatus = (systolic: number, diastolic: number) => {
   return { label: 'Desconhecido', color: Colors.textSecondary };
 };
 
-const formatDate = (date: Date) => {
-  return date.toLocaleDateString('pt-BR', {
+const formatDate = (date?: Date | string | null) => {
+  if (!date) return '';
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'short',
-  }) + ', ' + date.toLocaleTimeString('pt-BR', {
+  }) + ', ' + d.toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit'
   });
 };
 
+function getItemKey(item: any) {
+  try {
+    const id = item?._id ?? item?.id ?? item;
+    if (id == null) return String(Math.random());
+    if (typeof id === 'object' && typeof id.toHexString === 'function') return id.toHexString();
+    return String(id);
+  } catch {
+    return String(Math.random());
+  }
+}
+
 export default function Metrics() {
-  const [activeTab, setActiveTab] = useState<'pressure' | 'mood' | 'symptoms'>('pressure');
+  const [activeTab, setActiveTab] = useState<'pressure' | 'mood' | 'symptoms' | 'meals'>('pressure');
   const [selectedMetric, setSelectedMetric] = useState<'weight' | 'steps'>('steps');
   const [rangeDays, setRangeDays] = useState<number>(7);
 
@@ -66,6 +81,7 @@ export default function Metrics() {
   const measurements = useQuery(BloodPressure).sorted('timestamp', true);
   const wellnessLogs = useQuery(WellnessLog).sorted('timestamp', true);
   const symptomLogs = useQuery(SymptomLog).sorted('timestamp', true);
+  const mealLogs = useQuery<MealLog>('MealLog').sorted('timestamp', true);
   const activityLogs = useQuery(ActivityLog).sorted('date', true);
   const userProfiles = useQuery(UserProfile);
   const userProfile = userProfiles && userProfiles.length > 0 ? userProfiles[0] : null;
@@ -123,116 +139,14 @@ export default function Metrics() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={Typography.h1}>Suas Métricas</Text>
-        <Text style={Typography.caption}>Acompanhe seu progresso diário</Text>
-      </View>
-
-      <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-          <TouchableOpacity onPress={() => setSelectedMetric('weight')} style={[styles.smallSelector, selectedMetric === 'weight' && styles.smallSelectorActive]}>
-            <Text style={[styles.smallSelectorText, selectedMetric === 'weight' && styles.smallSelectorTextActive]}>Peso</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setSelectedMetric('steps')} style={[styles.smallSelector, selectedMetric === 'steps' && styles.smallSelectorActive]}>
-            <Text style={[styles.smallSelectorText, selectedMetric === 'steps' && styles.smallSelectorTextActive]}>Média de passos</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-          {[7, 15, 30, 90, 180, 365].map((d) => (
-            <TouchableOpacity key={d} onPress={() => setRangeDays(d)} style={[styles.rangeButton, rangeDays === d && styles.rangeButtonActive]}>
-              <Text style={[styles.rangeText, rangeDays === d && styles.rangeTextActive]}>{getRangeLabel(d)}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {(() => {
-        if (selectedMetric === 'steps') {
-          const days: { date: string; value: number }[] = [];
-          for (let i = rangeDays - 1; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const key = d.toISOString().slice(0, 10);
-            const found = activityLogs.find((a: any) => (a.date || '').startsWith(key));
-            days.push({ date: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), value: found ? found.steps : 0 });
-          }
-          return <EvolutionCharts title={`Média de passos (${getRangeLabel(rangeDays)})`} data={days} />;
-        }
-
-        if (selectedMetric === 'weight') {
-          const data: { date: string; value: number }[] = [];
-          if (userProfile && typeof userProfile.weight === 'number') {
-            for (let i = rangeDays - 1; i >= 0; i--) {
-              const d = new Date();
-              d.setDate(d.getDate() - i);
-              data.push({ date: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), value: Math.round(userProfile.weight) });
-            }
-          }
-          return <EvolutionCharts title={`Peso (${getRangeLabel(rangeDays)})`} data={data} />;
-        }
-
-        return null;
-      })()}
-
-      <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'pressure' && styles.activeTabButton]}
-          onPress={() => setActiveTab('pressure')}
-        >
-          <Text style={[styles.tabText, activeTab === 'pressure' && styles.activeTabText]}>Pressão</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'mood' && styles.activeTabButton]}
-          onPress={() => setActiveTab('mood')}
-        >
-          <Text style={[styles.tabText, activeTab === 'mood' && styles.activeTabText]}>Humor</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'symptoms' && styles.activeTabButton]}
-          onPress={() => setActiveTab('symptoms')}
-        >
-          <Text style={[styles.tabText, activeTab === 'symptoms' && styles.activeTabText]}>Sintomas</Text>
-        </TouchableOpacity>
-      </View>
-
-      {activeTab === 'pressure' && (
-        <FlatList<BloodPressure>
-          data={measurements}
-          keyExtractor={(item) => item._id.toHexString()}
-          renderItem={renderPressureItem}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={Typography.body}>Nenhum registro encontrado.</Text>
-            </View>
-          }
-        />
-      )}
-
-      {activeTab === 'mood' && (
-        <FlatList<WellnessLog>
-          data={wellnessLogs}
-          keyExtractor={(item) => item._id.toHexString()}
-          renderItem={renderMoodItem}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={Typography.body}>Nenhum registro encontrado.</Text>
-            </View>
-          }
-        />
-      )}
-
-      {activeTab === 'symptoms' && (
-        <>
-          <View style={styles.listContent}>
-            <SymptomWidget />
-          </View>
-          <FlatList<SymptomLog>
-            data={symptomLogs}
-            keyExtractor={(item) => item._id.toHexString()}
-            renderItem={({ item }: { item: SymptomLog }) => (
+      <FlatList<any>
+        data={activeTab === 'pressure' ? measurements : activeTab === 'mood' ? wellnessLogs : activeTab === 'symptoms' ? symptomLogs : mealLogs}
+        keyExtractor={(item) => getItemKey(item)}
+        renderItem={({ item }) => {
+          if (activeTab === 'pressure') return renderPressureItem({ item } as any);
+          if (activeTab === 'mood') return renderMoodItem({ item } as any);
+          if (activeTab === 'symptoms') {
+            return (
               <Card style={styles.measurementCard}>
                 <View style={styles.cardHeader}>
                   <Ionicons name={'medkit-outline' as any} size={20} color={Colors.primary} style={{ marginRight: 8 }} />
@@ -242,16 +156,140 @@ export default function Metrics() {
                   <Text style={styles.noteText}>&quot;{item.description}&quot;</Text>
                 </View>
               </Card>
-            )}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={Typography.body}>Nenhum registro encontrado.</Text>
+            );
+          }
+
+          // meals
+          return (
+            <Card style={styles.measurementCard}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="restaurant-outline" size={20} color={Colors.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.dateText}>{formatDate((item as any).timestamp)}</Text>
               </View>
-            }
-          />
-        </>
-      )}
+              <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View>
+                  <Text style={{ ...Typography.body, fontWeight: 'bold' }}>{(item as any).name}</Text>
+                  <Text style={{ ...Typography.caption, color: Colors.textSecondary }}>{(item as any).mealType}</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ ...Typography.body, color: Colors.primary, fontWeight: 'bold' }}>{(item as any).calories} kcal</Text>
+                  <Text style={{ ...Typography.caption, color: Colors.textSecondary }}>
+                    P: {(item as any).protein}g • C: {(item as any).carbs}g • G: {(item as any).fat}g
+                  </Text>
+                </View>
+              </View>
+            </Card>
+          );
+        }}
+        ListHeaderComponent={() => (
+          <View>
+            <View style={styles.header}>
+              <Text style={Typography.h1}>Suas Métricas</Text>
+              <Text style={Typography.caption}>Acompanhe seu progresso diário</Text>
+            </View>
+
+            <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+                nestedScrollEnabled
+                directionalLockEnabled
+              >
+                <TouchableOpacity onPress={() => setSelectedMetric('weight')} style={[styles.smallSelector, selectedMetric === 'weight' && styles.smallSelectorActive, { marginRight: 8 }]}>
+                  <Text style={[styles.smallSelectorText, selectedMetric === 'weight' && styles.smallSelectorTextActive]}>Peso</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSelectedMetric('steps')} style={[styles.smallSelector, selectedMetric === 'steps' && styles.smallSelectorActive, { marginRight: 8 }]}>
+                  <Text style={[styles.smallSelectorText, selectedMetric === 'steps' && styles.smallSelectorTextActive]}>Média de passos</Text>
+                </TouchableOpacity>
+              </ScrollView>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ flexDirection: 'row', alignItems: 'center' }}
+                nestedScrollEnabled
+                directionalLockEnabled
+              >
+                {[7, 15, 30, 90, 180, 365].map((d) => (
+                  <TouchableOpacity key={d} onPress={() => setRangeDays(d)} style={[styles.rangeButton, rangeDays === d && styles.rangeButtonActive, { marginRight: 8 }]}>
+                    <Text style={[styles.rangeText, rangeDays === d && styles.rangeTextActive]}>{getRangeLabel(d)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {(() => {
+              if (selectedMetric === 'steps') {
+                const days: { date: string; value: number }[] = [];
+                for (let i = rangeDays - 1; i >= 0; i--) {
+                  const d = new Date();
+                  d.setDate(d.getDate() - i);
+                  const key = d.toISOString().slice(0, 10);
+                  const found = activityLogs.find((a: any) => (a.date || '').startsWith(key));
+                  days.push({ date: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), value: found ? found.steps : 0 });
+                }
+                return <EvolutionCharts title={`Média de passos (${getRangeLabel(rangeDays)})`} data={days} />;
+              }
+
+              if (selectedMetric === 'weight') {
+                const data: { date: string; value: number }[] = [];
+                if (userProfile && typeof userProfile.weight === 'number') {
+                  for (let i = rangeDays - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    data.push({ date: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), value: Math.round(userProfile.weight) });
+                  }
+                }
+                return <EvolutionCharts title={`Peso (${getRangeLabel(rangeDays)})`} data={data} />;
+              }
+
+              return null;
+            })()}
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabContainer}
+              nestedScrollEnabled
+              directionalLockEnabled
+            >
+              <TouchableOpacity 
+                style={[styles.tabButton, activeTab === 'pressure' && styles.activeTabButton]}
+                onPress={() => setActiveTab('pressure')}
+              >
+                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'pressure' && styles.activeTabText]}>Pressão</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.tabButton, activeTab === 'mood' && styles.activeTabButton]}
+                onPress={() => setActiveTab('mood')}
+              >
+                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'mood' && styles.activeTabText]}>Humor</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.tabButton, activeTab === 'symptoms' && styles.activeTabButton]}
+                onPress={() => setActiveTab('symptoms')}
+              >
+                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'symptoms' && styles.activeTabText]}>Sintomas</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.tabButton, activeTab === 'meals' && styles.activeTabButton]}
+                onPress={() => setActiveTab('meals')}
+              >
+                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'meals' && styles.activeTabText]}>Alimentação</Text>
+              </TouchableOpacity>
+            </ScrollView>
+
+            {activeTab === 'symptoms' && (
+              <View style={{ paddingHorizontal: 20 }}>
+                <SymptomWidget />
+              </View>
+            )}
+          </View>
+        )}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={<View style={styles.emptyContainer}><Text style={Typography.body}>Nenhum registro encontrado.</Text></View>}
+      />
     </SafeAreaView>
   );
 }
@@ -269,7 +307,8 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    marginBottom: 10,
+    marginTop: 20,
+    marginBottom: 14,
     gap: 12,
   },
   tabButton: {
@@ -279,6 +318,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderWidth: 1,
     borderColor: '#eee',
+    minWidth: 88,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activeTabButton: {
     backgroundColor: Colors.primary,
@@ -295,7 +338,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 20,
-    paddingTop: 10,
+    paddingTop: 18,
   },
   measurementCard: {
     marginBottom: 15,
