@@ -159,7 +159,6 @@ export default function Metrics() {
             );
           }
 
-          // meals
           return (
             <Card style={styles.measurementCard}>
               <View style={styles.cardHeader}>
