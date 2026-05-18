@@ -1,15 +1,18 @@
 import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
 import React from 'react';
-import { StyleSheet, View, ViewProps, ViewStyle } from 'react-native';
+import { StyleSheet, Text, View, ViewProps, ViewStyle } from 'react-native';
 
 interface CardProps extends ViewProps {
   children: React.ReactNode;
   style?: ViewStyle;
+  title?: string;
 }
 
-export const Card: React.FC<CardProps> = ({ children, style, ...props }) => {
+export const Card: React.FC<CardProps> = ({ children, style, title, ...props }) => {
   return (
     <View style={[styles.card, style]} {...props}>
+      {title ? <Text style={styles.title}>{title}</Text> : null}
       {children}
     </View>
   );
@@ -25,5 +28,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
+  },
+  title: {
+    ...Typography.h3,
+    marginBottom: 8,
   },
 });

@@ -1,4 +1,5 @@
 import { Card } from '@/components/Card';
+import { NutritionWidget } from '@/components/NutritionWidget';
 import { PomodoroWidget } from '@/components/PomodoroWidget';
 import ShareProgressButton from '@/components/ShareProgressButton';
 import { WaterWidget } from '@/components/WaterWidget';
@@ -151,17 +152,14 @@ export function Home() {
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {(() => {
-          const insets = useSafeAreaInsets();
-          return (
-            <View style={{ paddingTop: insets.top }}>
-              <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
-            </View>
-          );
-        })()}
+        <View style={{ paddingTop: insets.top }}>
+          <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
+        </View>
         <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
         <ShareProgressButton
           message={`Bati minha meta de passos hoje! Dei ${steps.toLocaleString()} passos. #Saude10`}
@@ -305,6 +303,8 @@ export function Home() {
             </Pressable>
           </Pressable>
         </Modal>
+
+        <NutritionWidget />
         
         <View style={styles.gridRow}>
             <PomodoroWidget />

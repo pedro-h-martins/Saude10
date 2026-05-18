@@ -83,7 +83,8 @@ export const SymptomWidget = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    marginBottom: 16,
+    marginTop: 18,
+    marginBottom: 18,
   },
   header: {
     flexDirection: 'row',
