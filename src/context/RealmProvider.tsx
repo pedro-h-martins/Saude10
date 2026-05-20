@@ -41,9 +41,10 @@ export async function getEncryptionKey(): Promise<Uint8Array> {
 }
 
 const PREDEFINED_GOALS = [
-  { type: 'lose-weight', title: 'Perder peso' },
-  { type: 'gain-muscle', title: 'Ganhar massa muscular' },
-  { type: 'reduce-stress', title: 'Reduzir estresse' },
+  { type: 'steps', title: 'Caminhar 10.000 passos por dia', metric: 'steps', targetValue: 10000, unit: 'passos', periodType: 'daily' },
+  { type: 'hydration', title: 'Beber 2L de água por dia', metric: 'hydration', targetValue: 2000, unit: 'ml', periodType: 'daily' },
+  { type: 'meditation', title: 'Meditar 3x por semana', metric: 'meditation', targetValue: 3, unit: 'sessões', periodType: 'weekly' },
+  { type: 'lose-weight', title: 'Perder peso', metric: 'weight', targetValue: null, unit: 'kg', periodType: 'custom' },
 ];
 
 export const seedInitialGoals = (realm: Realm) => {
@@ -55,6 +56,11 @@ export const seedInitialGoals = (realm: Realm) => {
           _id: new Realm.BSON.ObjectId(),
           type: goal.type,
           title: goal.title,
+          metric: (goal as any).metric ?? undefined,
+          targetValue: (goal as any).targetValue ?? undefined,
+          unit: (goal as any).unit ?? undefined,
+          periodType: (goal as any).periodType ?? undefined,
+          periodValue: (goal as any).periodValue ?? undefined,
           startDate: new Date(),
           isActive: true,
         });
@@ -130,7 +136,7 @@ export const seedPredefinedWorkouts = (realm: Realm) => {
 
 export const RealmContext = createRealmContext({
   schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog],
-  schemaVersion: 27
+  schemaVersion: 28
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;

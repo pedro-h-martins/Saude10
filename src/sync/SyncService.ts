@@ -235,7 +235,12 @@ function hasRequiredRealmFields(realm: Realm, entityType: string, data: Record<s
   return true;
 }
 
-function mergeRemoteDocument(realm: Realm, entityType: string, entityId: string, data: Record<string, unknown>) {
+function mergeRemoteDocument(
+  realm: Realm,
+  entityType: string,
+  entityId: string,
+  data: Record<string, unknown>
+): boolean {
   const payload = {
     _id: getRealmPrimaryKey(entityType, entityId),
     ...data,
@@ -244,10 +249,11 @@ function mergeRemoteDocument(realm: Realm, entityType: string, entityId: string,
   const existing = realm.objectForPrimaryKey(entityType, payload._id);
   if (!existing && !hasRequiredRealmFields(realm, entityType, data)) {
     console.warn(`[SyncService] Skipping remote ${entityType} ${entityId} due to missing required fields`, data);
-    return;
+    return true;
   }
 
   realm.create(entityType, payload, Realm.UpdateMode.Modified);
+  return false;
 }
 
 export async function tryRemoteRead(collectionPath: string, entityId: string) {
@@ -348,6 +354,7 @@ export async function initializeSyncListeners(realm: Realm, userId: string) {
           if (!snapshot) {
             return;
           }
+          const deletions: string[] = [];
           realm.write(() => {
             snapshot.docChanges().forEach((change) => {
               const normalized = normalizeValue(change.doc.data() ?? {}) as Record<string, unknown>;
@@ -359,9 +366,22 @@ export async function initializeSyncListeners(realm: Realm, userId: string) {
                 return;
               }
 
-              mergeRemoteDocument(realm, entityType, change.doc.id, normalized);
+              const shouldDelete = mergeRemoteDocument(realm, entityType, change.doc.id, normalized);
+              if (shouldDelete) {
+                deletions.push(change.doc.id);
+              }
             });
           });
+
+          if (deletions.length > 0) {
+            Promise.all(
+              deletions.map((id) =>
+                deleteDoc(buildRemoteDocRef(userId, entityType, id)).catch((err) =>
+                  console.warn(`[SyncService] Failed to delete remote ${entityType} ${id}:`, err)
+                )
+              )
+            ).catch(() => {});
+          }
         },
         (error) => {
           console.warn(`[SyncService] snapshot listener failed for ${entityType}:`, error);
