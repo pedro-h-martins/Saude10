@@ -7,6 +7,7 @@ export const Colors = {
   textSecondary: '#7D7D7D',
   accent: '#2ECC71',
   warning: '#E74C3C',
+  error: '#E74C3C',
   border: '#EAEAEA',
   shadow: '#000000',
   timerBackground: '#F0F4F8',

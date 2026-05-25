@@ -6,6 +6,7 @@ import { HydrationLog } from '@/models/HydrationLog';
 import { MealLog } from '@/models/MealLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
 import { ProgressPhoto } from '@/models/ProgressPhoto';
+import { Recipe } from '@/models/Recipe';
 import { Reminder } from '@/models/Reminder';
 import { SymptomLog } from '@/models/SymptomLog';
 import { SyncQueueItem } from '@/models/SyncQueueItem';
@@ -114,6 +115,41 @@ const PREDEFINED_WORKOUTS = [
   },
 ];
 
+const PREDEFINED_RECIPES = [
+  {
+    title: 'Smoothie de Banana e Aveia',
+    category: 'pós-treino',
+    ingredients: '1 banana madura; 2 colheres de aveia; 1 copo de leite vegetal; 1 scoop de whey (opcional)',
+    instructions: '1. Coloque todos os ingredientes no liquidificador.\n2. Bata até ficar homogêneo.\n3. Sirva gelado.',
+    prepTime: '5 min',
+    calories: '250 kcal',
+  },
+  {
+    title: 'Omelete Low Carb com Espinafre',
+    category: 'low carb',
+    ingredients: '2 ovos; 1 xícara de espinafre picado; Sal e pimenta a gosto; 1 colher de chá de azeite',
+    instructions: '1. Bata os ovos com sal e pimenta.\n2. Refogue o espinafre no azeite.\n3. Despeje os ovos sobre o espinafre e cozinhe em fogo baixo.\n4. Vire para dourar os dois lados.',
+    prepTime: '10 min',
+    calories: '180 kcal',
+  },
+  {
+    title: 'Salada de Frango com Quinoa',
+    category: 'pós-treino',
+    ingredients: '100g de peito de frango grelhado; 1/2 xícara de quinoa cozida; Pepino e tomate em cubos; Suco de limão',
+    instructions: '1. Misture a quinoa, o frango, o pepino e o tomate.\n2. Tempere com suco de limão, sal e um fio de azeite.\n3. Sirva frio.',
+    prepTime: '15 min',
+    calories: '320 kcal',
+  },
+  {
+    title: 'Pudim de Chia com Frutas Vermelhas',
+    category: 'low carb',
+    ingredients: '3 colheres de sopa de sementes de chia; 200ml de leite de amêndoas; 5 morangos picados',
+    instructions: '1. Misture a chia com o leite e deixe na geladeira por pelo menos 4 horas.\n2. Sirva com os morangos por cima.',
+    prepTime: '5 min',
+    calories: '150 kcal',
+  }
+];
+
 export const seedPredefinedWorkouts = (realm: Realm) => {
   const existingWorkouts = realm.objects(Workout);
   if (existingWorkouts.length === 0) {
@@ -134,9 +170,24 @@ export const seedPredefinedWorkouts = (realm: Realm) => {
   }
 };
 
+export const seedInitialRecipes = (realm: Realm) => {
+  const existingRecipes = realm.objects(Recipe);
+  if (existingRecipes.length === 0) {
+    realm.write(() => {
+      PREDEFINED_RECIPES.forEach((recipe) => {
+        realm.create(Recipe, {
+          _id: new Realm.BSON.ObjectId(),
+          ...recipe,
+          isFavorite: false,
+        });
+      });
+    });
+  }
+};
+
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog],
-  schemaVersion: 28
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe],
+  schemaVersion: 30
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;
@@ -147,6 +198,7 @@ function SeedRealmData() {
   useEffect(() => {
     seedInitialGoals(realm);
     seedPredefinedWorkouts(realm);
+    seedInitialRecipes(realm);
   }, [realm]);
 
   return null;
