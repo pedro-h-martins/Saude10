@@ -188,7 +188,7 @@ export const seedInitialRecipes = (realm: Realm) => {
 
 export const RealmContext = createRealmContext({
   schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe, SleepLog],
-  schemaVersion: 31
+  schemaVersion: 33,
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;

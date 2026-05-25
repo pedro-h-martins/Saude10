@@ -5,6 +5,7 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
+import { useWaterGoal } from '@/hooks/useWaterGoal';
 import { HydrationLog } from '@/models/HydrationLog';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
@@ -15,31 +16,33 @@ export const WaterWidget = () => {
   const { currentUser } = useAuth();
   const user = currentUser;
   const { save } = useSync();
-  
+  const { baseGoal, targetGoal, isAdjusted } = useWaterGoal();
+
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
-  
-  const logs = useQuery(HydrationLog, (collection) => 
+
+  const logs = useQuery(HydrationLog, (collection) =>
     collection.filtered('timestamp >= $0', today), [today]
   );
-  
+
   const currentIntake = useMemo(() => {
     return logs.reduce((acc, log) => acc + log.amount, 0);
   }, [logs]);
 
-  const defaultGoal = user?.weight ? Math.round(user.weight * 35) : 2000;
-  const targetGoal = user?.waterGoal || defaultGoal;
+  const defaultGoal = baseGoal;
   const progress = Math.min(currentIntake / targetGoal, 1);
 
   const shareMessage = useMemo(() => {
     if (currentIntake >= targetGoal) {
-      return `Bati minha meta de água hoje: bebi ${currentIntake}ml de ${targetGoal}ml. #Saude10`;
+      const extra = isAdjusted ? ' (meta aumentada por exercício intenso)' : '';
+      return `Bati minha meta de água hoje: bebi ${currentIntake}ml de ${targetGoal}ml${extra}. #Saude10`;
     }
-    return `Hoje já bebi ${currentIntake}ml de ${targetGoal}ml de água. Continuo cuidando da minha hidratação. #Saude10`;
-  }, [currentIntake, targetGoal]);
+    const extra = isAdjusted ? ' (meta aumentada por exercício intenso)' : '';
+    return `Hoje já bebi ${currentIntake}ml de ${targetGoal}ml de água${extra}. Continuo cuidando da minha hidratação. #Saude10`;
+  }, [currentIntake, targetGoal, isAdjusted]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [newGoal, setNewGoal] = useState(targetGoal.toString());
@@ -61,9 +64,9 @@ export const WaterWidget = () => {
 
   const handleRemoveWater = (amount: number) => {
     if (currentIntake <= 0) return;
-    
+
     const amountToRemove = Math.min(amount, currentIntake);
-    
+
     if (!user) {
       Alert.alert('Atenção', 'Faça login para remover ingestão de água.');
       return;
@@ -98,7 +101,12 @@ export const WaterWidget = () => {
             </View>
             <View style={styles.titleSection}>
               <Text style={styles.title}>Hidratação</Text>
-              <Text style={styles.subtitle}>META DIÁRIA: {targetGoal}ml</Text>
+              <Text style={styles.subtitle}>
+                META DIÁRIA: {targetGoal}ml
+                {isAdjusted && (
+                  <Text style={styles.adjustmentBadge}> +15% (exercício intenso)</Text>
+                )}
+              </Text>
             </View>
           </View>
 
@@ -111,8 +119,8 @@ export const WaterWidget = () => {
             </ProgressCircle>
 
             <View style={styles.actionRow}>
-              <TouchableOpacity 
-                style={styles.addButton} 
+              <TouchableOpacity
+                style={styles.addButton}
                 onPress={() => handleAddWater(250)}
                 onLongPress={() => handleRemoveWater(250)}
                 delayLongPress={500}
@@ -120,9 +128,9 @@ export const WaterWidget = () => {
                 <Ionicons name="add" size={24} color={Colors.white} />
                 <Text style={styles.addButtonText}>250ml</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.addButton, { backgroundColor: '#E3F2FD' }]} 
+
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: '#E3F2FD' }]}
                 onPress={() => handleAddWater(500)}
                 onLongPress={() => handleRemoveWater(500)}
                 delayLongPress={500}
@@ -148,7 +156,7 @@ export const WaterWidget = () => {
             <Text style={styles.modalSubtitle}>
               Recomendação baseada no seu peso: {defaultGoal}ml
             </Text>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>NOVA META (ml)</Text>
               <TextInput
@@ -173,7 +181,6 @@ export const WaterWidget = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    marginBottom: 16,
   },
   header: {
     flexDirection: 'row',
@@ -265,6 +272,11 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 8,
     textAlign: 'center',
+  },
+  adjustmentBadge: {
+    fontSize: 10,
+    color: '#FF6B35',
+    fontWeight: '700',
   },
   modalSubtitle: {
     fontSize: 14,
