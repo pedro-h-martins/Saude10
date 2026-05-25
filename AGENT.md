@@ -1,84 +1,70 @@
 Agent: GitHub Copilot and Google Antigravity
 
 Purpose
-- Provide concise, safe, and actionable code suggestions, refactors, and reviews for this React Native project.
-- Priorities: online-first (Firebase) then local fallback (Realm). Enforce SOLID + Clean Architecture and watch for deprecations, redundancy, and excessive fallback logic.
+- Keep assistant behavior focused on this React Native app: make small, correct, testable changes.
+- Prefer Firebase for remote sync and authenticated cloud features, but make basic CRUD usable offline through Realm when there is no 4G/5G or Wi-Fi, or when the connection is unreliable.
+- Treat Realm as the local working store for offline-first basic data, then sync to Firebase when connectivity returns.
+- Enforce SOLID and Clean Architecture, and actively remove duplicated fallback logic, redundant models, and deprecated APIs.
 
-Persona & behavior
-- Tone: concise, collaborative, safety-first.
-- Ask clarifying questions when intent or scope is ambiguous.
-- Prefer minimal, explicit fallbacks; avoid adding duplicate or nested fallback chains.
-- When unsure, mark outputs as suggestions and include verification steps and tests.
+Operating style
+- Be concise, practical, and safety-first.
+- Default to implementation over discussion when the request is clear.
+- Ask a clarifying question only when the ambiguity blocks a safe or correct change.
+- When a solution has tradeoffs, state the recommendation and the reason briefly, then move to action.
 
-Project priorities
-- Platform: React Native (Expo + native Android folder present).
-- Primary data store (online): Firebase (Firestore/Auth or Realtime where used).
-- Secondary/local store: Realm (local-first for offline, as fallback/sync layer).
-- Architecture: SOLID principles + Clean Architecture (entities → use-cases → repositories → data-sources → presentation).
-- React Native files that depend on `react-native-get-random-values` must import `import 'react-native-get-random-values';` as the very first statement in the file.
+Project rules
+- Stack: React Native with Expo; an Android native folder is present and may need native-aware handling.
+- Canonical remote source for synced/cloud data: Firebase.
+- Canonical local source for offline-capable basic CRUD: Realm.
+- Architecture order: presentation → domain/use cases → repositories → data sources.
+- UI code should not talk directly to Firebase or Realm when a repository or sync layer can own that responsibility.
+- Files that depend on react-native-get-random-values must import it as the first statement.
 
-Capabilities
-- Read repository context and propose code changes, tests, and CI updates.
-- Suggest refactors to align with SOLID & Clean Architecture.
-- Identify deprecated APIs and dependency issues; propose migrations.
-- Find redundancy and excessive fallback patterns; recommend simplifications.
-- Provide minimal, testable code examples and migration steps.
+Decision priorities
+- Use Realm first for basic CRUD that must work without internet, then sync to Firebase later.
+- Use Firebase first for data that is cloud-owned, collaborative, or requires server authority.
+- Fall back to Realm immediately when there is no connection or the connection is unstable.
+- Keep fallback depth to one layer; do not add nested A → B → C chains in UI or feature code.
+- Centralize retry, timeout, queueing, and conflict resolution in a single repository or SyncService per domain.
+- Prefer explicit failure handling over silent catch blocks.
 
-Integrations & tools (recommended)
-- CI: GitHub Actions (or existing CI in this repo).
-- Linting: ESLint + TypeScript rules.
-- Type checking: `tsc`.
-- Use `npx expo install` for Expo-native package dependencies.
-- Look for update documentation on the web
+Working process
+- Start from the nearest concrete file, symbol, failing command, or test.
+- Before the first edit, gather only enough local context to form one falsifiable hypothesis and one cheap check.
+- Make the smallest edit that tests the hypothesis.
+- After the first substantive edit, run one focused validation step before broadening scope.
+- Keep edits minimal and preserve existing style unless a broader change is required.
 
-- Static checks:
-```bash
-npm run lint
-```
+What to optimize for
+- Replace duplicated remote-plus-local write flows with repository methods.
+- Move fallback and sync orchestration out of screens and components.
+- Keep domain models singular and avoid DTO/entity duplication across layers.
+- Prefer interface-first design so Firebase and Realm implementations stay swappable.
+- Add tests around use cases, repository behavior, and sync flows when logic changes.
 
-Guidelines for online-first / local-fallback behavior
-- Canonical source: Firebase. Always attempt read/write to Firebase first when network is available.
-- Fallback policy:
-  - Local writes: persist to Realm only when remote write fails or network is unavailable.
-  - Queue local writes for background sync to Firebase; ensure idempotency and conflict resolution.
-  - Limit fallback depth: do not chain multiple fallbacks. Prefer a single, central SyncService responsible for online vs local behavior.
-- Timeouts & retries: use exponential backoff, max retries, and circuit-breaker style fallback to local only after the retry window.
+Tools and validation
+- Use npx expo install for Expo-native dependencies.
+- Favor ESLint and TypeScript checks for validation.
+- Run npm run lint for static validation when relevant.
+- Use tsc when type safety could be affected.
+- Look up current documentation before changing platform-specific or dependency-sensitive behavior.
 
-Detecting redundancy & excessive fallbacks (what to look for)
-- Duplicate logic: repeated remote+local write blocks across components — centralize into a repository or SyncService.
-- Nested fallbacks: code that tries A → B → C inside UI components. Move to a single orchestrator.
-- Multiple conflicting fallback strategies in code (some modules retry forever, others immediately write to Realm).
-- Redundant data models: similar DTO/entity types duplicated across modules — unify domain entities.
-- Overuse of defensive code: many try/catch swallowing errors without logging/metrics.
+Safety and data handling
+- Never log secrets, API keys, tokens, or raw PII.
+- Use environment-specific config for sensitive values.
+- Treat auth, encryption, export, and persistence changes as security-sensitive and flag them clearly.
 
-Recommended architecture patterns (practical)
-- Layers: Presentation (screens/components) → Use Cases / Domain → Repositories → Data Sources (Firebase, Realm).
-- Dependency Injection: pass repositories/data sources into use cases; avoid direct Firebase/Realm access in components.
-- Single Responsibility: one class per responsibility (e.g., `HydrationRepository` coordinates remote/local).
-- Interface-first: define repository interfaces, implement Firebase and Realm data sources separately.
-- Tests: unit tests for use cases & repository logic; integration tests for sync behavior.
+Fallback policy template
+- All writes for cloud-owned data should go through the domain repository.
+- For basic offline-capable CRUD, the repository should write to Realm first and queue Firebase sync for when connectivity returns.
+- For cloud-owned data, the repository should attempt a remote write first, retry with bounded exponential backoff, and fall back to a local queue only after remote failure or confirmed offline state.
+- The repository should emit a failure event or metric and surface a concise user message only if user action is needed.
 
-Refactor suggestions (examples)
-- Implement a `SyncService` or `Repository` per domain entity:
-  - Expose `save(entity): Promise<void>` which does online-first logic, falls back to local queue on failure, and schedules background sync.
-- Replace duplicated remote/local write code with calls to repository methods.
-- Add `isOnline()` centralized utility and a single retry policy used across services.
-
-Safety & data handling
-- Never log or expose secrets (API keys, tokens). Use environment-specific config files.
-- Do not dump PII into logs or code examples.
-- Flag security-sensitive recommendations (auth, encryption, data export) for human review.
-
-Example minimal policy for fallbacks (copyable)
-- "All write operations must use their domain `Repository`. Repository performs:
-  1. Try remote write with 10s timeout and 3 retries (exponential backoff).
-  2. If remote ultimately fails, persist event to Realm queue with metadata for later sync.
-  3. Emit an event/metric for failure, and surface a concise UI notice if user action is needed."
-
-Operational notes
-- Keep AGENT.md updated when architecture, CI, or major tooling changes.
-- Update log: track date, author, and summary of changes.
+Maintenance
+- Keep this file current when architecture, sync behavior, CI, or major tooling changes.
+- Record updates with date, author, and a short summary.
 
 ## Update Log
-- 2026-04-25 (Antigravity): Completed migration to Firebase-first data sync with Realm offline fallback via centralized `useSync` hook. Addressed auth error propagation and persistence.
+- 2026-05-18 (Assistant): Clarified offline mode so basic CRUD can work in Realm when there is no 4G/5G or Wi-Fi, with Firebase reserved for sync and cloud-owned data.
+- 2026-04-25 (Antigravity): Completed migration to Firebase-first data sync with Realm offline fallback via centralized useSync hook. Addressed auth error propagation and persistence.
 - 2026-04-23 (Assistant): Initial draft created.

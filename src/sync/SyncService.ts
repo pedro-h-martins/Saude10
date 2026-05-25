@@ -19,6 +19,7 @@ const SYNC_ENTITY_TYPES = [
   'Workout',
   'ProgressPhoto',
   'MealLog',
+  'Recipe',
 ];
 
 const listeners: (() => void)[] = [];
@@ -80,6 +81,7 @@ const OBJECT_ID_ENTITY_TYPES = new Set([
   'Workout',
   'ProgressPhoto',
   'MealLog',
+  'Recipe',
 ]);
 
 function buildRemoteDocRef(userId: string, entityType: string, entityId: string) {

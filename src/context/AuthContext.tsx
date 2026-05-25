@@ -37,6 +37,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     (async () => {
       setLoading(true);
+      if (realm.isClosed) {
+        console.warn('[AuthContext] Realm is closed, skipping profile check.');
+        setLoading(false);
+        return;
+      }
       try {
         let profile: any = null;
 
@@ -57,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
 
-              const realmProfile = realm.objectForPrimaryKey<UserProfile>(UserProfile, uid);
+              const realmProfile = !realm.isClosed ? realm.objectForPrimaryKey<UserProfile>(UserProfile, uid) : null;
               profile = {
                 _id: uid,
                 name: remoteProfile?.name ?? realmProfile?.name ?? firebaseUser.displayName ?? firebaseUser.email ?? 'User',
@@ -87,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             } catch {
               const storedId = await SecureStore.getItemAsync(AUTH_USER_ID_KEY).catch(() => null);
-              if (storedId) {
+              if (storedId && !realm.isClosed) {
                 const realmProfile = realm.objectForPrimaryKey<UserProfile>(UserProfile, storedId);
                 if (realmProfile) {
                   setCurrentUser(realmProfile);
@@ -121,17 +126,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             updatedAt: new Date(),
           };
 
-          realm.write(() => {
-            realm.create(UserProfile, profileData, Realm.UpdateMode.Modified);
-          });
+          if (!realm.isClosed) {
+            realm.write(() => {
+              realm.create(UserProfile, profileData, Realm.UpdateMode.Modified);
+            });
 
-          const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
-          setCurrentUser(user ?? null);
+            const user = realm.objectForPrimaryKey<UserProfile>(UserProfile, id);
+            setCurrentUser(user ?? null);
+          }
         }
       } catch (err) {
         console.warn('Auth initialization error', err);
         const tokens = await authService.getStoredTokens();
-        if (tokens.accessToken) {
+        if (tokens.accessToken && !realm.isClosed) {
           const allUsers = realm.objects<UserProfile>(UserProfile);
           if (allUsers.length > 0) {
             setCurrentUser(allUsers[0]);
