@@ -1,5 +1,6 @@
 import { Card } from '@/components/Card';
 import EvolutionCharts from '@/components/EvolutionCharts';
+import { SleepWidget } from '@/components/SleepWidget';
 import { SymptomWidget } from '@/components/SymptomWidget';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
@@ -7,6 +8,7 @@ import { useQuery } from "@/context/RealmProvider";
 import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
 import { MealLog } from '@/models/MealLog';
+import { SleepLog } from '@/models/SleepLog';
 import { SymptomLog } from '@/models/SymptomLog';
 import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
@@ -65,8 +67,8 @@ function getItemKey(item: any) {
 }
 
 export default function Metrics() {
-  const [activeTab, setActiveTab] = useState<'pressure' | 'mood' | 'symptoms' | 'meals'>('pressure');
-  const [selectedMetric, setSelectedMetric] = useState<'weight' | 'steps'>('steps');
+  const [activeTab, setActiveTab] = useState<'pressure' | 'mood' | 'symptoms' | 'meals' | 'sleep'>('pressure');
+  const [selectedMetric, setSelectedMetric] = useState<'weight' | 'steps' | 'sleep_duration' | 'sleep_quality'>('steps');
   const [rangeDays, setRangeDays] = useState<number>(7);
 
   const getRangeLabel = (d: number) => {
@@ -82,9 +84,45 @@ export default function Metrics() {
   const wellnessLogs = useQuery(WellnessLog).sorted('timestamp', true);
   const symptomLogs = useQuery(SymptomLog).sorted('timestamp', true);
   const mealLogs = useQuery<MealLog>('MealLog').sorted('timestamp', true);
+  const sleepLogs = useQuery(SleepLog).sorted('startTime', true);
   const activityLogs = useQuery(ActivityLog).sorted('date', true);
   const userProfiles = useQuery(UserProfile);
   const userProfile = userProfiles && userProfiles.length > 0 ? userProfiles[0] : null;
+
+  const renderSleepItem = ({ item }: { item: SleepLog }) => {
+    const diffMs = item.endTime.getTime() - item.startTime.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.round((diffMs / (1000 * 60)) % 60);
+
+    return (
+      <Card style={styles.measurementCard}>
+        <View style={styles.cardHeader}>
+          <Ionicons name="moon-outline" size={20} color="#6366F1" style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.dateText}>
+              {item.startTime.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+            </Text>
+            <Text style={Typography.caption}>
+              {item.startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - {item.endTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ ...Typography.body, color: Colors.primary, fontWeight: 'bold' }}>{hours}h {minutes}min</Text>
+            <View style={styles.qualityContainer}>
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Ionicons 
+                  key={s} 
+                  name={item.quality >= s ? "star" : "star-outline"} 
+                  size={10} 
+                  color={item.quality >= s ? "#F1C40F" : Colors.border} 
+                />
+              ))}
+            </View>
+          </View>
+        </View>
+      </Card>
+    );
+  };
 
   const renderPressureItem = ({ item }: { item: BloodPressure }) => {
     const status = getBPStatus(item.systolic, item.diastolic);
@@ -140,11 +178,18 @@ export default function Metrics() {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList<any>
-        data={activeTab === 'pressure' ? measurements : activeTab === 'mood' ? wellnessLogs : activeTab === 'symptoms' ? symptomLogs : mealLogs}
+        data={
+          activeTab === 'pressure' ? measurements : 
+          activeTab === 'mood' ? wellnessLogs : 
+          activeTab === 'symptoms' ? symptomLogs : 
+          activeTab === 'sleep' ? sleepLogs :
+          mealLogs
+        }
         keyExtractor={(item) => getItemKey(item)}
         renderItem={({ item }) => {
           if (activeTab === 'pressure') return renderPressureItem({ item } as any);
           if (activeTab === 'mood') return renderMoodItem({ item } as any);
+          if (activeTab === 'sleep') return renderSleepItem({ item } as any);
           if (activeTab === 'symptoms') {
             return (
               <Card style={styles.measurementCard}>
@@ -201,6 +246,12 @@ export default function Metrics() {
                 <TouchableOpacity onPress={() => setSelectedMetric('steps')} style={[styles.smallSelector, selectedMetric === 'steps' && styles.smallSelectorActive, { marginRight: 8 }]}>
                   <Text style={[styles.smallSelectorText, selectedMetric === 'steps' && styles.smallSelectorTextActive]}>Média de passos</Text>
                 </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSelectedMetric('sleep_duration')} style={[styles.smallSelector, selectedMetric === 'sleep_duration' && styles.smallSelectorActive, { marginRight: 8 }]}>
+                  <Text style={[styles.smallSelectorText, selectedMetric === 'sleep_duration' && styles.smallSelectorTextActive]}>Duração do Sono</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSelectedMetric('sleep_quality')} style={[styles.smallSelector, selectedMetric === 'sleep_quality' && styles.smallSelectorActive, { marginRight: 8 }]}>
+                  <Text style={[styles.smallSelectorText, selectedMetric === 'sleep_quality' && styles.smallSelectorTextActive]}>Qualidade do Sono</Text>
+                </TouchableOpacity>
               </ScrollView>
 
               <ScrollView
@@ -243,6 +294,53 @@ export default function Metrics() {
                 return <EvolutionCharts title={`Peso (${getRangeLabel(rangeDays)})`} data={data} />;
               }
 
+              if (selectedMetric === 'sleep_duration') {
+                const days: { date: string; value: number }[] = [];
+                for (let i = rangeDays - 1; i >= 0; i--) {
+                  const d = new Date();
+                  d.setDate(d.getDate() - i);
+                  const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                  
+                  const startOfDay = new Date(d);
+                  startOfDay.setHours(0, 0, 0, 0);
+                  const endOfDay = new Date(d);
+                  endOfDay.setHours(23, 59, 59, 999);
+                  
+                  const logsForDay = sleepLogs.filtered('endTime >= $0 AND endTime <= $1', startOfDay, endOfDay);
+                  let totalHours = 0;
+                  logsForDay.forEach(log => {
+                    totalHours += (log.endTime.getTime() - log.startTime.getTime()) / (1000 * 60 * 60);
+                  });
+                  
+                  days.push({ date: dateStr, value: parseFloat(totalHours.toFixed(1)) });
+                }
+                return <EvolutionCharts title={`Duração do Sono (horas - ${getRangeLabel(rangeDays)})`} data={days} />;
+              }
+
+              if (selectedMetric === 'sleep_quality') {
+                const days: { date: string; value: number }[] = [];
+                for (let i = rangeDays - 1; i >= 0; i--) {
+                  const d = new Date();
+                  d.setDate(d.getDate() - i);
+                  const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                  
+                  const startOfDay = new Date(d);
+                  startOfDay.setHours(0, 0, 0, 0);
+                  const endOfDay = new Date(d);
+                  endOfDay.setHours(23, 59, 59, 999);
+                  
+                  const logsForDay = sleepLogs.filtered('endTime >= $0 AND endTime <= $1', startOfDay, endOfDay);
+                  let avgQuality = 0;
+                  if (logsForDay.length > 0) {
+                    const sum = logsForDay.reduce((acc, log) => acc + log.quality, 0);
+                    avgQuality = sum / logsForDay.length;
+                  }
+                  
+                  days.push({ date: dateStr, value: parseFloat(avgQuality.toFixed(1)) });
+                }
+                return <EvolutionCharts title={`Qualidade do Sono (1-5 - ${getRangeLabel(rangeDays)})`} data={days} />;
+              }
+
               return null;
             })()}
 
@@ -266,6 +364,12 @@ export default function Metrics() {
                 <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'mood' && styles.activeTabText]}>Humor</Text>
               </TouchableOpacity>
               <TouchableOpacity 
+                style={[styles.tabButton, activeTab === 'sleep' && styles.activeTabButton]}
+                onPress={() => setActiveTab('sleep')}
+              >
+                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'sleep' && styles.activeTabText]}>Sono</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
                 style={[styles.tabButton, activeTab === 'symptoms' && styles.activeTabButton]}
                 onPress={() => setActiveTab('symptoms')}
               >
@@ -282,6 +386,11 @@ export default function Metrics() {
             {activeTab === 'symptoms' && (
               <View style={{ paddingHorizontal: 20 }}>
                 <SymptomWidget />
+              </View>
+            )}
+            {activeTab === 'sleep' && (
+              <View style={{ paddingHorizontal: 20 }}>
+                <SleepWidget />
               </View>
             )}
           </View>
@@ -426,6 +535,10 @@ const styles = StyleSheet.create({
   },
   smallSelectorTextActive: {
     color: '#fff',
+  },
+  qualityContainer: {
+    flexDirection: 'row',
+    marginTop: 4,
   },
   rangeButton: {
     paddingVertical: 6,
