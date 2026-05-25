@@ -2,6 +2,7 @@ import { Card } from '@/components/Card';
 import { NutritionWidget } from '@/components/NutritionWidget';
 import { PomodoroWidget } from '@/components/PomodoroWidget';
 import ShareProgressButton from '@/components/ShareProgressButton';
+import { SleepWidget } from '@/components/SleepWidget';
 import { WaterWidget } from '@/components/WaterWidget';
 import { WellnessWidget } from '@/components/WellnessWidget';
 import { Colors } from '@/constants/Colors';
@@ -303,6 +304,8 @@ export function Home() {
             </Pressable>
           </Pressable>
         </Modal>
+
+        <SleepWidget />
 
         <NutritionWidget />
         

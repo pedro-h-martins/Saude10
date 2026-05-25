@@ -8,6 +8,7 @@ import { PomodoroLog } from '@/models/PomodoroLog';
 import { ProgressPhoto } from '@/models/ProgressPhoto';
 import { Recipe } from '@/models/Recipe';
 import { Reminder } from '@/models/Reminder';
+import { SleepLog } from '@/models/SleepLog';
 import { SymptomLog } from '@/models/SymptomLog';
 import { SyncQueueItem } from '@/models/SyncQueueItem';
 import { UserProfile } from '@/models/UserProfile';
@@ -186,8 +187,8 @@ export const seedInitialRecipes = (realm: Realm) => {
 };
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe],
-  schemaVersion: 30
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe, SleepLog],
+  schemaVersion: 31
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;

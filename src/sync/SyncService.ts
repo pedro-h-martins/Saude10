@@ -20,6 +20,7 @@ const SYNC_ENTITY_TYPES = [
   'ProgressPhoto',
   'MealLog',
   'Recipe',
+  'SleepLog',
 ];
 
 const listeners: (() => void)[] = [];
@@ -63,7 +64,10 @@ function normalizeDataForFirestore(data: any) {
     if (key === '_id' || key === 'localUri') {
       continue;
     }
-    converted[key] = normalizeValue(value);
+    const normalized = normalizeValue(value);
+    if (normalized !== undefined) {
+      converted[key] = normalized;
+    }
   }
   return converted;
 }
@@ -82,6 +86,7 @@ const OBJECT_ID_ENTITY_TYPES = new Set([
   'ProgressPhoto',
   'MealLog',
   'Recipe',
+  'SleepLog',
 ]);
 
 function buildRemoteDocRef(userId: string, entityType: string, entityId: string) {
