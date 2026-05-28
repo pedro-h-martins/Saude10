@@ -1,9 +1,9 @@
+import 'react-native-get-random-values';
 import { SyncQueueItem } from '@/models/SyncQueueItem';
 import { getUserEntityCollection, getUserEntityDocRef } from '@/services/firebase';
 import { isOnline } from '@/utils/network';
 import { deleteDoc, getDoc, onSnapshot, setDoc } from '@react-native-firebase/firestore';
 import { Realm } from '@realm/react';
-import 'react-native-get-random-values';
 
 const SYNC_ENTITY_TYPES = [
   'UserProfile',
@@ -242,6 +242,29 @@ function hasRequiredRealmFields(realm: Realm, entityType: string, data: Record<s
   return true;
 }
 
+function getMissingRequiredRealmFields(realm: Realm, entityType: string, data: Record<string, unknown>) {
+  const schema = getRealmSchema(realm, entityType);
+  if (!schema) {
+    return [] as string[];
+  }
+
+  const missing: string[] = [];
+  for (const [key, property] of Object.entries(schema.properties)) {
+    if (key === '_id') continue;
+    if (isPropertyOptional(property) || hasDefaultProperty(property)) continue;
+    if (!Object.prototype.hasOwnProperty.call(data, key)) {
+      missing.push(key);
+      continue;
+    }
+    const value = data[key];
+    if (value === undefined || value === null) {
+      missing.push(key);
+    }
+  }
+
+  return missing;
+}
+
 function mergeRemoteDocument(
   realm: Realm,
   entityType: string,
@@ -255,7 +278,8 @@ function mergeRemoteDocument(
 
   const existing = realm.objectForPrimaryKey(entityType, payload._id);
   if (!existing && !hasRequiredRealmFields(realm, entityType, data)) {
-    console.warn(`[SyncService] Skipping remote ${entityType} ${entityId} due to missing required fields`, data);
+    const missing = getMissingRequiredRealmFields(realm, entityType, data);
+    console.warn(`[SyncService] Skipping remote ${entityType} ${entityId} due to missing required fields`, { missingFields: missing, data });
     return true;
   }
 

@@ -1,6 +1,5 @@
 import { Card } from '@/components/Card';
 import EvolutionCharts from '@/components/EvolutionCharts';
-import { SleepWidget } from '@/components/SleepWidget';
 import { SymptomWidget } from '@/components/SymptomWidget';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
@@ -386,11 +385,6 @@ export default function Metrics() {
             {activeTab === 'symptoms' && (
               <View style={{ paddingHorizontal: 20 }}>
                 <SymptomWidget />
-              </View>
-            )}
-            {activeTab === 'sleep' && (
-              <View style={{ paddingHorizontal: 20 }}>
-                <SleepWidget />
               </View>
             )}
           </View>
