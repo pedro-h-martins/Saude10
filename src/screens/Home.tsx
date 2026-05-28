@@ -161,10 +161,14 @@ export function Home() {
         <View style={{ paddingTop: insets.top }}>
           <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
         </View>
-        <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
-        <ShareProgressButton
-          message={`Bati minha meta de passos hoje! Dei ${steps.toLocaleString()} passos. #Saude10`}
-        />
+        
+        <View style={styles.activityContainer}>
+          <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
+          <ShareProgressButton
+            message={`Bati minha meta de passos hoje! Dei ${steps.toLocaleString()} passos. #Saude10`}
+          />
+        </View>
+
         <WellnessWidget />
         <WaterWidget />
         
@@ -343,12 +347,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 40,
+    gap: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 25,
   },
   userSection: {
     flexDirection: 'row',
@@ -411,12 +415,14 @@ const styles = StyleSheet.create({
   activityCard: {
     borderRadius: 24,
     padding: 24,
-    marginBottom: 20,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 15,
     elevation: 8,
+  },
+  activityContainer: {
+    gap: 12,
   },
   activityHeader: {
     flexDirection: 'row',
@@ -488,7 +494,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#4FF088',
   },
   bpCard: {
-    marginBottom: 20,
     padding: 24,
   },
   bpHeader: {

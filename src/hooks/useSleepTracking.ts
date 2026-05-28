@@ -1,12 +1,11 @@
 import { useAuth } from '@/context/AuthContext';
-import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useQuery } from '@/context/RealmProvider';
 import { SleepLog } from '@/models/SleepLog';
 import { Realm } from '@realm/react';
 import { useCallback } from 'react';
 import { useSync } from './useSync';
 
 export function useSleepTracking() {
-  const realm = useRealm();
   const { currentUser } = useAuth();
   const user = currentUser;
   const { save, remove } = useSync();
@@ -23,7 +22,7 @@ export function useSleepTracking() {
     if (!user) return;
 
     const id = data._id || new Realm.BSON.ObjectId();
-    
+
     save('SleepLog', id.toHexString(), {
       _id: id,
       userId: user._id,

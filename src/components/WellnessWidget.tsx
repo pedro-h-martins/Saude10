@@ -8,7 +8,7 @@ import { useSync } from '@/hooks/useSync';
 import { WellnessLog } from '@/models/WellnessLog';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WellnessWidget = () => {
@@ -129,7 +129,7 @@ export const WellnessWidget = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 16, marginBottom: 16 },
+  container: { padding: 16 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   iconContainer: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.timerBackground, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   titleSection: { flex: 1 },

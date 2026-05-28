@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
 import { FeedbackSurvey } from '@/models/FeedbackSurvey';
@@ -18,7 +19,8 @@ import { createRealmContext, Realm } from '@realm/react';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import 'react-native-get-random-values';
+
+
 
 
 const ENCRYPTION_KEY_ID = 'realm_encryption_key_v1';
@@ -188,7 +190,7 @@ export const seedInitialRecipes = (realm: Realm) => {
 
 export const RealmContext = createRealmContext({
   schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe, SleepLog],
-  schemaVersion: 31
+  schemaVersion: 33,
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;

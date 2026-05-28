@@ -35,19 +35,22 @@ export function useActivityTracking() {
     setSteps(totalSteps);
     setDistanceMeters(estimatedDistanceMeters);
 
-    const existingLog = realm.objects(ActivityLog).filtered('date == $0', dateStr)[0];
-    const logId = existingLog ? existingLog._id : new Realm.BSON.ObjectId();
+const existingLog = realm.objects(ActivityLog).filtered('date == $0', dateStr)[0];
+const logId = existingLog ? existingLog._id : new Realm.BSON.ObjectId();
 
-    save('ActivityLog', logId.toHexString(), {
-      _id: logId,
-      date: dateStr,
-      steps: totalSteps,
-      distance: estimatedDistanceMeters,
-      updatedAt: new Date(),
-    });
-  }, [realm, user, save]);
+const intensity = totalSteps > 10000 || estimatedDistanceMeters > 5000 ? 'high' : totalSteps > 5000 ? 'moderate' : 'low';
 
-  const updateAndroidSteps = useCallback((newStepsSinceStart: number) => {
+save('ActivityLog', logId.toHexString(), {
+_id: logId,
+date: dateStr,
+steps: totalSteps,
+distance: estimatedDistanceMeters,
+intensity,
+updatedAt: new Date(),
+});
+}, [realm, user, save]);
+
+const updateAndroidSteps = useCallback((newStepsSinceStart: number) => {
     const totalSteps = lastBaseSteps.current + newStepsSinceStart;
     const estimatedDistanceMeters = user ? calculateDistance(totalSteps, user.height) : totalSteps * DEFAULT_METERS_PER_STEP;
     const dateStr = new Date().toISOString().split('T')[0];
@@ -55,17 +58,20 @@ export function useActivityTracking() {
     setSteps(totalSteps);
     setDistanceMeters(estimatedDistanceMeters);
 
-    const existingLog = realm.objects(ActivityLog).filtered('date == $0', dateStr)[0];
-    const logId = existingLog ? existingLog._id : new Realm.BSON.ObjectId();
+const existingLog = realm.objects(ActivityLog).filtered('date == $0', dateStr)[0];
+const logId = existingLog ? existingLog._id : new Realm.BSON.ObjectId();
 
-    save('ActivityLog', logId.toHexString(), {
-      _id: logId,
-      date: dateStr,
-      steps: totalSteps,
-      distance: estimatedDistanceMeters,
-      updatedAt: new Date(),
-    });
-  }, [realm, user, save]);
+const intensity = newStepsSinceStart > 5000 ? 'high' : newStepsSinceStart > 2500 ? 'moderate' : 'low';
+
+save('ActivityLog', logId.toHexString(), {
+_id: logId,
+date: dateStr,
+steps: totalSteps,
+distance: estimatedDistanceMeters,
+intensity,
+updatedAt: new Date(),
+});
+}, [realm, user, save]);
 
   useEffect(() => {
     let subscription: Pedometer.PedometerResult | any = null;
