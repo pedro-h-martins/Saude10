@@ -1,11 +1,11 @@
 import { Card } from '@/components/Card';
-import GoalProgressBar from '@/components/GoalProgressBar';
+import { GoalProgressBar } from '@/components/GoalProgressBar';
 import { StretchSection } from '@/components/StretchSection';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
-import useGoals from '@/hooks/useGoals';
+import { useGoals } from '@/hooks/useGoals';
 import { useReminders } from '@/hooks/useReminders';
 import { useSync } from '@/hooks/useSync';
 import { getNextOccurrenceLabel, getWorkoutRecurrenceLabel, getWorkoutStatusText, isWorkoutCompleted, useWorkouts } from '@/hooks/useWorkouts';
@@ -47,16 +47,15 @@ export default function GoalsRemindersScreen() {
 
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
-  
+
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [newGoalMetric, setNewGoalMetric] = useState<string>('steps');
   const [newGoalTarget, setNewGoalTarget] = useState<string>('');
   const [newGoalUnit, setNewGoalUnit] = useState<string>('');
-  const [newGoalPeriodType, setNewGoalPeriodType] = useState<'daily'|'weekly'|'custom'>('daily');
+  const [newGoalPeriodType, setNewGoalPeriodType] = useState<'daily' | 'weekly' | 'custom'>('daily');
   const [newGoalCreateReminder, setNewGoalCreateReminder] = useState<boolean>(false);
   const [newGoalReminderTime, setNewGoalReminderTime] = useState<Date>(new Date());
-  const [newGoalReminderType, setNewGoalReminderType] = useState<Reminder['type']>('custom');
-  
+
   const [newReminderTitle, setNewReminderTitle] = useState('');
   const [reminderTime, setReminderTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -102,8 +101,8 @@ export default function GoalsRemindersScreen() {
         realm.write(() => {
           const newGoal = realm.objectForPrimaryKey(Goal, newGoalId);
           if (newGoal && user) {
-             user.goals.push(newGoal);
-             save('UserProfile', user._id, { goals: user.goals });
+            user.goals.push(newGoal);
+            save('UserProfile', user._id, { goals: user.goals });
           }
         });
       }
@@ -153,13 +152,15 @@ export default function GoalsRemindersScreen() {
   const confirmDeleteGoal = (goal: Goal) => {
     Alert.alert('Excluir Meta', 'Tem certeza que deseja excluir esta meta?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: () => {
-        if (user) {
-          const updatedGoals = user.goals.filter(g => g._id.toHexString() !== goal._id.toHexString());
-          save('UserProfile', user._id, { goals: updatedGoals });
+      {
+        text: 'Excluir', style: 'destructive', onPress: () => {
+          if (user) {
+            const updatedGoals = user.goals.filter(g => g._id.toHexString() !== goal._id.toHexString());
+            save('UserProfile', user._id, { goals: updatedGoals });
+          }
+          remove('Goal', goal._id.toHexString());
         }
-        remove('Goal', goal._id.toHexString());
-      } },
+      },
     ]);
   };
 
@@ -338,10 +339,10 @@ export default function GoalsRemindersScreen() {
   const renderReminderItem = (item: Reminder) => (
     <Card key={item._id.toHexString()} style={styles.itemCard}>
       <View style={styles.reminderIconContainer}>
-        <MaterialIcons 
-          name={item.type === 'water' ? 'local-drink' : item.type === 'meditation' ? 'self-improvement' : 'notifications'} 
-          size={24} 
-          color={Colors.primary} 
+        <MaterialIcons
+          name={item.type === 'water' ? 'local-drink' : item.type === 'meditation' ? 'self-improvement' : 'notifications'}
+          size={24}
+          color={Colors.primary}
         />
       </View>
       <View style={styles.itemInfo}>
@@ -364,7 +365,7 @@ export default function GoalsRemindersScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-            <Text style={styles.headerMainTitle}>Objetivos & Lembretes</Text>
+          <Text style={styles.headerMainTitle}>Objetivos & Lembretes</Text>
         </View>
 
         <View style={styles.sectionHeader}>
@@ -382,7 +383,7 @@ export default function GoalsRemindersScreen() {
           goals.map(goal => renderGoalItem(goal))
         )}
 
-        <View style={[styles.sectionHeader, { marginTop: 30 }]}> 
+        <View style={[styles.sectionHeader, { marginTop: 30 }]}>
           <Text style={styles.sectionTitle}>Treinos Pré-definidos</Text>
         </View>
 
@@ -396,10 +397,10 @@ export default function GoalsRemindersScreen() {
 
         <StretchSection />
 
-        <View style={[styles.sectionHeader, { marginTop: 30 }]}> 
+        <View style={[styles.sectionHeader, { marginTop: 30 }]}>
           <Text style={styles.sectionTitle}>Lembretes Customizados</Text>
-          <TouchableOpacity 
-            style={styles.addButton} 
+          <TouchableOpacity
+            style={styles.addButton}
             onPress={() => {
               setReminderTime(new Date());
               setReminderModalVisible(true);
@@ -600,10 +601,10 @@ export default function GoalsRemindersScreen() {
               value={newReminderTitle}
               onChangeText={setNewReminderTitle}
             />
-            
+
             <View style={styles.typeSelector}>
               {(['water', 'meditation', 'custom'] as const).map((t) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={t}
                   style={[styles.typeBtn, reminderType === t && styles.typeBtnActive]}
                   onPress={() => setReminderType(t)}

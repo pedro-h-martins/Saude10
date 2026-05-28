@@ -9,7 +9,7 @@ import { Alert, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } fro
 
 export const SleepWidget = () => {
   const { sleepLogs, saveSleepLog, calculateDurationHours, formatDuration } = useSleepTracking();
-  
+
   const lastLog = useMemo(() => {
     return sleepLogs.length > 0 ? sleepLogs[0] : null;
   }, [sleepLogs]);
@@ -18,21 +18,21 @@ export const SleepWidget = () => {
   const [startTime, setStartTime] = useState(new Date(new Date().setHours(22, 0, 0, 0)));
   const [endTime, setEndTime] = useState(new Date(new Date().setHours(7, 0, 0, 0)));
   const [quality, setQuality] = useState(3);
-  
+
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
   const durationHours = useMemo(() => {
     let end = new Date(endTime);
     let start = new Date(startTime);
-    
+
     // If end is before start, assume it's the next day
     if (end < start) {
       end.setDate(end.getDate() + 1);
     }
-    
+
     return calculateDurationHours(start, end);
-  }, [startTime, endTime]);
+  }, [startTime, endTime, calculateDurationHours]);
 
   const handleSave = () => {
     let finalEnd = new Date(endTime);
@@ -74,11 +74,11 @@ export const SleepWidget = () => {
             <View style={styles.statBox}>
               <View style={styles.qualityContainer}>
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <Ionicons 
-                    key={s} 
-                    name={lastLog && lastLog.quality >= s ? "star" : "star-outline"} 
-                    size={16} 
-                    color={lastLog && lastLog.quality >= s ? "#F1C40F" : Colors.border} 
+                  <Ionicons
+                    key={s}
+                    name={lastLog && lastLog.quality >= s ? "star" : "star-outline"}
+                    size={16}
+                    color={lastLog && lastLog.quality >= s ? "#F1C40F" : Colors.border}
                   />
                 ))}
               </View>
@@ -94,18 +94,18 @@ export const SleepWidget = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay} 
+        <Pressable
+          style={styles.modalOverlay}
           onPress={() => setModalVisible(false)}
         >
           <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>Registrar Sono</Text>
-            
+
             <View style={styles.timeRow}>
               <View style={styles.timeInputBox}>
                 <Text style={styles.inputLabel}>FUI DORMIR</Text>
-                <TouchableOpacity 
-                  style={styles.timeButton} 
+                <TouchableOpacity
+                  style={styles.timeButton}
                   onPress={() => setShowStartPicker(true)}
                 >
                   <Text style={styles.timeText}>
@@ -116,8 +116,8 @@ export const SleepWidget = () => {
 
               <View style={styles.timeInputBox}>
                 <Text style={styles.inputLabel}>ACORDEI EM</Text>
-                <TouchableOpacity 
-                  style={styles.timeButton} 
+                <TouchableOpacity
+                  style={styles.timeButton}
                   onPress={() => setShowEndPicker(true)}
                 >
                   <Text style={styles.timeText}>
@@ -160,29 +160,29 @@ export const SleepWidget = () => {
             <Text style={styles.inputLabel}>QUALIDADE PERCEBIDA</Text>
             <View style={styles.qualitySelector}>
               {[1, 2, 3, 4, 5].map((s) => (
-                <TouchableOpacity 
-                  key={s} 
+                <TouchableOpacity
+                  key={s}
                   onPress={() => setQuality(s)}
                   style={styles.qualityBtn}
                 >
-                  <Ionicons 
-                    name={quality >= s ? "star" : "star-outline"} 
-                    size={32} 
-                    color={quality >= s ? "#F1C40F" : Colors.border} 
+                  <Ionicons
+                    name={quality >= s ? "star" : "star-outline"}
+                    size={32}
+                    color={quality >= s ? "#F1C40F" : Colors.border}
                   />
                 </TouchableOpacity>
               ))}
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalBtn, styles.cancelBtn]} 
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
                 onPress={() => setModalVisible(false)}
               >
                 <Text style={styles.cancelBtnText}>CANCELAR</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalBtn, styles.saveBtn]} 
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.saveBtn]}
                 onPress={handleSave}
               >
                 <Text style={styles.saveBtnText}>SALVAR</Text>
