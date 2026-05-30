@@ -6,7 +6,7 @@ export class SleepLog extends Realm.Object<SleepLog> {
   userId!: string;
   startTime!: Date;
   endTime!: Date;
-  quality!: number; // 1-5 scale
+  quality!: number;
   notes?: string;
   updatedAt!: Date;
 

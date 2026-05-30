@@ -1,8 +1,8 @@
-import 'react-native-get-random-values';
 import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
 import { FeedbackSurvey } from '@/models/FeedbackSurvey';
 import { Goal } from '@/models/Goal';
+import { GuidedAudio } from '@/models/GuidedAudio';
 import { HydrationLog } from '@/models/HydrationLog';
 import { MealLog } from '@/models/MealLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
@@ -16,9 +16,11 @@ import { UserProfile } from '@/models/UserProfile';
 import { WellnessLog } from '@/models/WellnessLog';
 import { Workout } from '@/models/Workout';
 import { createRealmContext, Realm } from '@realm/react';
+import { Asset } from 'expo-asset';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import 'react-native-get-random-values';
 
 
 
@@ -73,9 +75,9 @@ export const seedInitialGoals = (realm: Realm) => {
   }
 };
 
-const getNextDateAt = (hour: number, minute: number) => {
-  const next = new Date();
-  next.setHours(hour, minute, 0, 0);
+  const getNextDateAt = (hour: number, minute: number) => {
+    const next = new Date();
+    next.setHours(hour, minute, 0, 0);
   if (next <= new Date()) {
     next.setDate(next.getDate() + 1);
   }
@@ -153,6 +155,16 @@ const PREDEFINED_RECIPES = [
   }
 ];
 
+function inferAudioCategory(text: string) {
+  const n = (text || '').toLowerCase();
+
+  if (n.includes('sound of the sea') || n.includes('black sea shore') || n.includes('black sea') || n.includes('waves on the lake') || n.includes('waves') || n.includes('soft ocean') || n.includes('ocean') || n.includes('sea')) return 'waves';
+  if (n.includes('wind effect') || n.includes('garage wind') || n.includes('parking garage wind') || n.includes('hard-wind') || n.includes('hard wind') || n.includes('hard-wind')) return 'wind';
+  if (n.includes('wind in a pine') || n.includes('pine') || n.includes('forest-1') || n.includes('forest 1') || n.includes('forest')) return 'forest';
+  if (n.includes('wind')) return 'wind';
+  return 'wind';
+}
+
 export const seedPredefinedWorkouts = (realm: Realm) => {
   const existingWorkouts = realm.objects(Workout);
   if (existingWorkouts.length === 0) {
@@ -189,8 +201,8 @@ export const seedInitialRecipes = (realm: Realm) => {
 };
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe, SleepLog],
-  schemaVersion: 33,
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe, SleepLog, GuidedAudio],
+  schemaVersion: 35,
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;
@@ -202,6 +214,82 @@ function SeedRealmData() {
     seedInitialGoals(realm);
     seedPredefinedWorkouts(realm);
     seedInitialRecipes(realm);
+      const seedGuidedAudios = async () => {
+      const existing = realm.objects(GuidedAudio);
+      if (existing.length > 0) {
+        try {
+          realm.write(() => {
+            for (const obj of Array.from(existing) as any[]) {
+              if (!obj.category) {
+                obj.category = inferAudioCategory(obj.title ?? '');
+              }
+            }
+          });
+        } catch (e) {
+          console.warn('Failed to normalize GuidedAudio categories', e);
+        }
+        return;
+      }
+
+      const AUDIO_FILES = [
+        '450752__florianreichelt__sound-of-the-sea.m4a',
+        '474806__trevorg97__wind-effect-1.m4a',
+        '516039__filmscore__parking-garage-wind-1.m4a',
+        '516040__filmscore__parking-garage-wind-2.m4a',
+        '517866__angelkunev__black-sea-shore-1m-distance-from-water.m4a',
+        '532179__mcmikai__waves-on-the-lake-in-summer-time-in-wav.m4a',
+        '549334__kapilkant__soft-ocean-waves-sounds.m4a',
+        '651341__iliyabylich04__forest-1.m4a',
+        '655501__felixblume__wind-in-a-pine-tree-constant-with-some-birds-and-cricket-slight-gust-of-wind-at-the-evening-in-a-little-woods-in-the-forest-in-new-mexico.m4a',
+        '677563__santiagotorres1314__hard-wind.m4a',
+      ];
+
+      const MODULES = [
+        require('../../assets/audio/450752__florianreichelt__sound-of-the-sea.m4a'),
+        require('../../assets/audio/474806__trevorg97__wind-effect-1.m4a'),
+        require('../../assets/audio/516039__filmscore__parking-garage-wind-1.m4a'),
+        require('../../assets/audio/516040__filmscore__parking-garage-wind-2.m4a'),
+        require('../../assets/audio/517866__angelkunev__black-sea-shore-1m-distance-from-water.m4a'),
+        require('../../assets/audio/532179__mcmikai__waves-on-the-lake-in-summer-time-in-wav.m4a'),
+        require('../../assets/audio/549334__kapilkant__soft-ocean-waves-sounds.m4a'),
+        require('../../assets/audio/651341__iliyabylich04__forest-1.m4a'),
+        require('../../assets/audio/655501__felixblume__wind-in-a-pine-tree-constant-with-some-birds-and-cricket-slight-gust-of-wind-at-the-evening-in-a-little-woods-in-the-forest-in-new-mexico.m4a'),
+        require('../../assets/audio/677563__santiagotorres1314__hard-wind.m4a'),
+      ];
+
+      try {
+        const assets = [] as Asset[];
+        for (const mod of MODULES) {
+          const a = Asset.fromModule(mod as any);
+          await a.downloadAsync();
+          assets.push(a);
+        }
+
+        realm.write(() => {
+          for (let i = 0; i < assets.length; i++) {
+            const id = new Realm.BSON.ObjectId();
+            const fileName = AUDIO_FILES[i];
+            const title = (fileName.split('__').slice(1).join('__') || fileName).replace(/\.m4a$/i, '').replace(/[-_]/g, ' ');
+            realm.create('GuidedAudio', {
+              _id: id,
+              title,
+              description: '',
+                category: inferAudioCategory(fileName.replace(/\.m4a$/i, '').replace(/\d+__/,'').replace(/_/g,' ')),
+              remoteUrl: null,
+              localUri: assets[i].localUri ?? assets[i].uri,
+              duration: null,
+              status: 'downloaded',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+          }
+        });
+      } catch (e) {
+        console.warn('Failed to seed guided audios', e);
+      }
+    };
+
+    seedGuidedAudios();
   }, [realm]);
 
   return null;
@@ -225,7 +313,26 @@ export function EncryptedDatabaseProvider({ children, fallback }: { children: Re
   }
 
   return (
-    <RealmProvider encryptionKey={encryptionKey} fallback={fallback}>
+    <RealmProvider
+      encryptionKey={encryptionKey}
+      fallback={fallback}
+      schemaVersion={35}
+      onMigration={(oldRealm: Realm, newRealm: Realm) => {
+        if (oldRealm.schemaVersion < 35) {
+          try {
+            const newObjects = (newRealm.objects as any)('GuidedAudio') ?? [];
+            for (let i = 0; i < newObjects.length; i++) {
+              const newObj = newObjects[i];
+              if (newObj && (newObj.category === undefined || newObj.category === null)) {
+                newObj.category = inferAudioCategory(newObj.title ?? '');
+              }
+            }
+          } catch (e) {
+            console.warn('GuidedAudio migration failed', e);
+          }
+        }
+      }}
+    >
       <SeedRealmData />
       {children}
     </RealmProvider>

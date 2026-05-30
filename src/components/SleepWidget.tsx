@@ -26,7 +26,6 @@ export const SleepWidget = () => {
     let end = new Date(endTime);
     let start = new Date(startTime);
 
-    // If end is before start, assume it's the next day
     if (end < start) {
       end.setDate(end.getDate() + 1);
     }

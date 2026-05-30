@@ -1,3 +1,4 @@
+import AudioLibraryComponent from '@/components/AudioLibrary';
 import { Card } from '@/components/Card';
 import { InputWithValidation } from '@/components/InputWithValidation';
 import ShareProgressButton from '@/components/ShareProgressButton';
@@ -61,6 +62,7 @@ export default function SettingsScreen() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [goalTitle, setGoalTitle] = useState('');
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [audioLibraryVisible, setAudioLibraryVisible] = useState(false);
   const [pwdCurrent, setPwdCurrent] = useState('');
   const [pwdNew, setPwdNew] = useState('');
   const [pwdConfirm, setPwdConfirm] = useState('');
@@ -520,10 +522,30 @@ export default function SettingsScreen() {
                 <Ionicons name="log-out-outline" size={20} color={Colors.warning} />
               </View>
               <Text style={[styles.menuItemText, { color: Colors.warning }]}>Sair da conta</Text>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem} onPress={() => setAudioLibraryVisible(true)}>
+              <View style={styles.menuIconCircle}>
+                <Ionicons name="musical-notes-outline" size={20} color={Colors.primary} />
+              </View>
+              <Text style={styles.menuItemText}>Biblioteca de Meditações</Text>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={audioLibraryVisible}
+        onRequestClose={() => setAudioLibraryVisible(false)}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <AudioLibraryComponent onClose={() => setAudioLibraryVisible(false)} />
+        </SafeAreaView>
+      </Modal>
 
       <Modal
         animationType="slide"
