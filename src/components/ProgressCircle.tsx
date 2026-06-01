@@ -8,6 +8,8 @@ interface ProgressCircleProps {
   strokeWidth?: number;
   progress?: number;
   children?: React.ReactNode;
+  color?: string;
+  backgroundColor?: string;
 }
 
 export const ProgressCircle: React.FC<ProgressCircleProps> = ({
@@ -15,6 +17,8 @@ export const ProgressCircle: React.FC<ProgressCircleProps> = ({
   strokeWidth = 8,
   progress = 0.75,
   children,
+  color,
+  backgroundColor,
 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -27,7 +31,7 @@ export const ProgressCircle: React.FC<ProgressCircleProps> = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={Colors.timerBackground}
+          stroke={backgroundColor ?? Colors.timerBackground}
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -36,7 +40,7 @@ export const ProgressCircle: React.FC<ProgressCircleProps> = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={Colors.primary}
+          stroke={color ?? Colors.primary}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}

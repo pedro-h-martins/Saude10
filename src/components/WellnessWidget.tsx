@@ -1,10 +1,10 @@
 import { Card } from '@/components/Card';
 import { WellnessRating } from '@/components/WellnessRating';
-import { Colors } from '@/constants/Colors';
-import { Typography } from '@/constants/Typography';
+import { Typography, TypographyColors } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
+import { useTheme } from '@/hooks/useTheme';
 import { WellnessLog } from '@/models/WellnessLog';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Realm } from '@realm/react';
@@ -12,6 +12,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WellnessWidget = () => {
+  const { colors } = useTheme();
+  const textStyles = TypographyColors(colors);
   const { currentUser: user } = useAuth();
   const { save } = useSync();
   
@@ -81,12 +83,12 @@ export const WellnessWidget = () => {
   return (
     <Card style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.iconContainer}>
-          <MaterialCommunityIcons name="emoticon-outline" size={20} color={Colors.primary} />
+        <View style={[styles.iconContainer, { backgroundColor: colors.timerBackground }]}>
+          <MaterialCommunityIcons name="emoticon-outline" size={20} color={colors.primary} />
         </View>
         <View style={styles.titleSection}>
-          <Text style={styles.title}>Bem-estar</Text>
-          <Text style={styles.subtitle}>COMO VOCÊ SE SENTE HOJE?</Text>
+          <Text style={[styles.title, textStyles.h3, { color: colors.text }]}>Bem-estar</Text>
+          <Text style={[styles.subtitle, textStyles.caption, { color: colors.textSecondary }]}>COMO VOCÊ SE SENTE HOJE?</Text>
         </View>
       </View>
 
@@ -96,30 +98,30 @@ export const WellnessWidget = () => {
           onRatingChange={handleRatingChange} 
         />
         
-        <View style={styles.noteContainer}>
-          <Text style={styles.noteLabel}>O que você fez ou comeu hoje?</Text>
+        <View style={[styles.noteContainer, { borderTopColor: colors.border }]}>
+          <Text style={[styles.noteLabel, textStyles.body, { color: colors.text }]}>O que você fez ou comeu hoje?</Text>
           <TextInput
-            style={styles.noteInput}
+            style={[styles.noteInput, { backgroundColor: colors.inputBackground, color: colors.text }]}
             value={note}
             onChangeText={handleNoteChange}
             placeholder="Atividade, comida, etc..."
-            placeholderTextColor="#888"
+            placeholderTextColor={colors.textSecondary}
             multiline
           />
         </View>
 
         <TouchableOpacity 
-          style={[styles.submitButton, isSubmitted && styles.submittedButton]} 
+          style={[styles.submitButton, { backgroundColor: isSubmitted ? colors.qualityStar : colors.primary }]} 
           onPress={handleSubmit}
           disabled={isSubmitted && rating > 0}
         >
-          <Text style={styles.submitButtonText}>
+          <Text style={[styles.submitButtonText, { color: colors.white }]}>
             {isSubmitted ? 'ENVIADO ✓' : 'ENVIAR'}
           </Text>
         </TouchableOpacity>
 
         {isSubmitted && (
-          <Text style={styles.feedbackText}>
+          <Text style={[styles.feedbackText, textStyles.body, { color: colors.qualityStar }]}>
             Obrigado por registrar seu bem-estar!
           </Text>
         )}
@@ -131,16 +133,16 @@ export const WellnessWidget = () => {
 const styles = StyleSheet.create({
   container: { padding: 16 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  iconContainer: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.timerBackground, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  iconContainer: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   titleSection: { flex: 1 },
-  title: { ...Typography.h3, fontSize: 16, fontWeight: '700', color: Colors.text },
-  subtitle: { fontSize: 10, color: Colors.textSecondary, letterSpacing: 0.5 },
+  title: { ...Typography.h3, fontSize: 16, fontWeight: '700' },
+  subtitle: { fontSize: 10, letterSpacing: 0.5 },
   content: { alignItems: 'center' },
-  noteContainer: { width: '100%', marginTop: 16, borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 16 },
-  noteLabel: { ...Typography.body, fontSize: 14, color: Colors.text, marginBottom: 8 },
-  noteInput: { width: '100%', minHeight: 60, backgroundColor: '#F5F5F5', borderRadius: 8, padding: 12, ...Typography.body, fontSize: 14, color: Colors.text, textAlignVertical: 'top' },
-  submitButton: { backgroundColor: Colors.primary, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 25, marginTop: 16, width: '100%', alignItems: 'center' },
-  submittedButton: { backgroundColor: Colors.accent },
-  submitButtonText: { color: '#fff', fontWeight: '700', fontSize: 14, letterSpacing: 1 },
-  feedbackText: { ...Typography.body, marginTop: 8, fontSize: 12, color: Colors.accent, fontWeight: '500' }
+  noteContainer: { width: '100%', marginTop: 16, borderTopWidth: 1, paddingTop: 16 },
+  noteLabel: { ...Typography.body, fontSize: 14, marginBottom: 8 },
+  noteInput: { width: '100%', minHeight: 60, borderRadius: 8, padding: 12, ...Typography.body, fontSize: 14, textAlignVertical: 'top' },
+  submitButton: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 25, marginTop: 16, width: '100%', alignItems: 'center' },
+  submittedButton: {},
+  submitButtonText: { fontWeight: '700', fontSize: 14, letterSpacing: 1 },
+  feedbackText: { ...Typography.body, marginTop: 8, fontSize: 12, fontWeight: '500' }
 });

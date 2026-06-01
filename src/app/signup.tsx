@@ -1,6 +1,6 @@
 import { InputWithValidation } from '@/components/InputWithValidation';
-import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/hooks/useTheme';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
 import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
 import { useRouter } from 'expo-router';
@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function SignupScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
+  const { colors } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -128,7 +129,7 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }] }>
       <KeyboardAwareScrollView
         contentContainerStyle={styles.scrollContent}
         enableOnAndroid={true}
@@ -136,20 +137,20 @@ export default function SignupScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.inner}>
-          <Text style={styles.title}>Criar conta</Text>
+          <Text style={[styles.title, { color: colors.primary }]}>Criar conta</Text>
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text }]}
             placeholder="Nome"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={name}
             onChangeText={setName}
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text }]}
             placeholder="Email"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -203,29 +204,29 @@ export default function SignupScreen() {
           </View>
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text }]}
             placeholder="Senha"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text }]}
             placeholder="Confirmar senha"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={confirmPassword}
             onChangeText={setConfirmPassword}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Criar conta</Text>}
+          <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleSignUp} disabled={loading}>
+            {loading ? <ActivityIndicator color={colors.white} /> : <Text style={[styles.buttonText, { color: colors.white }]}>Criar conta</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.link} onPress={() => router.push('/login')}>
-            <Text style={styles.linkText}>Já tem uma conta? Entrar</Text>
+            <Text style={[styles.linkText, { color: colors.primary }]}>Já tem uma conta? Entrar</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAwareScrollView>
@@ -234,14 +235,14 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1 },
   scrollContent: { flexGrow: 1 },
   inner: { padding: 24, flex: 1, justifyContent: 'center' },
-  title: { fontSize: 32, fontWeight: '800', color: Colors.primary, marginBottom: 24 },
-  input: { backgroundColor: '#F5F7FA', padding: 14, borderRadius: 12, marginBottom: 12, color: Colors.text },
+  title: { fontSize: 32, fontWeight: '800', marginBottom: 24 },
+  input: { padding: 14, borderRadius: 12, marginBottom: 12 },
   row: { flexDirection: 'row', marginBottom: 0 },
-  button: { backgroundColor: Colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  buttonText: { color: '#fff', fontWeight: '700' },
+  button: { padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
+  buttonText: { fontWeight: '700' },
   link: { marginTop: 12, alignItems: 'center' },
-  linkText: { color: Colors.primary, fontWeight: '600' },
+  linkText: { fontWeight: '600' },
 });

@@ -1,17 +1,17 @@
-import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { useTheme } from '@/hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -38,6 +38,8 @@ export function FeedbackSurveyModal({ visible, onClose, onSubmit }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => rating > 0 && feedback.trim().length > 0, [rating, feedback]);
+
+  const { colors } = useTheme();
 
   const handleSubmit = async () => {
     if (!canSubmit || submitting) {
@@ -70,79 +72,81 @@ export function FeedbackSurveyModal({ visible, onClose, onSubmit }: Props) {
         <View style={styles.container}>
           <ScrollView contentContainerStyle={styles.content}>
             <View style={styles.header}>
-              <Text style={styles.title}>Compartilhe sua experiência</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Compartilhe sua experiência</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color={Colors.text} />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.subtitle}>Ajude-nos a encontrar bugs e melhorar o aplicativo.</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Ajude-nos a encontrar bugs e melhorar o aplicativo.</Text>
 
-            <Text style={styles.sectionTitle}>Como você avalia o app?</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Como você avalia o app?</Text>
             <View style={styles.ratingRow}>
               {[1, 2, 3, 4, 5].map((value) => (
                 <TouchableOpacity
                   key={value}
                   style={[
                     styles.ratingBadge,
-                    rating === value && styles.ratingBadgeSelected,
+                    { borderColor: colors.border, backgroundColor: colors.white },
+                    rating === value && { backgroundColor: colors.primary, borderColor: colors.primary },
                   ]}
                   onPress={() => setRating(value)}
                 >
                   <Text style={[
                     styles.ratingLabel,
-                    rating === value && styles.ratingLabelSelected,
-                  ]}
-                  >{value}</Text>
+                    { color: colors.text },
+                    rating === value && { color: colors.white },
+                  ]}>{value}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={styles.sectionTitle}>Tipo de feedback</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Tipo de feedback</Text>
             <View style={styles.buttonGroup}>
               {TYPES.map((option) => (
                 <TouchableOpacity
                   key={option.value}
                   style={[
-                    styles.typeButton,
-                    type === option.value && styles.typeButtonSelected,
-                  ]}
+                        styles.typeButton,
+                        { borderColor: colors.border, backgroundColor: colors.white },
+                        type === option.value && { backgroundColor: colors.primary, borderColor: colors.primary },
+                      ]}
                   onPress={() => setType(option.value)}
                 >
-                  <Text style={[
-                    styles.typeButtonText,
-                    type === option.value && styles.typeButtonTextSelected,
-                  ]}
-                  >{option.label}</Text>
+                      <Text style={[
+                        styles.typeButtonText,
+                        { color: colors.text },
+                        type === option.value && { color: colors.white },
+                      ]}>{option.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={styles.sectionTitle}>O que aconteceu?</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>O que aconteceu?</Text>
             <TextInput
               style={styles.input}
               placeholder="Descreva o bug ou a sugestão"
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               multiline
               value={feedback}
               onChangeText={setFeedback}
             />
 
-            <Text style={styles.sectionTitle}>Onde ocorreu?</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Onde ocorreu?</Text>
             <TextInput
               style={styles.input}
               placeholder="Tela ou ação opcional"
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={contextText}
               onChangeText={setContextText}
             />
 
             <TouchableOpacity
-              style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
+              style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled, { backgroundColor: colors.primary }]}
               onPress={handleSubmit}
               disabled={!canSubmit || submitting}
             >
-              <Text style={styles.submitButtonText}>{submitting ? 'Enviando...' : 'Enviar feedback'}</Text>
+              <Text style={[styles.submitButtonText, { color: colors.white }]}>{submitting ? 'Enviando...' : 'Enviar feedback'}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -159,7 +163,7 @@ const styles = StyleSheet.create({
   },
   container: {
     margin: 16,
-    backgroundColor: Colors.background,
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     overflow: 'hidden',
     maxHeight: '90%',
@@ -176,7 +180,7 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.h3,
     fontSize: 20,
-    color: Colors.text,
+    flex: 1,
     flex: 1,
   },
   closeButton: {
@@ -185,13 +189,13 @@ const styles = StyleSheet.create({
   subtitle: {
     ...Typography.body,
     marginBottom: 20,
-    color: Colors.textSecondary,
+    
   },
   sectionTitle: {
     ...Typography.body,
     fontWeight: '600',
     marginBottom: 8,
-    color: Colors.text,
+    
   },
   ratingRow: {
     flexDirection: 'row',
@@ -203,21 +207,21 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#EAEAEA',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: '#FFFFFF',
   },
   ratingBadgeSelected: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: '#0052D4',
+    borderColor: '#0052D4',
   },
   ratingLabel: {
     ...Typography.body,
-    color: Colors.text,
+    color: '#1C1C1C',
   },
   ratingLabelSelected: {
-    color: Colors.white,
+    color: '#FFFFFF',
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -229,20 +233,20 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
+    borderColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
   },
   typeButtonSelected: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: '#0052D4',
+    borderColor: '#0052D4',
   },
   typeButtonText: {
     ...Typography.body,
-    color: Colors.text,
+    color: '#1C1C1C',
   },
   typeButtonTextSelected: {
-    color: Colors.white,
+    color: '#FFFFFF',
   },
   input: {
     minHeight: 80,
@@ -250,23 +254,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
-    color: Colors.text,
+    borderColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
+    color: '#1C1C1C',
     textAlignVertical: 'top',
   },
   submitButton: {
     marginTop: 8,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#0052D4',
     alignItems: 'center',
   },
   submitButtonDisabled: {
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: '#B0B0B0',
   },
   submitButtonText: {
     ...Typography.body,
-    color: Colors.white,
+    color: '#FFFFFF',
   },
 });

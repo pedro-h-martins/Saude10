@@ -1,5 +1,5 @@
-import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/hooks/useTheme';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
+  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }] }>
       <KeyboardAwareScrollView
         contentContainerStyle={styles.scrollContent}
         enableOnAndroid={true}
@@ -56,12 +57,12 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.inner}>
-          <Text style={styles.title}>Entrar</Text>
+          <Text style={[styles.title, { color: colors.primary }]}>Entrar</Text>
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text }]}
             placeholder="Email"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -69,19 +70,19 @@ export default function LoginScreen() {
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text }]}
             placeholder="Senha"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={loading}>
+          <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleSignIn} disabled={loading}>
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.buttonText}>Entrar</Text>
+              <Text style={[styles.buttonText, { color: colors.white }]}>Entrar</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -91,11 +92,11 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1 },
   scrollContent: { flexGrow: 1 },
   inner: { padding: 24, flex: 1, justifyContent: 'center' },
-  title: { fontSize: 32, fontWeight: '800', color: Colors.primary, marginBottom: 24 },
-  input: { backgroundColor: '#F5F7FA', padding: 14, borderRadius: 12, marginBottom: 12, color: Colors.text },
-  button: { backgroundColor: Colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  buttonText: { color: '#fff', fontWeight: '700' },
+  title: { fontSize: 32, fontWeight: '800', marginBottom: 24 },
+  input: { padding: 14, borderRadius: 12, marginBottom: 12 },
+  button: { padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
+  buttonText: { fontWeight: '700' },
 });

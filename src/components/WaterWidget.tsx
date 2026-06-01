@@ -1,10 +1,11 @@
 import { Card } from '@/components/Card';
 import { ProgressCircle } from '@/components/ProgressCircle';
 import ShareProgressButton from '@/components/ShareProgressButton';
-import { Colors } from '@/constants/Colors';
+import { TypographyColors } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
+import { useTheme } from '@/hooks/useTheme';
 import { useWaterGoal } from '@/hooks/useWaterGoal';
 import { HydrationLog } from '@/models/HydrationLog';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,6 +14,8 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WaterWidget = () => {
+  const { colors } = useTheme();
+  const textStyles = TypographyColors(colors);
   const { currentUser } = useAuth();
   const user = currentUser;
   const { save } = useSync();
@@ -96,47 +99,47 @@ export const WaterWidget = () => {
       <TouchableOpacity activeOpacity={0.8} onPress={() => setModalVisible(true)}>
         <Card style={styles.container}>
           <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <MaterialCommunityIcons name="water" size={20} color="#2196F3" />
+            <View style={[styles.iconContainer]}>
+              <MaterialCommunityIcons name="water" size={20} color={colors.water} />
             </View>
             <View style={styles.titleSection}>
-              <Text style={styles.title}>Hidratação</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, textStyles.h3, { color: colors.text }]}>Hidratação</Text>
+              <Text style={[styles.subtitle, textStyles.caption, { color: colors.textSecondary }]}>
                 META DIÁRIA: {targetGoal}ml
                 {isAdjusted && (
-                  <Text style={styles.adjustmentBadge}> +15% (exercício intenso)</Text>
+                  <Text style={[styles.adjustmentBadge, { color: colors.qualityStar }]}> +15% (exercício intenso)</Text>
                 )}
               </Text>
             </View>
           </View>
 
-          <View style={styles.content}>
-            <ProgressCircle size={100} progress={progress} strokeWidth={8}>
+            <View style={styles.content}>
+            <ProgressCircle size={100} progress={progress} strokeWidth={8} color={colors.water} backgroundColor={colors.border}>
               <View style={styles.progressContent}>
-                <Text style={styles.currentValue}>{currentIntake}</Text>
-                <Text style={styles.unit}>ml</Text>
+                <Text style={[styles.currentValue, { color: colors.water }]}>{currentIntake}</Text>
+                <Text style={[styles.unit, textStyles.caption]}>ml</Text>
               </View>
             </ProgressCircle>
 
             <View style={styles.actionRow}>
               <TouchableOpacity
-                style={styles.addButton}
+                style={[styles.addButton, { backgroundColor: colors.water }]}
                 onPress={() => handleAddWater(250)}
                 onLongPress={() => handleRemoveWater(250)}
                 delayLongPress={500}
               >
-                <Ionicons name="add" size={24} color={Colors.white} />
-                <Text style={styles.addButtonText}>250ml</Text>
+                <Ionicons name="add" size={24} color={colors.white} />
+                <Text style={[styles.addButtonText, { color: colors.white }]}>250ml</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: '#E3F2FD' }]}
+                style={[styles.addButton, { backgroundColor: colors.water + '20' }]}
                 onPress={() => handleAddWater(500)}
                 onLongPress={() => handleRemoveWater(500)}
                 delayLongPress={500}
               >
-                <Ionicons name="add" size={24} color="#2196F3" />
-                <Text style={[styles.addButtonText, { color: '#2196F3' }]}>500ml</Text>
+                <Ionicons name="add" size={24} color={colors.water} />
+                <Text style={[styles.addButtonText, { color: colors.water }]}>500ml</Text>
               </TouchableOpacity>
             </View>
             <ShareProgressButton compact message={shareMessage} buttonStyle={styles.shareButton} />
@@ -150,26 +153,27 @@ export const WaterWidget = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Ajustar Meta de Água</Text>
-            <Text style={styles.modalSubtitle}>
+        <Pressable style={[styles.modalOverlay, { backgroundColor: colors.shadow + '80' }]} onPress={() => setModalVisible(false)}>
+          <Pressable style={[styles.modalContent, { backgroundColor: colors.white }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.modalTitle, textStyles.h2, { color: colors.text }]}>Ajustar Meta de Água</Text>
+            <Text style={[styles.modalSubtitle, textStyles.caption, { color: colors.textSecondary }]}>
               Recomendação baseada no seu peso: {defaultGoal}ml
             </Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>NOVA META (ml)</Text>
+              <Text style={[styles.inputLabel, textStyles.caption, { color: colors.textSecondary }]}>NOVA META (ml)</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.border }]}
                 placeholder={defaultGoal.toString()}
+                placeholderTextColor={colors.textSecondary}
                 keyboardType="numeric"
                 value={newGoal}
                 onChangeText={setNewGoal}
               />
             </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={handleUpdateGoal}>
-              <Text style={styles.saveButtonText}>SALVAR META</Text>
+            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleUpdateGoal}>
+              <Text style={[styles.saveButtonText, { color: colors.white }]}>SALVAR META</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -191,7 +195,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E3F2FD',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -202,11 +205,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#333',
   },
   subtitle: {
     fontSize: 12,
-    color: '#999',
     fontWeight: '600',
   },
   content: {
@@ -221,11 +222,9 @@ const styles = StyleSheet.create({
   currentValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#2196F3',
   },
   unit: {
     fontSize: 12,
-    color: '#999',
     fontWeight: '600',
   },
   actionRow: {
@@ -241,26 +240,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2196F3',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
   },
   addButtonText: {
-    color: Colors.white,
     fontWeight: '700',
     fontSize: 14,
     marginLeft: 4,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   modalContent: {
-    backgroundColor: Colors.white,
     borderRadius: 24,
     padding: 24,
     width: '100%',
@@ -269,18 +264,15 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#333',
     marginBottom: 8,
     textAlign: 'center',
   },
   adjustmentBadge: {
     fontSize: 10,
-    color: '#FF6B35',
     fontWeight: '700',
   },
   modalSubtitle: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -290,26 +282,21 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#999',
     marginBottom: 8,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#EAEAEA',
     borderRadius: 12,
     padding: 12,
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
   },
   saveButton: {
-    backgroundColor: '#2196F3',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   saveButtonText: {
-    color: Colors.white,
     fontWeight: '800',
     fontSize: 16,
   },

@@ -1,6 +1,7 @@
 import ShareProgressButton from '@/components/ShareProgressButton';
-import { Colors } from '@/constants/Colors';
+import { TypographyColors } from '@/constants/Typography';
 import { usePomodoro } from '@/hooks/usePomodoro';
+import { useTheme } from '@/hooks/useTheme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -8,6 +9,8 @@ import { Card } from './Card';
 import { ProgressCircle } from './ProgressCircle';
 
 export const PomodoroWidget: React.FC = () => {
+  const { colors } = useTheme();
+  const textStyles = TypographyColors(colors);
   const {
     timeLeft,
     mode,
@@ -18,7 +21,7 @@ export const PomodoroWidget: React.FC = () => {
     progress,
   } = usePomodoro();
 
-  const primaryColor = mode === 'focus' ? Colors.primary : Colors.accent;
+  const primaryColor = isRunning ? colors.timerRunning : colors.timerStopped;
 
   const shareMessage = isRunning
     ? mode === 'focus'
@@ -28,7 +31,7 @@ export const PomodoroWidget: React.FC = () => {
 
   return (
     <Card style={styles.halfCard}>
-      <Text style={styles.gridCardTitle}>
+      <Text style={[styles.gridCardTitle, textStyles.caption]}>
         {mode === 'focus' ? 'FOCO' : 'PAUSA'}
       </Text>
       
@@ -37,30 +40,32 @@ export const PomodoroWidget: React.FC = () => {
           size={70} 
           strokeWidth={6} 
           progress={progress}
+          color={primaryColor}
+          backgroundColor={colors.border}
         >
-          <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+          <Text style={[styles.timerText, { color: colors.text }]}>{formatTime(timeLeft)}</Text>
         </ProgressCircle>
 
         <View style={styles.controls}>
           <TouchableOpacity 
             onPress={toggleTimer} 
-            style={[styles.button, { backgroundColor: isRunning ? '#F1F5F9' : primaryColor + '15' }]}
+            style={[styles.button, { backgroundColor: isRunning ? colors.timerBackground : primaryColor + '15' }]}
           >
             <MaterialCommunityIcons 
               name={isRunning ? "pause" : "play"} 
               size={18} 
-              color={isRunning ? "#475569" : primaryColor} 
+              color={isRunning ? colors.textSecondary : primaryColor} 
             />
           </TouchableOpacity>
 
           <TouchableOpacity 
             onPress={resetTimer} 
-            style={[styles.button, styles.resetButton]}
+            style={[styles.button, styles.resetButton, { borderColor: colors.border }]}
           >
             <MaterialCommunityIcons 
               name="refresh" 
               size={16} 
-              color="#94A3B8" 
+              color={colors.textSecondary} 
             />
           </TouchableOpacity>
         </View>

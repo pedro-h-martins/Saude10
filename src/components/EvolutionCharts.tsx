@@ -1,5 +1,5 @@
-import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { useTheme } from '@/hooks/useTheme';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
@@ -18,6 +18,7 @@ const CHART_WIDTH = Math.min(600, width - 64 - CHART_PADDING * 2);
 const CHART_HEIGHT = 120;
 
 export default function EvolutionCharts({ title = 'Gráficos de Evolução', data }: Props) {
+  const { colors } = useTheme();
   if (!data || data.length === 0) {
     return (
       <Card style={styles.emptyCard}>
@@ -53,15 +54,15 @@ export default function EvolutionCharts({ title = 'Gráficos de Evolução', dat
               y1={CHART_HEIGHT - t * CHART_HEIGHT}
               x2={CHART_WIDTH}
               y2={CHART_HEIGHT - t * CHART_HEIGHT}
-              stroke={Colors.border}
+              stroke={colors.border}
               strokeWidth={0.5}
             />
           ))}
 
-          <Path d={dPath} fill="none" stroke={Colors.primary} strokeWidth={2} />
+          <Path d={dPath} fill="none" stroke={colors.primary} strokeWidth={2} />
 
           {points.map((p, i) => (
-            <Circle key={i} cx={p.x} cy={p.y} r={3.5} fill={Colors.primary} />
+            <Circle key={i} cx={p.x} cy={p.y} r={3.5} fill={colors.primary} />
           ))}
         </Svg>
       </View>

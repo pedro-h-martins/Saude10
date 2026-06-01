@@ -1,11 +1,12 @@
-import 'react-native-get-random-values';
 import FeedbackSurveyPrompt from '@/components/FeedbackSurveyPrompt';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { EncryptedDatabaseProvider } from "@/context/RealmProvider";
+import { ThemeProvider } from '@/context/ThemeContext';
 import { useSync } from '@/hooks/useSync';
 import { Stack, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import 'react-native-get-random-values';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 
@@ -55,9 +56,11 @@ export default function RootLayout() {
       }
     >
       <AuthProvider>
-        <SafeAreaProvider>
-          <RootLayoutContent />
-        </SafeAreaProvider>
+        <ThemeProvider>
+          <SafeAreaProvider>
+            <RootLayoutContent />
+          </SafeAreaProvider>
+        </ThemeProvider>
       </AuthProvider>
     </EncryptedDatabaseProvider>
   );

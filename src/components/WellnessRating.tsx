@@ -1,5 +1,5 @@
-import { Colors } from '@/constants/Colors';
-import { Typography } from '@/constants/Typography';
+import { Typography, TypographyColors } from '@/constants/Typography';
+import { useTheme } from '@/hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -23,6 +23,9 @@ export const WellnessRating: React.FC<WellnessRatingProps> = ({
   onRatingChange,
   disabled = false,
 }) => {
+  const { colors } = useTheme();
+  const textStyles = TypographyColors(colors);
+
   return (
     <View style={styles.container}>
       {RATINGS.map((item) => {
@@ -32,8 +35,8 @@ export const WellnessRating: React.FC<WellnessRatingProps> = ({
             key={item.value}
             style={[
               styles.ratingButton,
-              isSelected && styles.selectedButton,
-              { borderColor: isSelected ? Colors.primary : Colors.border },
+              isSelected && { backgroundColor: colors.timerBackground },
+              { borderColor: isSelected ? colors.primary : colors.border },
             ]}
             onPress={() => !disabled && onRatingChange(item.value)}
             disabled={disabled}
@@ -41,12 +44,13 @@ export const WellnessRating: React.FC<WellnessRatingProps> = ({
             <Ionicons
               name={item.icon as any}
               size={28}
-              color={isSelected ? Colors.primary : Colors.textSecondary}
+              color={isSelected ? colors.primary : colors.textSecondary}
             />
             <Text
               style={[
                 styles.label,
-                isSelected ? styles.selectedLabel : styles.unselectedLabel,
+                textStyles.caption,
+                { color: isSelected ? colors.primary : colors.textSecondary }
               ]}
             >
               {item.label}
@@ -73,19 +77,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     width: '18%',
   },
-  selectedButton: {
-    backgroundColor: Colors.timerBackground,
-  },
   label: {
     ...Typography.body,
     fontSize: 10,
     marginTop: 4,
   },
+  selectedButton: {},
   selectedLabel: {
-    color: Colors.primary,
     fontWeight: 'bold',
   },
-  unselectedLabel: {
-    color: Colors.textSecondary,
-  },
+  unselectedLabel: {},
 });

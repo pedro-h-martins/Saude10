@@ -2,10 +2,11 @@ import { Card } from '@/components/Card';
 import { InputWithValidation } from '@/components/InputWithValidation';
 import ShareProgressButton from '@/components/ShareProgressButton';
 import { Colors } from '@/constants/Colors';
-import { Typography } from '@/constants/Typography';
+import { Typography, TypographyColors } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
+import { useTheme } from '@/hooks/useTheme';
 import { Goal } from '@/models/Goal';
 import { changePassword } from '@/services/auth';
 import { EXPORT_CATEGORIES, exportHealthData, type ExportCategoryKey } from '@/services/exportData';
@@ -41,6 +42,9 @@ const calculateAge = (birthDate: Date) => {
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const { colors, theme, setTheme } = useTheme();
+  const textStyles = TypographyColors(colors);
+  
   const goals = useQuery(Goal);
   const { currentUser } = useAuth();
   const user = React.useMemo(() => currentUser, [currentUser]);
@@ -295,59 +299,90 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.white }]}>
         <TouchableOpacity onPress={isEditing ? handleCancel : undefined}>
-          <Ionicons name={isEditing ? "close" : "arrow-back"} size={24} color={Colors.text} />
+          <Ionicons name={isEditing ? "close" : "arrow-back"} size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Configurações</Text>
+        <Text style={[styles.headerTitle, textStyles.h3]}>Configurações</Text>
         <TouchableOpacity onPress={isEditing ? handleSave : () => setIsEditing(true)}>
-          <Ionicons name={isEditing ? "checkmark" : "pencil"} size={24} color={Colors.primary} />
+          <Ionicons name={isEditing ? "checkmark" : "pencil"} size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+        <Text style={[styles.sectionTitle, textStyles.h3]}>Tema do Aplicativo</Text>
+        <Card style={styles.themeSelectorCard}>
+          <TouchableOpacity 
+            style={[styles.themeOption, theme === 'light' && styles.themeOptionActive, { borderColor: theme === 'light' ? colors.primary : colors.border }]} 
+            onPress={() => setTheme('light')}
+          >
+            <View style={[styles.themeCircle, { backgroundColor: '#F8F9FB', borderWidth: 1, borderColor: '#EAEAEA' }]} />
+            <Text style={[styles.themeText, theme === 'light' && { color: colors.primary, fontWeight: '700' }]}>Claro</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.themeOption, theme === 'dark' && styles.themeOptionActive, { borderColor: theme === 'dark' ? colors.primary : colors.border }]} 
+            onPress={() => setTheme('dark')}
+          >
+            <View style={[styles.themeCircle, { backgroundColor: '#121212', borderWidth: 1, borderColor: '#333333' }]} />
+            <Text style={[styles.themeText, theme === 'dark' && { color: colors.primary, fontWeight: '700' }]}>Escuro</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.themeOption, theme === 'highlight' && styles.themeOptionActive, { borderColor: theme === 'highlight' ? colors.primary : colors.border }]} 
+            onPress={() => setTheme('highlight')}
+          >
+            <View style={[styles.themeCircle, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F1C40F' }]}>
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#F1C40F' }} />
+            </View>
+            <Text style={[styles.themeText, theme === 'highlight' && { color: colors.primary, fontWeight: '700' }]}>Destaque</Text>
+          </TouchableOpacity>
+        </Card>
 
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <TouchableOpacity onPress={isEditing ? handlePickAvatar : undefined} activeOpacity={0.8}>
               <Image
                 source={{ uri: user.avatarUri ?? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' }}
-                style={styles.avatar}
+                style={[styles.avatar, { borderColor: colors.white }]}
               />
             </TouchableOpacity>
             {isEditing && (
               <View style={styles.editAvatarControls}>
-                <TouchableOpacity style={styles.editAvatarButton} onPress={handlePickAvatar}>
-                  <Ionicons name="camera" size={16} color={Colors.white} />
+                <TouchableOpacity style={[styles.editAvatarButton, { backgroundColor: colors.primary, borderColor: colors.white }]} onPress={handlePickAvatar}>
+                  <Ionicons name="camera" size={16} color={colors.white} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.removeAvatarButton} onPress={handleRemoveAvatar}>
-                  <Ionicons name="trash" size={16} color={Colors.white} />
+                <TouchableOpacity style={[styles.removeAvatarButton, { backgroundColor: colors.warning, borderColor: colors.white }]} onPress={handleRemoveAvatar}>
+                  <Ionicons name="trash" size={16} color={colors.white} />
                 </TouchableOpacity>
               </View>
             )}
           </View>
-          <Text style={styles.sectionLabel}>PERFIL PESSOAL</Text>
+          <Text style={[styles.sectionLabel, textStyles.caption]}>PERFIL PESSOAL</Text>
           {isEditing ? (
             <View style={styles.editSection}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.white, borderColor: colors.border, color: colors.text }]}
                 value={formData.name}
                 onChangeText={(text) => setFormData({ ...formData, name: text })}
                 placeholder="Nome"
+                placeholderTextColor={colors.textSecondary}
               />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.white, borderColor: colors.border, color: colors.text }]}
                 value={formData.email}
                 onChangeText={(text) => setFormData({ ...formData, email: text })}
                 placeholder="Email"
                 keyboardType="email-address"
+                placeholderTextColor={colors.textSecondary}
               />
-              <TouchableOpacity style={styles.passwordChangeButton} onPress={() => setPasswordModalVisible(true)}>
+              <TouchableOpacity style={[styles.passwordChangeButton, { backgroundColor: colors.primary }]} onPress={() => setPasswordModalVisible(true)}>
                 <View style={styles.iconCircleSmall}>
-                  <Ionicons name="lock-closed" size={16} color={Colors.white} />
+                  <Ionicons name="lock-closed" size={16} color={colors.white} />
                 </View>
-                <Text style={styles.passwordChangeText}>Alterar senha</Text>
+                <Text style={[styles.passwordChangeText, { color: colors.white }]}>Alterar senha</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -1085,5 +1120,35 @@ const styles = StyleSheet.create({
     color: Colors.warning,
     fontWeight: '600',
   },
+  themeSelectorCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 15,
+    marginBottom: 25,
+  },
+  themeOption: {
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    width: '30%',
+  },
+  themeOptionActive: {
+    backgroundColor: 'rgba(0, 82, 212, 0.05)',
+  },
+  themeCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginBottom: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  themeText: {
+    ...Typography.caption,
+    fontSize: 10,
+  },
 });
+
 

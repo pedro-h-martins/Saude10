@@ -5,11 +5,12 @@ import ShareProgressButton from '@/components/ShareProgressButton';
 import { SleepWidget } from '@/components/SleepWidget';
 import { WaterWidget } from '@/components/WaterWidget';
 import { WellnessWidget } from '@/components/WellnessWidget';
-import { Colors } from '@/constants/Colors';
+import { TypographyColors } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@/context/RealmProvider';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { useSync } from '@/hooks/useSync';
+import { useTheme } from '@/hooks/useTheme';
 import { BloodPressure } from '@/models/BloodPressure';
 import { calculateBMI } from '@/utils/health';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -21,55 +22,55 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const DashboardHeader = ({ avatarUri, onAvatarPress }: { avatarUri?: string | null; onAvatarPress?: () => void }) => (
+const DashboardHeader = ({ avatarUri, onAvatarPress, colors }: { avatarUri?: string | null; onAvatarPress?: () => void; colors: any }) => (
   <View style={styles.header}>
     <View style={styles.userSection}>
       <TouchableOpacity onPress={onAvatarPress} activeOpacity={0.8}>
         {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatarPlaceholderImage} />
+          <Image source={{ uri: avatarUri }} style={[styles.avatarPlaceholderImage, { borderColor: colors.white }]} />
         ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={20} color={Colors.white} />
+          <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary, borderColor: colors.white, shadowColor: colors.primary }]}>
+            <Ionicons name="person" size={20} color={colors.white} />
           </View>
         )}
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>SaudeIO</Text>
+      <Text style={[styles.headerTitle, { color: colors.cardTitle }]}>SaudeIO</Text>
     </View>
-    <TouchableOpacity style={styles.notificationBtn}>
-      <View style={styles.notificationDot} />
-      <Ionicons name="notifications-outline" size={24} color={Colors.primary} />
+    <TouchableOpacity style={[styles.notificationBtn, { backgroundColor: colors.white, shadowColor: colors.shadow }]}> 
+      <View style={[styles.notificationDot, { backgroundColor: colors.error }]} />
+      <Ionicons name="notifications-outline" size={24} color={colors.primary} />
     </TouchableOpacity>
   </View>
 );
 
-const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFormatted: string }) => (
+const ActivityCard = ({ steps, distanceFormatted, colors }: { steps: number; distanceFormatted: string; colors: any }) => (
   <LinearGradient
-    colors={[Colors.primary, Colors.primaryLight]}
+    colors={[colors.primary, colors.primaryLight]}
     start={{ x: 0, y: 0 }}
     end={{ x: 1, y: 1 }}
     style={styles.activityCard}
   >
     <View style={styles.activityHeader}>
-      <Text style={styles.activityLabel}>ATIVIDADE HOJE</Text>
+      <Text style={[styles.activityLabel, { color: colors.white }]}>ATIVIDADE HOJE</Text>
       <View style={styles.lightningIcon}>
-        <Ionicons name="flash" size={16} color={Colors.white} />
+        <Ionicons name="flash" size={16} color={colors.white} />
       </View>
     </View>
     
-    <Text style={styles.stepsCount}>{steps.toLocaleString()}</Text>
-    <Text style={styles.stepsLabel}>Passos concluidos hoje</Text>
+    <Text style={[styles.stepsCount, { color: colors.white }]}>{steps.toLocaleString()}</Text>
+    <Text style={[styles.stepsLabel, { color: colors.white }]}>Passos concluidos hoje</Text>
 
     <View style={styles.activityStats}>
       <View style={styles.statItem}>
-        <Text style={styles.statLabel}>DISTÂNCIA PERCORRIDA</Text>
-        <Text style={styles.statValue}>{distanceFormatted}</Text>
+        <Text style={[styles.statLabel, { color: colors.white }]}>DISTÂNCIA PERCORRIDA</Text>
+        <Text style={[styles.statValue, { color: colors.white }]}>{distanceFormatted}</Text>
       </View>
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.white + '30' }]} />
       <View style={styles.statItem}>
-        <Text style={styles.statLabel}>STATUS</Text>
+        <Text style={[styles.statLabel, { color: colors.white }]}>STATUS</Text>
         <View style={styles.statusRow}>
-            <View style={styles.greenDot} />
-            <Text style={styles.statValue}>ATIVO</Text>
+            <View style={[styles.greenDot, { backgroundColor: colors.accent }]} />
+            <Text style={[styles.statValue, { color: colors.white }]}>ATIVO</Text>
         </View>
       </View>
     </View>
@@ -77,6 +78,8 @@ const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFor
 );
 
 export function Home() {
+  const { colors } = useTheme();
+  const textStyles = TypographyColors(colors);
   const { currentUser } = useAuth();
   const user = currentUser;
   const { steps, formattedDistance } = useActivityTracking();
@@ -156,14 +159,14 @@ export function Home() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={{ paddingTop: insets.top }}>
-          <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
+          <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} colors={colors} />
         </View>
         
         <View style={styles.activityContainer}>
-          <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
+          <ActivityCard steps={steps} distanceFormatted={formattedDistance} colors={colors} />
           <ShareProgressButton
             message={`Bati minha meta de passos hoje! Dei ${steps.toLocaleString()} passos. #Saude10`}
           />
@@ -181,38 +184,38 @@ export function Home() {
         >
           <Card style={styles.bpCard}>
               <View style={styles.bpHeader}>
-                  <View style={styles.bpIconContainer}>
-                      <MaterialIcons name="grid-on" size={20} color="#8E6E53" />
+                  <View style={[styles.bpIconContainer, { backgroundColor: colors.bloodPressure + '20' }]}>
+                      <MaterialIcons name="grid-on" size={20} color={colors.bloodPressure} />
                   </View>
                   <View style={styles.bpTitleSection}>
-                      <Text style={styles.cardTitle}>Pressão arterial</Text>
-                      <Text style={styles.cardSubtitle}>
+                      <Text style={[styles.cardTitle, textStyles.h3]}>Pressão arterial</Text>
+                      <Text style={[styles.cardSubtitle, textStyles.caption]}>
                         {lastBP ? `ÚLTIMA VEZ: ${formatDate(lastBP.timestamp)}` : 'NENHUM REGISTRO'}
                       </Text>
                   </View>
               </View>
               <View style={styles.bpValueRow}>
-                  <Text style={styles.bpValueLarge}>{lastBP ? lastBP.systolic : '--'}</Text>
-                  <Text style={styles.bpDivider}>/</Text>
-                  <Text style={styles.bpValueSmall}>{lastBP ? lastBP.diastolic : '--'}</Text>
-                  <Text style={styles.bpUnit}>MMHG</Text>
+                  <Text style={[styles.bpValueLarge, { color: colors.primary }]}>{lastBP ? lastBP.systolic : '--'}</Text>
+                  <Text style={[styles.bpDivider, { color: colors.border }]}>/</Text>
+                  <Text style={[styles.bpValueSmall, { color: colors.primary }]}>{lastBP ? lastBP.diastolic : '--'}</Text>
+                  <Text style={[styles.bpUnit, textStyles.caption]}>MMHG</Text>
               </View>
               
-              <View style={styles.chartWrapper}>
+              <View style={[styles.chartWrapper, { borderTopColor: colors.border }]}>
                   <View style={styles.barChartPlaceholder}>
                       {chartData.map((data, i) => (
                           <View key={i} style={styles.chartCol}>
                               <View style={[styles.bar, { 
                                   height: Math.min(60, data.systolic / 3), 
-                                  backgroundColor: i === chartData.length - 1 ? Colors.primary : '#EAEAEA',
+                                  backgroundColor: i === chartData.length - 1 ? colors.primary : colors.chartSecondary,
                                   width: 12,
                                   borderRadius: 6
                               }]} />
-                              <Text style={styles.chartLabel}>{data.label}</Text>
+                              <Text style={[styles.chartLabel, textStyles.caption]}>{data.label}</Text>
                           </View>
                       ))}
                       {chartData.length === 0 && (
-                        <Text style={styles.noDataText}>Toque para adicionar sua primeira medição</Text>
+                        <Text style={[styles.noDataText, textStyles.caption]}>Toque para adicionar sua primeira medição</Text>
                       )}
                   </View>
               </View>
@@ -226,24 +229,25 @@ export function Home() {
           onRequestClose={() => setModalVisible(false)}
         >
           <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
-            <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-              <Text style={styles.modalTitle}>Nova Medição</Text>
+              <Pressable style={[styles.modalContent, { backgroundColor: colors.white, shadowColor: colors.shadow }]} onPress={(e) => e.stopPropagation()}>
+              <Text style={[styles.modalTitle, textStyles.h2]}>Nova Medição</Text>
               
               <View style={styles.inputRow}>
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>SISTÓLICA</Text>
+                  <Text style={[styles.inputLabel, textStyles.caption]}>SISTÓLICA</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, { backgroundColor: colors.inputBackground, color: colors.text }]}
                     placeholder="120"
+                    placeholderTextColor={colors.textSecondary}
                     keyboardType="numeric"
                     value={systolic}
                     onChangeText={setSystolic}
                   />
                 </View>
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>DIASTÓLICA</Text>
+                  <Text style={[styles.inputLabel, textStyles.caption]}>DIASTÓLICA</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, { backgroundColor: colors.inputBackground, color: colors.text }]}
                     placeholder="80"
                     keyboardType="numeric"
                     value={diastolic}
@@ -254,21 +258,21 @@ export function Home() {
 
               <View style={styles.dateTimeRow}>
                 <TouchableOpacity 
-                  style={styles.dateTimeButton} 
+                  style={[styles.dateTimeButton, { backgroundColor: colors.timerBackground }]} 
                   onPress={() => setShowDatePicker(true)}
                 >
-                  <Ionicons name="calendar-outline" size={18} color={Colors.primary} />
-                  <Text style={styles.dateTimeText}>
+                  <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+                  <Text style={[styles.dateTimeText, { color: colors.text }]}>
                     {date.toLocaleDateString('pt-BR')}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={styles.dateTimeButton} 
+                  style={[styles.dateTimeButton, { backgroundColor: colors.timerBackground }]} 
                   onPress={() => setShowTimePicker(true)}
                 >
-                  <Ionicons name="time-outline" size={18} color={Colors.primary} />
-                  <Text style={styles.dateTimeText}>
+                  <Ionicons name="time-outline" size={18} color={colors.primary} />
+                  <Text style={[styles.dateTimeText, { color: colors.text }]}>
                     {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </TouchableOpacity>
@@ -293,16 +297,16 @@ export function Home() {
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity 
-                  style={[styles.modalBtn, styles.cancelBtn]} 
+                  style={[styles.modalBtn, styles.cancelBtn, { borderColor: colors.border }]} 
                   onPress={() => setModalVisible(false)}
                 >
-                  <Text style={styles.cancelBtnText}>CANCELAR</Text>
+                  <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>CANCELAR</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.modalBtn, styles.saveBtn]} 
+                  style={[styles.modalBtn, styles.saveBtn, { backgroundColor: colors.primary }]} 
                   onPress={handleSaveBP}
                 >
-                  <Text style={styles.saveBtnText}>SALVAR</Text>
+                  <Text style={[styles.saveBtnText, { color: colors.white }]}>SALVAR</Text>
                 </TouchableOpacity>
               </View>
             </Pressable>
@@ -316,20 +320,20 @@ export function Home() {
         <View style={styles.gridRow}>
             <PomodoroWidget />
             <Card style={styles.halfCard}>
-                <Text style={styles.gridCardTitle}>IMC</Text>
+                <Text style={[styles.gridCardTitle, { color: colors.cardTitle }]}>IMC</Text>
                 {bmiData ? (
                   <View style={styles.imcContent}>
-                    <Text style={[styles.imcValue, { color: bmiData.color }]}>
+                    <Text style={[styles.imcValue, { color: colors[bmiData.colorKey] }]}>
                       {bmiData.value.toFixed(1)}
                     </Text>
-                    <View style={[styles.imcBadge, { backgroundColor: bmiData.color + '20' }]}>
-                      <Text style={[styles.imcBadgeText, { color: bmiData.color }]}>
+                    <View style={[styles.imcBadge, { backgroundColor: colors[bmiData.colorKey] + '20' }]}>
+                      <Text style={[styles.imcBadgeText, { color: colors[bmiData.colorKey] }]}>
                         {bmiData.isIdeal ? 'IDEAL' : bmiData.category.toUpperCase()}
                       </Text>
                     </View>
                   </View>
                 ) : (
-                  <Text style={styles.timerText}>N/A</Text>
+                  <Text style={[styles.timerText, { color: colors.textSecondary }]}>N/A</Text>
                 )}
             </Card>
         </View>
@@ -341,7 +345,6 @@ export function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -363,12 +366,9 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -379,22 +379,19 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#002244',
     letterSpacing: -0.5,
   },
   notificationBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 5,
@@ -407,15 +404,13 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF4D4D',
+    
     borderWidth: 1.5,
-    borderColor: Colors.white,
     zIndex: 1,
   },
   activityCard: {
     borderRadius: 24,
     padding: 24,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 15,
@@ -431,7 +426,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   activityLabel: {
-    color: 'rgba(255,255,255,0.7)',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
@@ -445,12 +439,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepsCount: {
-    color: Colors.white,
     fontSize: 42,
     fontWeight: '800',
   },
   stepsLabel: {
-    color: Colors.white,
     fontSize: 15,
     opacity: 0.9,
     marginBottom: 25,
@@ -472,14 +464,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   statValue: {
-    color: Colors.white,
     fontSize: 16,
     fontWeight: '700',
   },
   divider: {
     width: 1,
     height: 25,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     marginHorizontal: 15,
   },
   statusRow: {
@@ -491,7 +481,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#4FF088',
+    
   },
   bpCard: {
     padding: 24,
@@ -506,7 +496,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#F8F4F0',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -516,11 +505,9 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#002244',
   },
   cardSubtitle: {
     fontSize: 10,
-    color: '#94A3B8',
     fontWeight: '700',
     marginTop: 2,
   },
@@ -532,29 +519,24 @@ const styles = StyleSheet.create({
   bpValueLarge: {
     fontSize: 48,
     fontWeight: '800',
-    color: '#002244',
   },
   bpDivider: {
     fontSize: 28,
-    color: '#E2E8F0',
     marginHorizontal: 8,
     fontWeight: '300',
   },
   bpValueSmall: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#64748B',
   },
   bpUnit: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#94A3B8',
     marginLeft: 10,
   },
   chartWrapper: {
     marginTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
     paddingTop: 15,
   },
   barChartPlaceholder: {
@@ -570,35 +552,31 @@ const styles = StyleSheet.create({
   },
   chartLabel: {
     fontSize: 8,
-    color: '#94A3B8',
     fontWeight: '700',
     textAlign: 'center',
     width: 35,
   },
   noDataText: {
     fontSize: 12,
-    color: '#94A3B8',
     fontStyle: 'italic',
     width: '100%',
     textAlign: 'center',
     paddingBottom: 20,
   },
   bar: {
-    backgroundColor: '#EAEAEA',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 34, 68, 0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
     width: '100%',
-    backgroundColor: Colors.white,
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#002244',
+    
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -607,7 +585,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#002244',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -622,20 +599,16 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#94A3B8',
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   textInput: {
-    backgroundColor: '#F8FAFC',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 18,
     fontWeight: '700',
-    color: '#002244',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -648,16 +621,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F0F9FF',
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#BAE6FD',
   },
   dateTimeText: {
     fontSize: 14,
     fontWeight: '700',
-    color: Colors.primary,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -670,20 +640,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelBtn: {
-    backgroundColor: '#F1F5F9',
   },
   saveBtn: {
-    backgroundColor: Colors.primary,
   },
   cancelBtnText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#64748B',
   },
   saveBtnText: {
     fontSize: 13,
     fontWeight: '800',
-    color: Colors.white,
   },
   gridRow: {
     flexDirection: 'row',
@@ -697,14 +663,12 @@ const styles = StyleSheet.create({
   gridCardTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#94A3B8',
     marginBottom: 15,
     letterSpacing: 0.5,
   },
   timerText: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#002244',
   },
   imcContent: {
     alignItems: 'center',

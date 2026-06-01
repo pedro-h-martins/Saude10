@@ -1,11 +1,11 @@
 import { Card } from '@/components/Card';
-import GoalProgressBar from '@/components/GoalProgressBar';
+import { GoalProgressBar } from '@/components/GoalProgressBar';
 import { StretchSection } from '@/components/StretchSection';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
-import useGoals from '@/hooks/useGoals';
+import { useGoals } from '@/hooks/useGoals';
 import { useReminders } from '@/hooks/useReminders';
 import { useSync } from '@/hooks/useSync';
 import { getNextOccurrenceLabel, getWorkoutRecurrenceLabel, getWorkoutStatusText, isWorkoutCompleted, useWorkouts } from '@/hooks/useWorkouts';
@@ -55,7 +55,6 @@ export default function GoalsRemindersScreen() {
   const [newGoalPeriodType, setNewGoalPeriodType] = useState<'daily'|'weekly'|'custom'>('daily');
   const [newGoalCreateReminder, setNewGoalCreateReminder] = useState<boolean>(false);
   const [newGoalReminderTime, setNewGoalReminderTime] = useState<Date>(new Date());
-  const [newGoalReminderType, setNewGoalReminderType] = useState<Reminder['type']>('custom');
   
   const [newReminderTitle, setNewReminderTitle] = useState('');
   const [reminderTime, setReminderTime] = useState(new Date());

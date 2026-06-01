@@ -1,13 +1,15 @@
 import { Card } from '@/components/Card';
-import { Colors } from '@/constants/Colors';
-import { Typography } from '@/constants/Typography';
+import { Typography, TypographyColors } from '@/constants/Typography';
 import { useSleepTracking } from '@/hooks/useSleepTracking';
+import { useTheme } from '@/hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export const SleepWidget = () => {
+  const { colors } = useTheme();
+  const textStyles = TypographyColors(colors);
   const { sleepLogs, saveSleepLog, calculateDurationHours, formatDuration } = useSleepTracking();
   
   const lastLog = useMemo(() => {
@@ -32,7 +34,7 @@ export const SleepWidget = () => {
     }
     
     return calculateDurationHours(start, end);
-  }, [startTime, endTime]);
+  }, [startTime, endTime, calculateDurationHours]);
 
   const handleSave = () => {
     let finalEnd = new Date(endTime);
@@ -54,23 +56,23 @@ export const SleepWidget = () => {
       <TouchableOpacity activeOpacity={0.8} onPress={() => setModalVisible(true)}>
         <Card style={styles.container}>
           <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="moon" size={20} color="#6366F1" />
-            </View>
-            <View style={styles.titleSection}>
-              <Text style={styles.title}>Sono</Text>
-              <Text style={styles.subtitle}>COMO VOCÊ DORMIU?</Text>
-            </View>
+            <View style={[styles.iconContainer, { backgroundColor: colors.moon + '20' }]}>
+                <Ionicons name="moon" size={20} color={colors.moon} />
+              </View>
+              <View style={styles.titleSection}>
+                <Text style={[styles.title, textStyles.h3, { color: colors.text }]}>Sono</Text>
+                <Text style={[styles.subtitle, textStyles.caption, { color: colors.textSecondary }]}>COMO VOCÊ DORMIU?</Text>
+              </View>
           </View>
 
-          <View style={styles.content}>
+            <View style={styles.content}>
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>
+              <Text style={[styles.statValue, { color: colors.primary }]}>
                 {lastLog ? formatDuration(calculateDurationHours(lastLog.startTime, lastLog.endTime)) : '--'}
               </Text>
-              <Text style={styles.statLabel}>ÚLTIMA NOITE</Text>
+              <Text style={[styles.statLabel, textStyles.caption]}>ÚLTIMA NOITE</Text>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
             <View style={styles.statBox}>
               <View style={styles.qualityContainer}>
                 {[1, 2, 3, 4, 5].map((s) => (
@@ -78,11 +80,11 @@ export const SleepWidget = () => {
                     key={s} 
                     name={lastLog && lastLog.quality >= s ? "star" : "star-outline"} 
                     size={16} 
-                    color={lastLog && lastLog.quality >= s ? "#F1C40F" : Colors.border} 
+                    color={lastLog && lastLog.quality >= s ? colors.qualityStar : colors.border} 
                   />
                 ))}
               </View>
-              <Text style={styles.statLabel}>QUALIDADE</Text>
+              <Text style={[styles.statLabel, textStyles.caption]}>QUALIDADE</Text>
             </View>
           </View>
         </Card>
@@ -95,32 +97,32 @@ export const SleepWidget = () => {
         onRequestClose={() => setModalVisible(false)}
       >
         <Pressable 
-          style={styles.modalOverlay} 
+          style={[styles.modalOverlay, { backgroundColor: colors.shadow + '80' }]} 
           onPress={() => setModalVisible(false)}
         >
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Registrar Sono</Text>
+          <Pressable style={[styles.modalContent, { backgroundColor: colors.white }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.modalTitle, textStyles.h2]}>Registrar Sono</Text>
             
             <View style={styles.timeRow}>
               <View style={styles.timeInputBox}>
-                <Text style={styles.inputLabel}>FUI DORMIR</Text>
+                <Text style={[styles.inputLabel, textStyles.caption]}>FUI DORMIR</Text>
                 <TouchableOpacity 
-                  style={styles.timeButton} 
+                  style={[styles.timeButton, { backgroundColor: colors.timerBackground }]} 
                   onPress={() => setShowStartPicker(true)}
                 >
-                  <Text style={styles.timeText}>
+                  <Text style={[styles.timeText, { color: colors.text }]}>
                     {startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <View style={styles.timeInputBox}>
-                <Text style={styles.inputLabel}>ACORDEI EM</Text>
+                <Text style={[styles.inputLabel, textStyles.caption]}>ACORDEI EM</Text>
                 <TouchableOpacity 
-                  style={styles.timeButton} 
+                  style={[styles.timeButton, { backgroundColor: colors.timerBackground }]} 
                   onPress={() => setShowEndPicker(true)}
                 >
-                  <Text style={styles.timeText}>
+                  <Text style={[styles.timeText, { color: colors.text }]}>
                     {endTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </TouchableOpacity>
@@ -153,11 +155,11 @@ export const SleepWidget = () => {
               />
             )}
 
-            <View style={styles.durationPreview}>
-              <Text style={styles.durationText}>Duração total: {formatDuration(durationHours)}</Text>
+            <View style={[styles.durationPreview, { backgroundColor: colors.moon + '10' }]}>
+              <Text style={[styles.durationText, { color: colors.moon, fontWeight: '600' }]}>Duração total: {formatDuration(durationHours)}</Text>
             </View>
 
-            <Text style={styles.inputLabel}>QUALIDADE PERCEBIDA</Text>
+            <Text style={[styles.inputLabel, textStyles.caption]}>QUALIDADE PERCEBIDA</Text>
             <View style={styles.qualitySelector}>
               {[1, 2, 3, 4, 5].map((s) => (
                 <TouchableOpacity 
@@ -168,7 +170,7 @@ export const SleepWidget = () => {
                   <Ionicons 
                     name={quality >= s ? "star" : "star-outline"} 
                     size={32} 
-                    color={quality >= s ? "#F1C40F" : Colors.border} 
+                    color={quality >= s ? colors.qualityStar : colors.border} 
                   />
                 </TouchableOpacity>
               ))}
@@ -176,16 +178,16 @@ export const SleepWidget = () => {
 
             <View style={styles.modalButtons}>
               <TouchableOpacity 
-                style={[styles.modalBtn, styles.cancelBtn]} 
+                style={[styles.modalBtn, styles.cancelBtn, { borderColor: colors.border, backgroundColor: colors.timerBackground }]} 
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.cancelBtnText}>CANCELAR</Text>
+                <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>CANCELAR</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.modalBtn, styles.saveBtn]} 
+                style={[styles.modalBtn, styles.saveBtn, { backgroundColor: colors.primary }]} 
                 onPress={handleSave}
               >
-                <Text style={styles.saveBtnText}>SALVAR</Text>
+                <Text style={[styles.saveBtnText, { color: colors.white }]}>SALVAR</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -208,7 +210,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#6366F120',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -218,12 +219,10 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.h3,
-    color: Colors.text,
     fontSize: 16,
   },
   subtitle: {
     ...Typography.caption,
-    color: Colors.textSecondary,
     fontSize: 10,
   },
   content: {
@@ -237,19 +236,16 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...Typography.h2,
-    color: Colors.primary,
     fontSize: 20,
     marginBottom: 4,
   },
   statLabel: {
     ...Typography.caption,
-    color: Colors.textSecondary,
     fontSize: 10,
   },
   divider: {
     width: 1,
     height: 30,
-    backgroundColor: Colors.border,
   },
   qualityContainer: {
     flexDirection: 'row',
@@ -257,12 +253,10 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: 20,
     elevation: 5,
@@ -282,11 +276,9 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     ...Typography.caption,
-    color: Colors.textSecondary,
     marginBottom: 8,
   },
   timeButton: {
-    backgroundColor: '#F1F5F9',
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
@@ -296,7 +288,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   durationPreview: {
-    backgroundColor: '#6366F110',
     padding: 12,
     borderRadius: 12,
     marginBottom: 20,
@@ -304,7 +295,6 @@ const styles = StyleSheet.create({
   },
   durationText: {
     ...Typography.body,
-    color: '#6366F1',
     fontWeight: '700',
   },
   qualitySelector: {
@@ -325,20 +315,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  cancelBtn: {
-    backgroundColor: '#F1F5F9',
-  },
-  saveBtn: {
-    backgroundColor: Colors.primary,
-  },
+  cancelBtn: {},
+  saveBtn: {},
   cancelBtnText: {
     ...Typography.body,
-    color: Colors.textSecondary,
     fontWeight: '600',
   },
   saveBtnText: {
     ...Typography.body,
-    color: Colors.white,
     fontWeight: '600',
   },
 });
