@@ -22,7 +22,7 @@ export function useSleepTracking() {
     if (!user) return;
 
     const id = data._id || new Realm.BSON.ObjectId();
-    
+
     save('SleepLog', id.toHexString(), {
       _id: id,
       userId: user._id,

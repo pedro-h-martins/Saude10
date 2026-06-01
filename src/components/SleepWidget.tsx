@@ -11,7 +11,7 @@ export const SleepWidget = () => {
   const { colors } = useTheme();
   const textStyles = TypographyColors(colors);
   const { sleepLogs, saveSleepLog, calculateDurationHours, formatDuration } = useSleepTracking();
-  
+
   const lastLog = useMemo(() => {
     return sleepLogs.length > 0 ? sleepLogs[0] : null;
   }, [sleepLogs]);
@@ -20,19 +20,18 @@ export const SleepWidget = () => {
   const [startTime, setStartTime] = useState(new Date(new Date().setHours(22, 0, 0, 0)));
   const [endTime, setEndTime] = useState(new Date(new Date().setHours(7, 0, 0, 0)));
   const [quality, setQuality] = useState(3);
-  
+
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
   const durationHours = useMemo(() => {
     let end = new Date(endTime);
     let start = new Date(startTime);
-    
-    // If end is before start, assume it's the next day
+
     if (end < start) {
       end.setDate(end.getDate() + 1);
     }
-    
+
     return calculateDurationHours(start, end);
   }, [startTime, endTime, calculateDurationHours]);
 
@@ -162,8 +161,8 @@ export const SleepWidget = () => {
             <Text style={[styles.inputLabel, textStyles.caption]}>QUALIDADE PERCEBIDA</Text>
             <View style={styles.qualitySelector}>
               {[1, 2, 3, 4, 5].map((s) => (
-                <TouchableOpacity 
-                  key={s} 
+                <TouchableOpacity
+                  key={s}
                   onPress={() => setQuality(s)}
                   style={styles.qualityBtn}
                 >
