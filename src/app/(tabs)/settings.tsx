@@ -7,6 +7,7 @@ import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
+import { useWeeklyReport } from '@/hooks/useWeeklyReport';
 import { Goal } from '@/models/Goal';
 import { changePassword } from '@/services/auth';
 import { EXPORT_CATEGORIES, exportHealthData, type ExportCategoryKey } from '@/services/exportData';
@@ -70,6 +71,7 @@ export default function SettingsScreen() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [selectedExportCategories, setSelectedExportCategories] = useState<ExportCategoryKey[]>(EXPORT_CATEGORIES.map((category) => category.key));
   const [isExporting, setIsExporting] = useState(false);
+  const { summary: weeklySummary, isLoading: isWeeklyLoading, isSending, sendEmail } = useWeeklyReport();
 
   const formatDisplayDate = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
@@ -499,8 +501,62 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {!isEditing && (
-          <View style={styles.bottomMenu}>
+      {!isEditing && (
+        <View style={styles.weeklyReportSection}>
+          <Text style={styles.sectionTitle}>Resumo Semanal</Text>
+          <Text style={styles.sectionSubtitle}>
+            {weeklySummary ? `${weeklySummary.periodStart} — ${weeklySummary.periodEnd}` : 'Carregando...'}
+          </Text>
+
+          {isWeeklyLoading ? (
+            <Text style={styles.sectionSubtitle}>Calculando resumo...</Text>
+          ) : weeklySummary ? (
+            <>
+              <View style={styles.weeklyGrid}>
+                <Card style={styles.weeklyMetricCard}>
+                  <Ionicons name="walk-outline" size={20} color={Colors.primary} />
+                  <Text style={styles.weeklyMetricValue}>{weeklySummary.totalSteps.toLocaleString('pt-BR')}</Text>
+                  <Text style={styles.weeklyMetricLabel}>PASSOS</Text>
+                </Card>
+                <Card style={styles.weeklyMetricCard}>
+                  <Ionicons name="restaurant-outline" size={20} color={Colors.primary} />
+                  <Text style={styles.weeklyMetricValue}>{weeklySummary.mealsLogged}</Text>
+                  <Text style={styles.weeklyMetricLabel}>REFEIÇÕES</Text>
+                </Card>
+                <Card style={styles.weeklyMetricCard}>
+                  <Ionicons name="timer-outline" size={20} color={Colors.primary} />
+                  <Text style={styles.weeklyMetricValue}>{weeklySummary.meditationsCompleted}</Text>
+                  <Text style={styles.weeklyMetricLabel}>MEDITAÇÕES</Text>
+                </Card>
+                <Card style={styles.weeklyMetricCard}>
+                  <Ionicons name="moon-outline" size={20} color={Colors.primary} />
+                  <Text style={styles.weeklyMetricValue}>{weeklySummary.avgSleepHours}h</Text>
+                  <Text style={styles.weeklyMetricLabel}>SONO</Text>
+                </Card>
+                <Card style={styles.weeklyMetricCard}>
+                  <Ionicons name="barbell-outline" size={20} color={Colors.primary} />
+                  <Text style={styles.weeklyMetricValue}>{weeklySummary.workoutsCompleted}</Text>
+                  <Text style={styles.weeklyMetricLabel}>TREINOS</Text>
+                </Card>
+                <Card style={styles.weeklyMetricCard}>
+                  <Ionicons name="heart-outline" size={20} color={Colors.primary} />
+                  <Text style={styles.weeklyMetricValue}>{weeklySummary.avgWellness}/5</Text>
+                  <Text style={styles.weeklyMetricLabel}>BEM-ESTAR</Text>
+                </Card>
+              </View>
+              <TouchableOpacity style={styles.exportButton} onPress={sendEmail} disabled={isSending}>
+                <Ionicons name="mail-outline" size={18} color={Colors.white} style={{ marginRight: 8 }} />
+                <Text style={styles.exportButtonText}>{isSending ? 'Enviando...' : 'Enviar relatório por e-mail'}</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <Text style={styles.sectionSubtitle}>Nenhum dado disponível para esta semana.</Text>
+          )}
+        </View>
+      )}
+
+      {!isEditing && (
+        <View style={styles.bottomMenu}>
             <TouchableOpacity style={styles.menuItem}>
               <View style={styles.menuIconCircle}>
                 <Ionicons name="notifications-outline" size={20} color={Colors.primary} />
@@ -1009,6 +1065,38 @@ const styles = StyleSheet.create({
   shareActionButton: {
     marginLeft: 12,
     backgroundColor: Colors.primary,
+  },
+  weeklyReportSection: {
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  weeklyGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 12,
+  },
+  weeklyMetricCard: {
+    width: '31%',
+    padding: 12,
+    alignItems: 'center',
+  },
+  weeklyMetricValue: {
+    ...Typography.h3,
+    color: Colors.primary,
+    marginTop: 4,
+    fontSize: 16,
+  },
+  weeklyMetricLabel: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginTop: 2,
   },
   modalOverlay: {
     flex: 1,
