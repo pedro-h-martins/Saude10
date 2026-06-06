@@ -131,12 +131,10 @@ export function composeReportEmail(summary: WeeklySummary, userName: string): {
 } {
   const subject = `Seu Resumo Semanal - Saude10`;
 
-  // Gera a lista de passos por dia com quebras de linha (<br />) para o HTML
   const stepsLinesHtml = summary.stepsByDay
     .map((d) => `• <strong>${d.date}:</strong> ${d.steps.toLocaleString('pt-BR')} passos`)
     .join('<br />');
 
-  // HTML reformulado com quebras de linha dinâmicas e margens limpas
   const bodyHtml = `
     <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#1C1C1C;line-height:1.6;">
       <h1 style="color:#0052D4;font-size:22px;margin-bottom:4px">Saude10 — Resumo Semanal</h1>

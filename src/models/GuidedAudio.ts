@@ -1,10 +1,14 @@
 import { Realm } from '@realm/react';
 
+export type GuidedAudioCategory = 'anxiety' | 'focus' | 'sleep' | 'wind' | 'waves' | 'forest';
+export type GuidedAudioType = 'guided' | 'ambient';
+
 export class GuidedAudio extends Realm.Object<GuidedAudio> {
   _id!: Realm.BSON.ObjectId;
   title!: string;
   description?: string;
-  category?: 'wind' | 'waves' | 'forest';
+  category?: GuidedAudioCategory;
+  type!: GuidedAudioType;
   remoteUrl?: string;
   localUri?: string;
   duration?: number;
@@ -20,6 +24,7 @@ export class GuidedAudio extends Realm.Object<GuidedAudio> {
       title: 'string',
       description: 'string?',
       category: 'string?',
+      type: { type: 'string', default: 'ambient' },
       remoteUrl: 'string?',
       localUri: 'string?',
       duration: 'int?',

@@ -4,6 +4,7 @@ import { FeedbackSurvey } from '@/models/FeedbackSurvey';
 import { Goal } from '@/models/Goal';
 import { GuidedAudio } from '@/models/GuidedAudio';
 import { HydrationLog } from '@/models/HydrationLog';
+import { MeditationLog } from '@/models/MeditationLog';
 import { MealLog } from '@/models/MealLog';
 import { PomodoroLog } from '@/models/PomodoroLog';
 import { ProgressPhoto } from '@/models/ProgressPhoto';
@@ -158,6 +159,9 @@ const PREDEFINED_RECIPES = [
 function inferAudioCategory(text: string) {
   const n = (text || '').toLowerCase();
 
+  if (n.includes('respiração') || n.includes('relaxamento progressivo') || n.includes('body scan') || n.includes('ansiedade') || n.includes('ansious') || n.includes('anxiety') || n.includes('panic')) return 'anxiety';
+  if (n.includes('atenção plena') || n.includes('concentração') || n.includes('foco') || n.includes('deep focus') || n.includes('alertness')) return 'focus';
+  if (n.includes('dormir') || n.includes('sono') || n.includes('noturno') || n.includes('sleep') || n.includes('insomnia')) return 'sleep';
   if (n.includes('sound of the sea') || n.includes('black sea shore') || n.includes('black sea') || n.includes('waves on the lake') || n.includes('waves') || n.includes('soft ocean') || n.includes('ocean') || n.includes('sea')) return 'waves';
   if (n.includes('wind effect') || n.includes('garage wind') || n.includes('parking garage wind') || n.includes('hard-wind') || n.includes('hard wind') || n.includes('hard-wind')) return 'wind';
   if (n.includes('wind in a pine') || n.includes('pine') || n.includes('forest-1') || n.includes('forest 1') || n.includes('forest')) return 'forest';
@@ -201,8 +205,8 @@ export const seedInitialRecipes = (realm: Realm) => {
 };
 
 export const RealmContext = createRealmContext({
-  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe, SleepLog, GuidedAudio],
-  schemaVersion: 35,
+  schema: [UserProfile, Goal, ActivityLog, PomodoroLog, BloodPressure, HydrationLog, Reminder, SymptomLog, Workout, ProgressPhoto, FeedbackSurvey, SyncQueueItem, WellnessLog, MealLog, Recipe, SleepLog, GuidedAudio, MeditationLog],
+  schemaVersion: 38,
 });
 
 export const { RealmProvider, useRealm, useQuery, useObject } = RealmContext;
@@ -214,7 +218,25 @@ function SeedRealmData() {
     seedInitialGoals(realm);
     seedPredefinedWorkouts(realm);
     seedInitialRecipes(realm);
-      const seedGuidedAudios = async () => {
+  const GUIDED_INDICES = [10, 11, 12];
+
+  const GUIDED_MODULES = [
+    require('../../assets/audio/guided_anxiety.m4a'),
+    require('../../assets/audio/guided_focus.m4a'),
+    require('../../assets/audio/guided_sleep.m4a'),
+  ];
+
+    const resolveGuidedAssets = async (): Promise<Asset[]> => {
+      const assets: Asset[] = [];
+      for (const mod of GUIDED_MODULES) {
+        const a = Asset.fromModule(mod as any);
+        await a.downloadAsync();
+        assets.push(a);
+      }
+      return assets;
+    };
+
+    const seedGuidedAudios = async () => {
       const existing = realm.objects(GuidedAudio);
       if (existing.length > 0) {
         try {
@@ -223,39 +245,58 @@ function SeedRealmData() {
               if (!obj.category) {
                 obj.category = inferAudioCategory(obj.title ?? '');
               }
+              if (!obj.type) {
+                obj.type = 'ambient';
+              }
             }
           });
         } catch (e) {
           console.warn('Failed to normalize GuidedAudio categories', e);
         }
+
+      const guidedCount = Array.from(existing).filter((a: any) => a.type === 'guided').length;
+      if (guidedCount === 0) {
+        try {
+          const guidedAssets = await resolveGuidedAssets();
+          seedGuidedMeditations(realm, guidedAssets);
+        } catch (e) {
+          console.warn('Failed to seed guided meditations for existing data', e);
+        }
+      }
         return;
       }
 
       const AUDIO_FILES = [
-        '450752__florianreichelt__sound-of-the-sea.m4a',
-        '474806__trevorg97__wind-effect-1.m4a',
-        '516039__filmscore__parking-garage-wind-1.m4a',
-        '516040__filmscore__parking-garage-wind-2.m4a',
-        '517866__angelkunev__black-sea-shore-1m-distance-from-water.m4a',
-        '532179__mcmikai__waves-on-the-lake-in-summer-time-in-wav.m4a',
-        '549334__kapilkant__soft-ocean-waves-sounds.m4a',
-        '651341__iliyabylich04__forest-1.m4a',
-        '655501__felixblume__wind-in-a-pine-tree-constant-with-some-birds-and-cricket-slight-gust-of-wind-at-the-evening-in-a-little-woods-in-the-forest-in-new-mexico.m4a',
-        '677563__santiagotorres1314__hard-wind.m4a',
-      ];
+      '450752__florianreichelt__sound-of-the-sea.m4a',
+      '474806__trevorg97__wind-effect-1.m4a',
+      '516039__filmscore__parking-garage-wind-1.m4a',
+      '516040__filmscore__parking-garage-wind-2.m4a',
+      '517866__angelkunev__black-sea-shore-1m-distance-from-water.m4a',
+      '532179__mcmikai__waves-on-the-lake-in-summer-time-in-wav.m4a',
+      '549334__kapilkant__soft-ocean-waves-sounds.m4a',
+      '651341__iliyabylich04__forest-1.m4a',
+      '655501__felixblume__wind-in-a-pine-tree-constant-with-some-birds-and-cricket-slight-gust-of-wind-at-the-evening-in-a-little-woods-in-the-forest-in-new-mexico.m4a',
+      '677563__santiagotorres1314__hard-wind.m4a',
+      'guided_anxiety.m4a',
+      'guided_focus.m4a',
+      'guided_sleep.m4a',
+    ];
 
       const MODULES = [
-        require('../../assets/audio/450752__florianreichelt__sound-of-the-sea.m4a'),
-        require('../../assets/audio/474806__trevorg97__wind-effect-1.m4a'),
-        require('../../assets/audio/516039__filmscore__parking-garage-wind-1.m4a'),
-        require('../../assets/audio/516040__filmscore__parking-garage-wind-2.m4a'),
-        require('../../assets/audio/517866__angelkunev__black-sea-shore-1m-distance-from-water.m4a'),
-        require('../../assets/audio/532179__mcmikai__waves-on-the-lake-in-summer-time-in-wav.m4a'),
-        require('../../assets/audio/549334__kapilkant__soft-ocean-waves-sounds.m4a'),
-        require('../../assets/audio/651341__iliyabylich04__forest-1.m4a'),
-        require('../../assets/audio/655501__felixblume__wind-in-a-pine-tree-constant-with-some-birds-and-cricket-slight-gust-of-wind-at-the-evening-in-a-little-woods-in-the-forest-in-new-mexico.m4a'),
-        require('../../assets/audio/677563__santiagotorres1314__hard-wind.m4a'),
-      ];
+      require('../../assets/audio/450752__florianreichelt__sound-of-the-sea.m4a'),
+      require('../../assets/audio/474806__trevorg97__wind-effect-1.m4a'),
+      require('../../assets/audio/516039__filmscore__parking-garage-wind-1.m4a'),
+      require('../../assets/audio/516040__filmscore__parking-garage-wind-2.m4a'),
+      require('../../assets/audio/517866__angelkunev__black-sea-shore-1m-distance-from-water.m4a'),
+      require('../../assets/audio/532179__mcmikai__waves-on-the-lake-in-summer-time-in-wav.m4a'),
+      require('../../assets/audio/549334__kapilkant__soft-ocean-waves-sounds.m4a'),
+      require('../../assets/audio/651341__iliyabylich04__forest-1.m4a'),
+      require('../../assets/audio/655501__felixblume__wind-in-a-pine-tree-constant-with-some-birds-and-cricket-slight-gust-of-wind-at-the-evening-in-a-little-woods-in-the-forest-in-new-mexico.m4a'),
+      require('../../assets/audio/677563__santiagotorres1314__hard-wind.m4a'),
+      require('../../assets/audio/guided_anxiety.m4a'),
+      require('../../assets/audio/guided_focus.m4a'),
+      require('../../assets/audio/guided_sleep.m4a'),
+    ];
 
       try {
         const assets = [] as Asset[];
@@ -267,6 +308,7 @@ function SeedRealmData() {
 
         realm.write(() => {
           for (let i = 0; i < assets.length; i++) {
+            if (GUIDED_INDICES.includes(i)) continue;
             const id = new Realm.BSON.ObjectId();
             const fileName = AUDIO_FILES[i];
             const title = (fileName.split('__').slice(1).join('__') || fileName).replace(/\.m4a$/i, '').replace(/[-_]/g, ' ');
@@ -274,7 +316,8 @@ function SeedRealmData() {
               _id: id,
               title,
               description: '',
-                category: inferAudioCategory(fileName.replace(/\.m4a$/i, '').replace(/\d+__/,'').replace(/_/g,' ')),
+              category: inferAudioCategory(fileName.replace(/\.m4a$/i, '').replace(/\d+__/,'').replace(/_/g,' ')),
+              type: 'ambient',
               remoteUrl: null,
               localUri: assets[i].localUri ?? assets[i].uri,
               duration: null,
@@ -284,6 +327,9 @@ function SeedRealmData() {
             });
           }
         });
+
+        const guidedAssets = GUIDED_INDICES.map((i) => assets[i]);
+        seedGuidedMeditations(realm, guidedAssets);
       } catch (e) {
         console.warn('Failed to seed guided audios', e);
       }
@@ -295,14 +341,49 @@ function SeedRealmData() {
   return null;
 }
 
+const PREDEFINED_GUIDED_MEDITATIONS = [
+  { title: 'Meditação para Ansiedade', description: 'Meditação guiada com sons de chuva para acalmar ataques de ansiedade e pânico.', category: 'anxiety' as const, duration: 989, assetIndex: 10 },
+  { title: 'Música para Foco Profundo', description: 'Música de fundo para concentração e alertidade mental.', category: 'focus' as const, duration: 427, assetIndex: 11 },
+  { title: 'Música para Sono Profundo', description: 'Relaxamento profundo de 20 minutos para curar insônia e adormecer com tranquilidade.', category: 'sleep' as const, duration: 1180, assetIndex: 12 },
+];
+
+function seedGuidedMeditations(realm: Realm, guidedAssets: Asset[]) {
+  const existingGuided = realm.objects(GuidedAudio).filtered('type == "guided"');
+  if (existingGuided.length > 0) return;
+
+  realm.write(() => {
+    for (const med of PREDEFINED_GUIDED_MEDITATIONS) {
+      const asset = guidedAssets[med.assetIndex - 10];
+      realm.create('GuidedAudio', {
+        _id: new Realm.BSON.ObjectId(),
+        title: med.title,
+        description: med.description,
+        category: med.category,
+        type: 'guided',
+        remoteUrl: null,
+        localUri: asset?.localUri ?? asset?.uri ?? null,
+        duration: med.duration,
+        status: 'downloaded',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+  });
+}
+
 export function EncryptedDatabaseProvider({ children, fallback }: { children: React.ReactNode, fallback?: React.ReactElement | null }) {
   const [encryptionKey, setEncryptionKey] = useState<Uint8Array | null>(null);
+  const [realmError, setRealmError] = useState<Error | null>(null);
 
   useEffect(() => {
     getEncryptionKey()
       .then(setEncryptionKey)
-      .catch(console.error);
+      .catch((e) => { console.error('Encryption key error', e); setRealmError(e instanceof Error ? e : new Error(String(e))); });
   }, []);
+
+  if (realmError) {
+    throw realmError;
+  }
 
   if (!encryptionKey) {
     return (
@@ -316,9 +397,8 @@ export function EncryptedDatabaseProvider({ children, fallback }: { children: Re
     <RealmProvider
       encryptionKey={encryptionKey}
       fallback={fallback}
-      schemaVersion={35}
       onMigration={(oldRealm: Realm, newRealm: Realm) => {
-        if (oldRealm.schemaVersion < 35) {
+        if (oldRealm.schemaVersion < 36) {
           try {
             const newObjects = (newRealm.objects as any)('GuidedAudio') ?? [];
             for (let i = 0; i < newObjects.length; i++) {
@@ -326,9 +406,20 @@ export function EncryptedDatabaseProvider({ children, fallback }: { children: Re
               if (newObj && (newObj.category === undefined || newObj.category === null)) {
                 newObj.category = inferAudioCategory(newObj.title ?? '');
               }
+              if (newObj && !newObj.type) {
+                newObj.type = 'ambient';
+              }
             }
           } catch (e) {
             console.warn('GuidedAudio migration failed', e);
+          }
+        }
+        if (oldRealm.schemaVersion < 38) {
+          try {
+            const guidedPlaceholders = (newRealm.objects as any)('GuidedAudio').filtered('type == "guided" AND localUri == $0', null);
+            (newRealm as any).delete(guidedPlaceholders);
+          } catch (e) {
+            console.warn('Failed to delete guided meditation placeholders', e);
           }
         }
       }}

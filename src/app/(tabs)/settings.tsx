@@ -585,7 +585,7 @@ export default function SettingsScreen() {
               <View style={styles.menuIconCircle}>
                 <Ionicons name="musical-notes-outline" size={20} color={Colors.primary} />
               </View>
-              <Text style={styles.menuItemText}>Biblioteca de Meditações</Text>
+              <Text style={styles.menuItemText}>Biblioteca de Audios</Text>
               <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
