@@ -7,10 +7,10 @@ import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
-import { useWeeklyReport } from '@/hooks/useWeeklyReport';
 import { Goal } from '@/models/Goal';
 import { changePassword } from '@/services/auth';
 import { EXPORT_CATEGORIES, exportHealthData, type ExportCategoryKey } from '@/services/exportData';
+import { sendCategoryReportEmail } from '@/services/weeklyReport';
 import { formatBirthDate as formatBirthDateFn, sanitizeNumberInput } from '@/utils/formatters';
 import { validateBirthDate, validateHeight, validateWeight } from '@/utils/validation';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,15 +19,15 @@ import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+Alert,
+Image,
+Modal,
+ScrollView,
+StyleSheet,
+Text,
+TextInput,
+TouchableOpacity,
+View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -71,7 +71,7 @@ export default function SettingsScreen() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [selectedExportCategories, setSelectedExportCategories] = useState<ExportCategoryKey[]>(EXPORT_CATEGORIES.map((category) => category.key));
   const [isExporting, setIsExporting] = useState(false);
-  const { summary: weeklySummary, isLoading: isWeeklyLoading, isSending, sendEmail } = useWeeklyReport();
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const formatDisplayDate = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
@@ -241,6 +241,42 @@ export default function SettingsScreen() {
       Alert.alert('Erro', 'Não foi possível exportar seus dados.');
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleSendReportEmail = async () => {
+    if (!user) {
+      return;
+    }
+
+    if (selectedExportCategories.length === 0) {
+      Alert.alert('Selecione categorias', 'Escolha pelo menos uma categoria para o relatório.');
+      return;
+    }
+
+    if (!user.email) {
+      Alert.alert('E-mail ausente', 'Cadastre um e-mail no seu perfil para receber o relatório.');
+      return;
+    }
+
+    try {
+      setIsSendingEmail(true);
+      const { sent, method } = await sendCategoryReportEmail(
+        realm,
+        user._id,
+        selectedExportCategories,
+        user.name || 'Usuário',
+        user.email,
+      );
+
+      if (method === 'mail' && !sent) {
+        Alert.alert('Cancelado', 'O envio do e-mail foi cancelado.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível enviar o relatório. Tente novamente.');
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -468,128 +504,63 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         )}
 
-        {!isEditing && (
-          <View style={styles.exportSection}>
-            <Text style={styles.sectionTitle}>Exportar dados</Text>
-            <Text style={styles.sectionSubtitle}>Selecione as categorias que deseja incluir no arquivo JSON.</Text>
-            {EXPORT_CATEGORIES.map((category) => {
-              const selected = selectedExportCategories.includes(category.key);
-              return (
-                <TouchableOpacity
-                  key={category.key}
-                  style={[styles.exportCategoryRow, selected && styles.exportCategoryRowSelected]}
-                  onPress={() => {
-                    setSelectedExportCategories((prev) =>
-                      prev.includes(category.key)
-                        ? prev.filter((item) => item !== category.key)
-                        : [...prev, category.key]
-                    );
-                  }}
-                >
-                  <Ionicons
-                    name={selected ? 'checkbox' : 'square-outline'}
-                    size={20}
-                    color={selected ? Colors.primary : Colors.textSecondary}
-                  />
-                  <Text style={[styles.exportCategoryText, selected && styles.exportCategoryTextSelected]}>{category.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-            <TouchableOpacity style={styles.exportButton} onPress={handleExportData} disabled={isExporting}>
-              <Text style={styles.exportButtonText}>{isExporting ? 'Exportando...' : 'Exportar dados selecionados'}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
       {!isEditing && (
-        <View style={styles.weeklyReportSection}>
-          <Text style={styles.sectionTitle}>Resumo Semanal</Text>
-          <Text style={styles.sectionSubtitle}>
-            {weeklySummary ? `${weeklySummary.periodStart} — ${weeklySummary.periodEnd}` : 'Carregando...'}
-          </Text>
-
-          {isWeeklyLoading ? (
-            <Text style={styles.sectionSubtitle}>Calculando resumo...</Text>
-          ) : weeklySummary ? (
-            <>
-              <View style={styles.weeklyGrid}>
-                <Card style={styles.weeklyMetricCard}>
-                  <Ionicons name="walk-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.weeklyMetricValue}>{weeklySummary.totalSteps.toLocaleString('pt-BR')}</Text>
-                  <Text style={styles.weeklyMetricLabel}>PASSOS</Text>
-                </Card>
-                <Card style={styles.weeklyMetricCard}>
-                  <Ionicons name="restaurant-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.weeklyMetricValue}>{weeklySummary.mealsLogged}</Text>
-                  <Text style={styles.weeklyMetricLabel}>REFEIÇÕES</Text>
-                </Card>
-                <Card style={styles.weeklyMetricCard}>
-                  <Ionicons name="timer-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.weeklyMetricValue}>{weeklySummary.meditationsCompleted}</Text>
-                  <Text style={styles.weeklyMetricLabel}>MEDITAÇÕES</Text>
-                </Card>
-                <Card style={styles.weeklyMetricCard}>
-                  <Ionicons name="moon-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.weeklyMetricValue}>{weeklySummary.avgSleepHours}h</Text>
-                  <Text style={styles.weeklyMetricLabel}>SONO</Text>
-                </Card>
-                <Card style={styles.weeklyMetricCard}>
-                  <Ionicons name="barbell-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.weeklyMetricValue}>{weeklySummary.workoutsCompleted}</Text>
-                  <Text style={styles.weeklyMetricLabel}>TREINOS</Text>
-                </Card>
-                <Card style={styles.weeklyMetricCard}>
-                  <Ionicons name="heart-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.weeklyMetricValue}>{weeklySummary.avgWellness}/5</Text>
-                  <Text style={styles.weeklyMetricLabel}>BEM-ESTAR</Text>
-                </Card>
-              </View>
-              <TouchableOpacity style={styles.exportButton} onPress={sendEmail} disabled={isSending}>
-                <Ionicons name="mail-outline" size={18} color={Colors.white} style={{ marginRight: 8 }} />
-                <Text style={styles.exportButtonText}>{isSending ? 'Enviando...' : 'Enviar relatório por e-mail'}</Text>
+        <View style={styles.reportSection}>
+          <Text style={styles.sectionTitle}>Relatório</Text>
+          <Text style={styles.sectionSubtitle}>Selecione as categorias que deseja incluir no relatório.</Text>
+          {EXPORT_CATEGORIES.map((category) => {
+            const selected = selectedExportCategories.includes(category.key);
+            return (
+              <TouchableOpacity
+                key={category.key}
+                style={[styles.exportCategoryRow, selected && styles.exportCategoryRowSelected]}
+                onPress={() => {
+                  setSelectedExportCategories((prev) =>
+                    prev.includes(category.key)
+                      ? prev.filter((item) => item !== category.key)
+                      : [...prev, category.key]
+                  );
+                }}
+              >
+                <Ionicons
+                  name={selected ? 'checkbox' : 'square-outline'}
+                  size={20}
+                  color={selected ? Colors.primary : Colors.textSecondary}
+                />
+                <Text style={[styles.exportCategoryText, selected && styles.exportCategoryTextSelected]}>{category.label}</Text>
               </TouchableOpacity>
-            </>
-          ) : (
-            <Text style={styles.sectionSubtitle}>Nenhum dado disponível para esta semana.</Text>
-          )}
+            );
+          })}
+          <TouchableOpacity style={styles.exportButton} onPress={handleExportData} disabled={isExporting}>
+            <Ionicons name="document-text-outline" size={18} color={Colors.white} style={{ marginRight: 8 }} />
+            <Text style={styles.exportButtonText}>{isExporting ? 'Exportando...' : 'Exportar JSON'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.exportButton, { backgroundColor: Colors.text }]} onPress={handleSendReportEmail} disabled={isSendingEmail}>
+            <Ionicons name="mail-outline" size={18} color={Colors.white} style={{ marginRight: 8 }} />
+            <Text style={styles.exportButtonText}>{isSendingEmail ? 'Enviando...' : 'Enviar por e-mail'}</Text>
+          </TouchableOpacity>
         </View>
       )}
 
       {!isEditing && (
         <View style={styles.bottomMenu}>
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconCircle}>
-                <Ionicons name="notifications-outline" size={20} color={Colors.primary} />
-              </View>
-              <Text style={styles.menuItemText}>Notificações e Lembretes</Text>
-              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-            </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => setAudioLibraryVisible(true)}>
+            <View style={styles.menuIconCircle}>
+              <Ionicons name="musical-notes-outline" size={20} color={Colors.primary} />
+            </View>
+            <Text style={styles.menuItemText}>Biblioteca de Audios</Text>
+            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+          </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconCircle}>
-                <Ionicons name="shield-checkmark-outline" size={20} color={Colors.primary} />
-              </View>
-              <Text style={styles.menuItemText}>Privacidade de Dados</Text>
-              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
-              <View style={[styles.menuIconCircle, { backgroundColor: '#FFEEED' }] }>
-                <Ionicons name="log-out-outline" size={20} color={Colors.warning} />
-              </View>
-              <Text style={[styles.menuItemText, { color: Colors.warning }]}>Sair da conta</Text>
-              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => setAudioLibraryVisible(true)}>
-              <View style={styles.menuIconCircle}>
-                <Ionicons name="musical-notes-outline" size={20} color={Colors.primary} />
-              </View>
-              <Text style={styles.menuItemText}>Biblioteca de Audios</Text>
-              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        )}
+          <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
+            <View style={[styles.menuIconCircle, { backgroundColor: '#FFEEED' }]}>
+              <Ionicons name="log-out-outline" size={20} color={Colors.warning} />
+            </View>
+            <Text style={[styles.menuItemText, { color: Colors.warning }]}>Sair da conta</Text>
+            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      )}
       </ScrollView>
 
       <Modal
@@ -830,35 +801,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     ...Typography.body,
   },
-  sectionCard: {
-    padding: 15,
-    marginBottom: 20,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F0F7FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  rowContent: {
-    flex: 1,
-  },
-  rowLabel: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
-    marginBottom: 2,
-  },
-  rowValue: {
-    ...Typography.body,
-    color: Colors.text,
-  },
   sectionTitle: {
     ...Typography.h3,
     color: Colors.text,
@@ -929,11 +871,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  goalButtonActive: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F0F7FF',
-  },
-  exportSection: {
+  reportSection: {
     backgroundColor: Colors.white,
     borderRadius: 18,
     padding: 16,
@@ -971,18 +909,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   exportButtonText: {
     ...Typography.body,
     color: Colors.white,
     fontWeight: '700',
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.primary,
-    marginRight: 12,
   },
   goalIcon: {
     marginRight: 12,
@@ -990,10 +923,6 @@ const styles = StyleSheet.create({
   goalButtonText: {
     ...Typography.body,
     color: Colors.text,
-  },
-  goalButtonTextActive: {
-    color: Colors.primary,
-    fontWeight: '600',
   },
   bottomMenu: {
     marginTop: 20,
@@ -1055,48 +984,9 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '600',
   },
-  goalActions: {
-    flexDirection: 'row',
-  },
-  actionButton: {
-    padding: 5,
-    marginLeft: 10,
-  },
   shareActionButton: {
     marginLeft: 12,
     backgroundColor: Colors.primary,
-  },
-  weeklyReportSection: {
-    backgroundColor: Colors.white,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  weeklyGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 12,
-  },
-  weeklyMetricCard: {
-    width: '31%',
-    padding: 12,
-    alignItems: 'center',
-  },
-  weeklyMetricValue: {
-    ...Typography.h3,
-    color: Colors.primary,
-    marginTop: 4,
-    fontSize: 16,
-  },
-  weeklyMetricLabel: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
-    fontSize: 10,
-    letterSpacing: 0.8,
-    marginTop: 2,
   },
   modalOverlay: {
     flex: 1,

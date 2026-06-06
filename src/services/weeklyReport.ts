@@ -9,6 +9,7 @@ import { PomodoroLog } from '@/models/PomodoroLog';
 import { SleepLog } from '@/models/SleepLog';
 import { WellnessLog } from '@/models/WellnessLog';
 import { Workout } from '@/models/Workout';
+import { EXPORT_CATEGORIES, normalizeRealmCollection, type ExportCategoryKey } from '@/services/exportData';
 
 export type WeeklySummary = {
   periodStart: string;
@@ -194,6 +195,311 @@ export async function sendWeeklyReport(
   userEmail: string,
 ): Promise<{ sent: boolean; method: 'mail' | 'share' }> {
   const { subject, bodyHtml, bodyText } = composeReportEmail(summary, userName);
+
+  const isAvailable = await MailComposer.isAvailableAsync();
+
+  if (isAvailable) {
+    const result = await MailComposer.composeAsync({
+      recipients: [userEmail],
+      subject,
+      body: bodyHtml,
+      isHtml: true,
+    });
+
+    return { sent: result.status === MailComposer.MailComposerStatus.SENT, method: 'mail' };
+  }
+
+  await Share.share({ title: subject, message: bodyText });
+  return { sent: true, method: 'share' };
+}
+
+const HIDDEN_FIELDS = new Set([
+  '_id', 'userId', 'realm', 'objectSchema', 'isValid', 'updatedAt',
+  'avatarUri', 'waterGoal', 'currentGoalId', 'goals',
+  'instructions', 'isPredefined', 'isRecurring', 'recurrenceRule', 'lastCompletedAt', 'createdAt',
+  'type', 'periodType', 'periodValue', 'unit', 'currentValue',
+  'isCompleted', 'isRecurring', 'isEnabled', 'isPredefined',
+  'nextOccurrence', 'endDate', 'metric',
+]);
+
+const FRIENDLY_LABELS: Record<string, Record<string, string>> = {
+  profile: {
+    name: 'Nome', email: 'E-mail', birthDate: 'Data de Nascimento',
+    weight: 'Peso (kg)', height: 'Altura (cm)',
+  },
+  goals: {
+    title: 'Título', isActive: 'Ativa', targetValue: 'Meta', startDate: 'Data de Início',
+  },
+  activities: {
+    date: 'Data', steps: 'Passos', distance: 'Distância (m)', intensity: 'Intensidade',
+  },
+  bloodPressure: {
+    systolic: 'Sistólica', diastolic: 'Diastólica', timestamp: 'Data/Hora',
+  },
+  hydration: {
+    amount: 'Quantidade (copos)', timestamp: 'Data/Hora',
+  },
+  pomodoro: {
+    type: 'Tipo', duration: 'Duração (s)', completedAt: 'Concluído em',
+  },
+  reminders: {
+    title: 'Título', time: 'Horário', isEnabled: 'Ativo', type: 'Tipo',
+  },
+  symptoms: {
+    description: 'Descrição', timestamp: 'Data/Hora',
+  },
+  wellness: {
+    rating: 'Nota', notes: 'Observações', timestamp: 'Data/Hora',
+  },
+  workouts: {
+    title: 'Título', intensity: 'Intensidade', completedAt: 'Concluído em',
+  },
+};
+
+const FIELD_EMOJIS: Record<string, Record<string, string>> = {
+  profile: {
+    name: '🧑', email: '✉️', birthDate: '🎂', weight: '⚖️', height: '📏',
+  },
+  goals: {
+    title: '🎯', isActive: '✅', targetValue: '🏆', startDate: '📅',
+  },
+  activities: {
+    date: '📅', steps: '👟', distance: '🗺️', intensity: '⚡',
+  },
+  bloodPressure: {
+    systolic: '🔺', diastolic: '🔻', timestamp: '🕐',
+  },
+  hydration: {
+    amount: '💧', timestamp: '🕐',
+  },
+  pomodoro: {
+    type: '🏷️', duration: '⏳', completedAt: '✅',
+  },
+  reminders: {
+    title: '📌', time: '⏰', isEnabled: '🔔', type: '🏷️',
+  },
+  symptoms: {
+    description: '📝', timestamp: '🕐',
+  },
+  wellness: {
+    rating: '⭐', notes: '📝', timestamp: '🕐',
+  },
+  workouts: {
+    title: '🏋️', intensity: '⚡', completedAt: '✅',
+  },
+};
+
+const CATEGORY_ICONS: Record<string, string> = {
+  profile: '👤', goals: '🎯', activities: '👟', bloodPressure: '🩺',
+  hydration: '💧', pomodoro: '🧘', reminders: '🔔', symptoms: '🤒',
+  wellness: '😊', workouts: '💪',
+};
+
+function formatDisplayDate(value: unknown): string {
+  if (value == null) return '—';
+  const str = String(value);
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${mins}`;
+}
+
+const DATE_FIELDS = new Set([
+  'birthDate', 'timestamp', 'completedAt', 'startDate', 'endDate', 'nextOccurrence',
+]);
+
+const BOOL_FIELDS = new Set(['isActive', 'isCompleted', 'isEnabled']);
+
+const INTENSITY_MAP: Record<string, string> = {
+  low: 'Leve', moderate: 'Moderada', high: 'Intensa',
+};
+
+const POMODORO_TYPE_MAP: Record<string, string> = {
+  focus: 'Foco', break: 'Pausa',
+};
+
+const REMINDER_TYPE_MAP: Record<string, string> = {
+  water: 'Água', meditation: 'Meditação', medicine: 'Remédio', custom: 'Personalizado',
+};
+
+function formatFieldValue(categoryKey: string, fieldKey: string, value: unknown): string {
+  if (value == null) return '—';
+
+  if (BOOL_FIELDS.has(fieldKey)) {
+    return value ? 'Sim' : 'Não';
+  }
+
+  if (DATE_FIELDS.has(fieldKey)) {
+    return formatDisplayDate(value);
+  }
+
+  if (fieldKey === 'intensity') {
+    return INTENSITY_MAP[String(value)] ?? String(value);
+  }
+
+  if (categoryKey === 'pomodoro' && fieldKey === 'type') {
+    return POMODORO_TYPE_MAP[String(value)] ?? String(value);
+  }
+
+  if (categoryKey === 'reminders' && fieldKey === 'type') {
+    return REMINDER_TYPE_MAP[String(value)] ?? String(value);
+  }
+
+  const str = String(value);
+  if (Array.isArray(value)) {
+    return value.length > 0 ? str : 'Nenhum';
+  }
+
+  return str;
+}
+
+function buildCategoryItemHtml(
+  categoryKey: string,
+  item: Record<string, unknown>,
+): string {
+  const labels = FRIENDLY_LABELS[categoryKey] ?? {};
+  const emojis = FIELD_EMOJIS[categoryKey] ?? {};
+  const lines = Object.entries(item)
+    .filter(([k]) => !HIDDEN_FIELDS.has(k))
+    .map(([k, v]) => {
+      const label = labels[k] ?? k;
+      const formatted = formatFieldValue(categoryKey, k, v);
+      const emoji = emojis[k] ? `${emojis[k]} ` : '';
+      return `${emoji}<strong>${label}:</strong> ${formatted}`;
+    })
+    .join('<br />\n    ');
+
+  return `<li style="padding:10px 12px;margin-bottom:8px;background:#F8F9FB;border-radius:8px;font-size:14px;line-height:1.8;">
+    ${lines}
+  </li>`;
+}
+
+function buildCategorySectionHtml(
+  categoryKey: string,
+  categoryLabel: string,
+  items: Record<string, unknown>[] | undefined,
+): string {
+  const icon = CATEGORY_ICONS[categoryKey] ?? '📋';
+
+  if (!items || items.length === 0) {
+    return `<h3 style="color:#0052D4;font-size:16px;margin-top:24px;margin-bottom:10px;">${icon} ${categoryLabel}</h3>
+      <p style="font-size:14px;color:#7D7D7D;margin:0 0 16px 0;">Nenhum dado disponível.</p>`;
+  }
+
+  const displayItems = items.slice(0, 20);
+  const itemsHtml = displayItems.map((item) => buildCategoryItemHtml(categoryKey, item)).join('\n');
+
+  const countNote = items.length > 20
+    ? `<p style="font-size:12px;color:#7D7D7D;margin:4px 0 16px 0;">Exibindo 20 de ${items.length} registros.</p>`
+    : '';
+
+  return `<h3 style="color:#0052D4;font-size:16px;margin-top:24px;margin-bottom:10px;">${icon} ${categoryLabel} (${items.length})</h3>
+    <ul style="list-style:none;padding:0;margin:0 0 12px 0;">
+      ${itemsHtml}
+    </ul>
+    ${countNote}`;
+}
+
+function composeCategoryEmailHtml(
+  categories: ExportCategoryKey[],
+  data: Record<string, unknown[]>,
+): string {
+  const selectedCategories = EXPORT_CATEGORIES.filter((c) => categories.includes(c.key));
+
+  const sectionsHtml = selectedCategories
+    .map((cat) => {
+      const items = data[cat.key] as Record<string, unknown>[] | undefined;
+      return buildCategorySectionHtml(cat.key, cat.label, items);
+    })
+    .join('\n');
+
+  return `
+<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#1C1C1C;line-height:1.8;">
+  <h1 style="color:#0052D4;font-size:22px;margin-bottom:4px;">📋 Saude10 — Relatório de Dados</h1>
+  <p style="color:#7D7D7D;font-size:14px;margin-top:0;margin-bottom:24px;">
+    📂 Categorias: ${selectedCategories.map((c) => c.label).join(', ')}
+  </p>
+  ${sectionsHtml}
+  <br />
+  <p style="color:#7D7D7D;font-size:12px;margin-top:24px;">
+    🤖 Relatório gerado automaticamente pelo app Saude10.
+  </p>
+</div>`;
+}
+
+function buildCategoryItemText(
+  categoryKey: string,
+  item: Record<string, unknown>,
+): string {
+  const labels = FRIENDLY_LABELS[categoryKey] ?? {};
+  const emojis = FIELD_EMOJIS[categoryKey] ?? {};
+  const lines = Object.entries(item)
+    .filter(([k]) => !HIDDEN_FIELDS.has(k))
+    .map(([k, v]) => {
+      const label = labels[k] ?? k;
+      const formatted = formatFieldValue(categoryKey, k, v);
+      const emoji = emojis[k] ? `${emojis[k]} ` : '';
+      return `  ${emoji}${label}: ${formatted}`;
+    })
+    .join('\n');
+
+  return lines;
+}
+
+function composeCategoryEmailText(
+  categories: ExportCategoryKey[],
+  data: Record<string, unknown[]>,
+): string {
+  const selectedCategories = EXPORT_CATEGORIES.filter((c) => categories.includes(c.key));
+
+  const sectionsText = selectedCategories
+    .map((cat) => {
+      const icon = CATEGORY_ICONS[cat.key] ?? '📋';
+      const items = data[cat.key] as Record<string, unknown>[] | undefined;
+      if (!items || items.length === 0) {
+        return `${icon} ${cat.label}\n  Nenhum dado disponível.`;
+      }
+
+      const displayItems = items.slice(0, 20);
+      const itemsText = displayItems
+        .map((item) => buildCategoryItemText(cat.key, item))
+        .join('\n—\n');
+
+      const countNote = items.length > 20 ? `\n  (Exibindo 20 de ${items.length} registros.)` : '';
+      return `${icon} ${cat.label} (${items.length})\n${itemsText}${countNote}`;
+    })
+    .join('\n\n━━━━━━━━━━━━━━━━━━\n\n');
+
+  return `📋 Saude10 — Relatório de Dados\n📂 Categorias: ${selectedCategories.map((c) => c.label).join(', ')}\n\n━━━━━━━━━━━━━━━━━━\n\n${sectionsText}\n\n━━━━━━━━━━━━━━━━━━\n\n🤖 Relatório gerado automaticamente pelo app Saude10.`;
+}
+
+export async function sendCategoryReportEmail(
+  realm: Realm,
+  userId: string,
+  categories: ExportCategoryKey[],
+  userName: string,
+  userEmail: string,
+): Promise<{ sent: boolean; method: 'mail' | 'share' }> {
+  const dataPayload: Record<string, unknown[]> = {};
+  const selectedCategories = EXPORT_CATEGORIES.filter((c) => categories.includes(c.key));
+
+  for (const category of selectedCategories) {
+    try {
+      const collection = realm.objects(category.entityType);
+      dataPayload[category.key] = await normalizeRealmCollection(collection as Realm.Results<any>);
+    } catch (error) {
+      console.warn('[sendCategoryReportEmail] failed to export', category.entityType, error);
+      dataPayload[category.key] = [];
+    }
+  }
+
+  const bodyHtml = composeCategoryEmailHtml(categories, dataPayload);
+  const bodyText = composeCategoryEmailText(categories, dataPayload);
+  const subject = `Relatório de Dados — Saude10 (${selectedCategories.map((c) => c.label).join(', ')})`;
 
   const isAvailable = await MailComposer.isAvailableAsync();
 

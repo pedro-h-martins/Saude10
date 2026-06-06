@@ -16,7 +16,7 @@ export const EXPORT_CATEGORIES = [
 
 export type ExportCategoryKey = (typeof EXPORT_CATEGORIES)[number]['key'];
 
-function normalizeValue(value: unknown): unknown {
+export function normalizeValue(value: unknown): unknown {
   if (value instanceof Date) {
     return value.toISOString();
   }
@@ -45,7 +45,7 @@ function normalizeValue(value: unknown): unknown {
   return value;
 }
 
-function normalizeRealmObject(realmObj: any): Record<string, unknown> {
+export function normalizeRealmObject(realmObj: any): Record<string, unknown> {
   const normalized: Record<string, unknown> = {};
 
   for (const key of Object.keys(realmObj)) {
@@ -58,7 +58,7 @@ function normalizeRealmObject(realmObj: any): Record<string, unknown> {
   return normalized;
 }
 
-async function normalizeRealmCollection(collection: Realm.Results<any> | Realm.List<any>): Promise<unknown[]> {
+export async function normalizeRealmCollection(collection: Realm.Results<any> | Realm.List<any>): Promise<unknown[]> {
   return Array.from(collection).map(normalizeRealmObject);
 }
 
