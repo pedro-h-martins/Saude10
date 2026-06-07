@@ -1,14 +1,274 @@
-export const Colors = {
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+export interface ThemeColors {
+  surface: string;
+  surfaceDim: string;
+  surfaceBright: string;
+  surfaceContainerLowest: string;
+  surfaceContainerLow: string;
+  surfaceContainer: string;
+  surfaceContainerHigh: string;
+  surfaceContainerHighest: string;
+  onSurface: string;
+  onSurfaceVariant: string;
+  inverseSurface: string;
+  inverseOnSurface: string;
+  outline: string;
+  outlineVariant: string;
+  surfaceTint: string;
+  primary: string;
+  onPrimary: string;
+  primaryContainer: string;
+  onPrimaryContainer: string;
+  inversePrimary: string;
+  secondary: string;
+  onSecondary: string;
+  secondaryContainer: string;
+  onSecondaryContainer: string;
+  tertiary: string;
+  onTertiary: string;
+  tertiaryContainer: string;
+  onTertiaryContainer: string;
+  error: string;
+  onError: string;
+  errorContainer: string;
+  onErrorContainer: string;
+  primaryFixed: string;
+  primaryFixedDim: string;
+  onPrimaryFixed: string;
+  onPrimaryFixedVariant: string;
+  secondaryFixed: string;
+  secondaryFixedDim: string;
+  onSecondaryFixed: string;
+  onSecondaryFixedVariant: string;
+  tertiaryFixed: string;
+  tertiaryFixedDim: string;
+  onTertiaryFixed: string;
+  onTertiaryFixedVariant: string;
+  background: string;
+  onBackground: string;
+  surfaceVariant: string;
+  white: string;
+  shadow: string;
+  timerBackground: string;
+  accent: string;
+  warning: string;
+  water: string;
+  waterLight: string;
+  sleep: string;
+  sleepLight: string;
+  pomodoroBg: string;
+  pomodoroSurface: string;
+  pomodoroMuted: string;
+  pomodoroBorder: string;
+  pomodoroText: string;
+  audioAnxiety: string;
+  audioFocus: string;
+  audioSleep: string;
+  audioWind: string;
+  audioWaves: string;
+  audioForest: string;
+  moodTerrible: string;
+  moodBad: string;
+  moodOk: string;
+  moodGood: string;
+  moodGreat: string;
+  bmiUnderweight: string;
+  bmiIdeal: string;
+  bmiOverweight: string;
+  bmiObese: string;
+  notificationDot: string;
+  greenDot: string;
+  inputBackground: string;
+  cancelButtonBackground: string;
+  placeholderBackground: string;
+  seekTrackBackground: string;
+}
+
+const lightTheme: ThemeColors = {
+  surface: '#F8F9FB',
+  surfaceDim: '#F8F9FB',
+  surfaceBright: '#FFFFFF',
+  surfaceContainerLowest: '#FFFFFF',
+  surfaceContainerLow: '#F8F9FB',
+  surfaceContainer: '#F2F3F5',
+  surfaceContainerHigh: '#ECEEF0',
+  surfaceContainerHighest: '#E6E8EB',
+  onSurface: '#1C1C1C',
+  onSurfaceVariant: '#7D7D7D',
+  inverseSurface: '#1C1C1C',
+  inverseOnSurface: '#F2F3F5',
+  outline: '#7D7D7D',
+  outlineVariant: '#EAEAEA',
+  surfaceTint: '#0052D4',
   primary: '#0052D4',
-  primaryLight: '#4389F1',
-  background: '#F8F9FB',
-  white: '#FFFFFF',
-  text: '#1C1C1C',
-  textSecondary: '#7D7D7D',
-  accent: '#2ECC71',
-  warning: '#E74C3C',
+  onPrimary: '#FFFFFF',
+  primaryContainer: '#4389F1',
+  onPrimaryContainer: '#001B3E',
+  inversePrimary: '#4389F1',
+  secondary: '#5f78a3',
+  onSecondary: '#FFFFFF',
+  secondaryContainer: '#D6E3FF',
+  onSecondaryContainer: '#1A2744',
+  tertiary: '#c55b00',
+  onTertiary: '#FFFFFF',
+  tertiaryContainer: '#FFDBC9',
+  onTertiaryContainer: '#321200',
   error: '#E74C3C',
-  border: '#EAEAEA',
+  onError: '#FFFFFF',
+  errorContainer: '#FFDAD6',
+  onErrorContainer: '#410002',
+  primaryFixed: '#D6E3FF',
+  primaryFixedDim: '#4389F1',
+  onPrimaryFixed: '#001B3E',
+  onPrimaryFixedVariant: '#00458D',
+  secondaryFixed: '#D6E3FF',
+  secondaryFixedDim: '#B0C8F5',
+  onSecondaryFixed: '#001B3D',
+  onSecondaryFixedVariant: '#2D476F',
+  tertiaryFixed: '#FFDBC9',
+  tertiaryFixedDim: '#FFB68C',
+  onTertiaryFixed: '#321200',
+  onTertiaryFixedVariant: '#763400',
+  background: '#F8F9FB',
+  onBackground: '#1C1C1C',
+  surfaceVariant: '#E6E8EB',
+  white: '#FFFFFF',
   shadow: '#000000',
   timerBackground: '#F0F4F8',
+  accent: '#2ECC71',
+  warning: '#E74C3C',
+  water: '#2196F3',
+  waterLight: '#E3F2FD',
+  sleep: '#6366F1',
+  sleepLight: '#EDE7F6',
+  pomodoroBg: '#FFFFFF',
+  pomodoroSurface: '#F8FAFC',
+  pomodoroMuted: '#94A3B8',
+  pomodoroBorder: '#F1F5F9',
+  pomodoroText: '#1E293B',
+  audioAnxiety: '#E74C3C',
+  audioFocus: '#F39C12',
+  audioSleep: '#8E44AD',
+  audioWind: '#3498DB',
+  audioWaves: '#2980B9',
+  audioForest: '#27AE60',
+  moodTerrible: '#E74C3C',
+  moodBad: '#E67E22',
+  moodOk: '#F1C40F',
+  moodGood: '#2ECC71',
+  moodGreat: '#9B59B6',
+  bmiUnderweight: '#FFD700',
+  bmiIdeal: '#4CAF50',
+  bmiOverweight: '#FF9800',
+  bmiObese: '#F44336',
+  notificationDot: '#FF4D4D',
+  greenDot: '#4FF088',
+  inputBackground: '#F5F7FA',
+  cancelButtonBackground: '#F1F5F9',
+  placeholderBackground: '#F0F0F0',
+  seekTrackBackground: '#E8E8E8',
 };
+
+const interstellarDeepTheme: ThemeColors = {
+  surface: '#10131a',
+  surfaceDim: '#10131a',
+  surfaceBright: '#363940',
+  surfaceContainerLowest: '#0b0e14',
+  surfaceContainerLow: '#181c22',
+  surfaceContainer: '#1c2026',
+  surfaceContainerHigh: '#272a31',
+  surfaceContainerHighest: '#31353c',
+  onSurface: '#e0e2eb',
+  onSurfaceVariant: '#c1c6d5',
+  inverseSurface: '#e0e2eb',
+  inverseOnSurface: '#2d3037',
+  outline: '#8b919f',
+  outlineVariant: '#414753',
+  surfaceTint: '#aac7ff',
+  primary: '#aac7ff',
+  onPrimary: '#002f64',
+  primaryContainer: '#1275e2',
+  onPrimaryContainer: '#000512',
+  inversePrimary: '#005db8',
+  secondary: '#aec7f7',
+  onSecondary: '#143057',
+  secondaryContainer: '#2d476f',
+  onSecondaryContainer: '#9db6e4',
+  tertiary: '#ffb68c',
+  onTertiary: '#532200',
+  tertiaryContainer: '#c05900',
+  onTertiaryContainer: '#0d0300',
+  error: '#ffb4ab',
+  onError: '#690005',
+  errorContainer: '#93000a',
+  onErrorContainer: '#ffdad6',
+  primaryFixed: '#d6e3ff',
+  primaryFixedDim: '#aac7ff',
+  onPrimaryFixed: '#001b3e',
+  onPrimaryFixedVariant: '#00458d',
+  secondaryFixed: '#d6e3ff',
+  secondaryFixedDim: '#aec7f7',
+  onSecondaryFixed: '#001b3d',
+  onSecondaryFixedVariant: '#2d476f',
+  tertiaryFixed: '#ffdbc9',
+  tertiaryFixedDim: '#ffb68c',
+  onTertiaryFixed: '#321200',
+  onTertiaryFixedVariant: '#763400',
+  background: '#10131a',
+  onBackground: '#e0e2eb',
+  surfaceVariant: '#31353c',
+  white: '#e0e2eb',
+  shadow: '#000000',
+  timerBackground: '#1c2026',
+  accent: '#2ECC71',
+  warning: '#ffb4ab',
+  water: '#64B5F6',
+  waterLight: '#1a2744',
+  sleep: '#9FA8DA',
+  sleepLight: '#1a1e3a',
+  pomodoroBg: '#1c2026',
+  pomodoroSurface: '#181c22',
+  pomodoroMuted: '#8b919f',
+  pomodoroBorder: '#31353c',
+  pomodoroText: '#e0e2eb',
+  audioAnxiety: '#EF9A9A',
+  audioFocus: '#FFB74D',
+  audioSleep: '#CE93D8',
+  audioWind: '#64B5F6',
+  audioWaves: '#4FC3F7',
+  audioForest: '#81C784',
+  moodTerrible: '#EF9A9A',
+  moodBad: '#FFB74D',
+  moodOk: '#FFF176',
+  moodGood: '#81C784',
+  moodGreat: '#CE93D8',
+  bmiUnderweight: '#FFF176',
+  bmiIdeal: '#81C784',
+  bmiOverweight: '#FFB74D',
+  bmiObese: '#EF9A9A',
+  notificationDot: '#FF4D4D',
+  greenDot: '#4FF088',
+  inputBackground: '#181c22',
+  cancelButtonBackground: '#272a31',
+  placeholderBackground: '#272a31',
+  seekTrackBackground: '#31353c',
+};
+
+export const themes: Record<string, ThemeColors> = {
+  light: lightTheme,
+  'interstellar-deep': interstellarDeepTheme,
+};
+
+export const darkThemes = new Set(['interstellar-deep']);
+
+export function registerTheme(name: string, colors: ThemeColors, isDark = false): void {
+  themes[name] = colors;
+  if (isDark) darkThemes.add(name);
+}
+
+export function isThemeDark(name: string): boolean {
+  return darkThemes.has(name);
+}
+
+export const defaultThemeName = 'light';

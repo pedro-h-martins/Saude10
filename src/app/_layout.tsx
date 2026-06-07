@@ -2,10 +2,11 @@ import 'react-native-get-random-values';
 import FeedbackSurveyPrompt from '@/components/FeedbackSurveyPrompt';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { EncryptedDatabaseProvider } from "@/context/RealmProvider";
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { useSync } from '@/hooks/useSync';
 import { Stack, useRouter, useSegments } from "expo-router";
 import React, { Component, useEffect } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -62,8 +63,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 function RootLayoutContent() {
   useSync();
+  const { isDark, colors } = useTheme();
   return (
     <AuthGuard>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
@@ -85,9 +88,11 @@ export default function RootLayout() {
         }
       >
         <AuthProvider>
-          <SafeAreaProvider>
-            <RootLayoutContent />
-          </SafeAreaProvider>
+          <ThemeProvider>
+            <SafeAreaProvider>
+              <RootLayoutContent />
+            </SafeAreaProvider>
+          </ThemeProvider>
         </AuthProvider>
       </EncryptedDatabaseProvider>
     </ErrorBoundary>
@@ -95,11 +100,11 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#fff' },
-  errorTitle: { fontSize: 20, fontWeight: '700', color: '#E74C3C', marginBottom: 12 },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
   errorScroll: { maxHeight: 200, width: '100%' },
   errorScrollContent: { paddingHorizontal: 16 },
-  errorMessage: { fontSize: 14, color: '#555', fontFamily: 'monospace' },
-  errorButton: { marginTop: 20, backgroundColor: '#3498DB', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  errorButtonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  errorMessage: { fontSize: 14, fontFamily: 'monospace' },
+  errorButton: { marginTop: 20, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  errorButtonText: { fontWeight: '600', fontSize: 16 },
 });

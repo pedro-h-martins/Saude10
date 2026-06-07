@@ -1,4 +1,4 @@
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,7 +49,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.surfaceContainerLowest }]}>
       <KeyboardAwareScrollView
         contentContainerStyle={styles.scrollContent}
         enableOnAndroid={true}
@@ -56,12 +57,12 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.inner}>
-          <Text style={styles.title}>Entrar</Text>
+          <Text style={[styles.title, { color: colors.primary }]}>Entrar</Text>
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.onSurface }]}
             placeholder="Email"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.onSurfaceVariant}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -69,19 +70,19 @@ export default function LoginScreen() {
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.onSurface }]}
             placeholder="Senha"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.onSurfaceVariant}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={loading}>
+          <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleSignIn} disabled={loading}>
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
-              <Text style={styles.buttonText}>Entrar</Text>
+              <Text style={[styles.buttonText, { color: colors.onPrimary }]}>Entrar</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -91,11 +92,11 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1 },
   scrollContent: { flexGrow: 1 },
   inner: { padding: 24, flex: 1, justifyContent: 'center' },
-  title: { fontSize: 32, fontWeight: '800', color: Colors.primary, marginBottom: 24 },
-  input: { backgroundColor: '#F5F7FA', padding: 14, borderRadius: 12, marginBottom: 12, color: Colors.text },
-  button: { backgroundColor: Colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  buttonText: { color: '#fff', fontWeight: '700' },
+  title: { fontSize: 32, fontWeight: '800', marginBottom: 24 },
+  input: { padding: 14, borderRadius: 12, marginBottom: 12 },
+  button: { padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
+  buttonText: { fontWeight: '700' },
 });

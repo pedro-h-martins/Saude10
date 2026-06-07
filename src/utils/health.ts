@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import { Pedometer } from 'expo-sensors';
 import { Platform } from 'react-native';
+import { ThemeColors } from '@/constants/Colors';
 
 export interface BMIData {
   value: number;
@@ -9,34 +10,34 @@ export interface BMIData {
   color: string;
 }
 
-export function calculateBMI(weight: number, heightCm: number): BMIData {
+export function calculateBMI(weight: number, heightCm: number, colors?: ThemeColors): BMIData {
   if (!weight || !heightCm || isNaN(weight) || isNaN(heightCm)) {
-    return { value: 0, category: 'Dados insuficientes', isIdeal: false, color: '#ccc' };
+    return { value: 0, category: 'Dados insuficientes', isIdeal: false, color: colors?.onSurfaceVariant ?? '#ccc' };
   }
   const heightM = heightCm / 100;
   if (heightM === 0) {
-    return { value: 0, category: 'Dados insuficientes', isIdeal: false, color: '#ccc' };
+    return { value: 0, category: 'Dados insuficientes', isIdeal: false, color: colors?.onSurfaceVariant ?? '#ccc' };
   }
   const bmi = weight / (heightM * heightM);
   const roundedBmi = Math.round(bmi * 10) / 10;
 
   let category = '';
   let isIdeal = false;
-  let color = '#ccc';
+  let color = colors?.onSurfaceVariant ?? '#ccc';
 
   if (roundedBmi < 18.5) {
     category = 'Abaixo do peso';
-    color = '#FFD700';
+    color = colors?.bmiUnderweight ?? '#FFD700';
   } else if (roundedBmi >= 18.5 && roundedBmi <= 24.9) {
     category = 'Peso ideal';
     isIdeal = true;
-    color = '#4CAF50';
+    color = colors?.bmiIdeal ?? '#4CAF50';
   } else if (roundedBmi >= 25 && roundedBmi <= 29.9) {
     category = 'Sobrepeso';
-    color = '#FF9800';
+    color = colors?.bmiOverweight ?? '#FF9800';
   } else {
     category = 'Obesidade';
-    color = '#F44336';
+    color = colors?.bmiObese ?? '#F44336';
   }
 
   return {

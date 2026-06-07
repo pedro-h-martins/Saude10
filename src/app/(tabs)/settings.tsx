@@ -2,9 +2,9 @@ import AudioLibraryComponent from '@/components/AudioLibrary';
 import { Card } from '@/components/Card';
 import { InputWithValidation } from '@/components/InputWithValidation';
 import ShareProgressButton from '@/components/ShareProgressButton';
-import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
 import { Goal } from '@/models/Goal';
@@ -42,6 +42,7 @@ const calculateAge = (birthDate: Date) => {
 };
 
 export default function SettingsScreen() {
+  const { colors, isDark, mode, setMode } = useTheme();
   const insets = useSafeAreaInsets();
   const goals = useQuery(Goal);
   const { currentUser } = useAuth();
@@ -328,21 +329,21 @@ export default function SettingsScreen() {
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Text>Usuário não encontrado.</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.onSurface }}>Usuário não encontrado.</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.surfaceContainerLowest }]}>
         <TouchableOpacity onPress={isEditing ? handleCancel : undefined}>
-          <Ionicons name={isEditing ? "close" : "arrow-back"} size={24} color={Colors.text} />
+          <Ionicons name={isEditing ? "close" : "arrow-back"} size={24} color={colors.onSurface} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Configurações</Text>
+        <Text style={[styles.headerTitle, { color: colors.onSurface }]}>Configurações</Text>
         <TouchableOpacity onPress={isEditing ? handleSave : () => setIsEditing(true)}>
-          <Ionicons name={isEditing ? "checkmark" : "pencil"} size={24} color={Colors.primary} />
+          <Ionicons name={isEditing ? "checkmark" : "pencil"} size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -353,116 +354,116 @@ export default function SettingsScreen() {
             <TouchableOpacity onPress={isEditing ? handlePickAvatar : undefined} activeOpacity={0.8}>
               <Image
                 source={{ uri: user.avatarUri ?? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' }}
-                style={styles.avatar}
+                style={[styles.avatar, { borderColor: colors.surfaceContainerLowest }]}
               />
             </TouchableOpacity>
             {isEditing && (
               <View style={styles.editAvatarControls}>
-                <TouchableOpacity style={styles.editAvatarButton} onPress={handlePickAvatar}>
-                  <Ionicons name="camera" size={16} color={Colors.white} />
+                <TouchableOpacity style={[styles.editAvatarButton, { backgroundColor: colors.primary, borderColor: colors.surfaceContainerLowest }]} onPress={handlePickAvatar}>
+                  <Ionicons name="camera" size={16} color={colors.white} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.removeAvatarButton} onPress={handleRemoveAvatar}>
-                  <Ionicons name="trash" size={16} color={Colors.white} />
+                <TouchableOpacity style={[styles.removeAvatarButton, { backgroundColor: colors.warning, borderColor: colors.surfaceContainerLowest }]} onPress={handleRemoveAvatar}>
+                  <Ionicons name="trash" size={16} color={colors.white} />
                 </TouchableOpacity>
               </View>
             )}
           </View>
-          <Text style={styles.sectionLabel}>PERFIL PESSOAL</Text>
+          <Text style={[styles.sectionLabel, { color: colors.onSurfaceVariant }]}>PERFIL PESSOAL</Text>
           {isEditing ? (
             <View style={styles.editSection}>
               <TextInput
-                style={styles.input}
-                value={formData.name}
+style={[styles.input, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }]}
+          value={formData.name}
                 onChangeText={(text) => setFormData({ ...formData, name: text })}
                 placeholder="Nome"
               />
               <TextInput
-                style={styles.input}
-                value={formData.email}
+style={[styles.input, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }]}
+          value={formData.email}
                 onChangeText={(text) => setFormData({ ...formData, email: text })}
                 placeholder="Email"
                 keyboardType="email-address"
               />
-              <TouchableOpacity style={styles.passwordChangeButton} onPress={() => setPasswordModalVisible(true)}>
-                <View style={styles.iconCircleSmall}>
-                  <Ionicons name="lock-closed" size={16} color={Colors.white} />
-                </View>
-                <Text style={styles.passwordChangeText}>Alterar senha</Text>
+<TouchableOpacity style={[styles.passwordChangeButton, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }]} onPress={() => setPasswordModalVisible(true)}>
+          <View style={[styles.iconCircleSmall, { backgroundColor: colors.primary }]}>
+            <Ionicons name="lock-closed" size={16} color={colors.white} />
+          </View>
+          <Text style={[styles.passwordChangeText, { color: colors.onSurface }]}>Alterar senha</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <>
-              <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.userEmail}>{user.email}</Text>
+<Text style={[styles.userName, { color: colors.onSurface }]}>{user.name}</Text>
+      <Text style={[styles.userEmail, { color: colors.onSurfaceVariant }]}>{user.email}</Text>
             </>
           )}
         </View>
 
 
-        <Text style={styles.sectionTitle}>Biometria e Fisiologia</Text>
+        <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Biometria e Fisiologia</Text>
         <View style={styles.biometryGrid}>
           <Card style={styles.biometryCard}>
-            <Ionicons name="man-outline" size={24} color={Colors.primary} />
+            <Ionicons name="man-outline" size={24} color={colors.primary} />
                   {isEditing ? (
-                    <InputWithValidation
-                      style={styles.biometryInput}
-                      value={formData.birthDate}
+<InputWithValidation
+          style={[styles.biometryInput, { color: colors.primary, backgroundColor: colors.cancelButtonBackground }]}
+          value={formData.birthDate}
                       onChangeText={formatBirthDateInput}
                       keyboardType="numeric"
                       maxLength={10}
                     />
                   ) : (
-                    <Text style={styles.biometryValue}>{birthYear}</Text>
+                    <Text style={[styles.biometryValue, { color: colors.onSurface }]}>{birthYear}</Text>
                   )}
-            <Text style={styles.biometryLabel}>{isEditing ? 'NASCIMENTO' : 'ANO DE NASCIMENTO'}</Text>
+            <Text style={[styles.biometryLabel, { color: colors.onSurfaceVariant }]}>{isEditing ? 'NASCIMENTO' : 'ANO DE NASCIMENTO'}</Text>
           </Card>
           <Card style={styles.biometryCard}>
-            <Ionicons name="resize-outline" size={24} color={Colors.primary} />
+            <Ionicons name="resize-outline" size={24} color={colors.primary} />
             {isEditing ? (
-              <InputWithValidation
-                style={styles.biometryInput}
-                value={formData.height}
+<InputWithValidation
+          style={[styles.biometryInput, { color: colors.primary, backgroundColor: colors.cancelButtonBackground }]}
+          value={formData.height}
                 onChangeText={(text) => setFormData({ ...formData, height: sanitizeNumberInput(text, 6) })}
                 keyboardType="numeric"
               />
             ) : (
-              <Text style={styles.biometryValue}>{user.height.toFixed(2)}</Text>
+              <Text style={[styles.biometryValue, { color: colors.onSurface }]}>{user.height.toFixed(2)}</Text>
             )}
-            <Text style={styles.biometryLabel}>ALTURA (CM)</Text>
+            <Text style={[styles.biometryLabel, { color: colors.onSurfaceVariant }]}>ALTURA (CM)</Text>
           </Card>
         </View>
 
-        <Card style={styles.weightCard}>
+        <Card style={[styles.weightCard, { backgroundColor: colors.primary }]}>
           <View style={styles.weightHeader}>
-            <Ionicons name="scale-outline" size={24} color={Colors.white} />
+            <Ionicons name="scale-outline" size={24} color={colors.white} />
           </View>
           {isEditing ? (
             <InputWithValidation
-              style={[styles.weightValue, { color: Colors.primary, backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 10 }]}
+              style={[styles.weightValue, { color: colors.primary, backgroundColor: colors.surfaceContainerLowest, borderRadius: 8, paddingHorizontal: 10 }]}
               value={formData.weight}
               onChangeText={(text) => setFormData({ ...formData, weight: sanitizeNumberInput(text, 6) })}
               keyboardType="numeric"
             />
           ) : (
-            <Text style={styles.weightValue}>{user.weight}</Text>
+            <Text style={[styles.weightValue, { color: colors.onPrimary }]}>{user.weight}</Text>
           )}
           <Text style={styles.weightLabel}>PESO (KG)</Text>
         </Card>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Metas de Saúde</Text>
+          <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Metas de Saúde</Text>
           {goals.length < 3 && (
             <TouchableOpacity onPress={handleAddGoal}>
-              <Ionicons name="add-circle" size={28} color={Colors.primary} />
+              <Ionicons name="add-circle" size={28} color={colors.primary} />
             </TouchableOpacity>
           )}
         </View>
-        <Text style={styles.sectionSubtitle}>Gerencie suas metas ativas (Máximo 3).</Text>
+        <Text style={[styles.sectionSubtitle, { color: colors.onSurfaceVariant }]}>Gerencie suas metas ativas (Máximo 3).</Text>
 
         {goals.map((goal) => {
           const isSelected = goal.isActive;
           return (
-            <View key={goal._id.toHexString()} style={[styles.goalItem, isSelected && styles.goalItemActive]}>
+            <View key={goal._id.toHexString()} style={[styles.goalItem, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }, isSelected && styles.goalItemActive, isSelected && { borderColor: colors.primary, backgroundColor: colors.waterLight }]}>
               <TouchableOpacity 
                 style={styles.goalInfo} 
                 onPress={() => {
@@ -476,17 +477,17 @@ export default function SettingsScreen() {
                 <Ionicons 
                   name={isSelected ? "checkbox" : "square-outline"} 
                   size={22} 
-                  color={isSelected ? Colors.primary : Colors.textSecondary} 
+                  color={isSelected ? colors.primary : colors.onSurfaceVariant} 
                   style={styles.goalIcon} 
                 />
-                <Text style={[styles.goalText, isSelected && styles.goalTextActive]}>{goal.title}</Text>
+                <Text style={[styles.goalText, { color: colors.onSurface }, isSelected && styles.goalTextActive, isSelected && { color: colors.primary }]}>{goal.title}</Text>
               </TouchableOpacity>
               {!isEditing && (
                 <ShareProgressButton
                   compact
                   title="Compartilhar meta"
                   message={`Minha meta ativa no Saude10: ${goal.title}`}
-                  buttonStyle={styles.shareActionButton}
+                  buttonStyle={[styles.shareActionButton, { backgroundColor: colors.primary }]}
                 />
               )}
             </View>
@@ -495,25 +496,25 @@ export default function SettingsScreen() {
 
         
         {goals.length === 0 && (
-          <TouchableOpacity 
-            style={styles.goalButton}
-            onPress={handleAddGoal}
-          >
-            <Ionicons name="add-outline" size={18} color={Colors.primary} style={styles.goalIcon} />
-            <Text style={[styles.goalButtonText, { color: Colors.primary }]}>Adicionar primeira meta</Text>
+<TouchableOpacity
+      style={[styles.goalButton, { backgroundColor: colors.surfaceContainerLowest }]}
+      onPress={handleAddGoal}
+    >
+            <Ionicons name="add-outline" size={18} color={colors.primary} style={styles.goalIcon} />
+            <Text style={[styles.goalButtonText, { color: colors.primary }]}>Adicionar primeira meta</Text>
           </TouchableOpacity>
         )}
 
       {!isEditing && (
-        <View style={styles.reportSection}>
-          <Text style={styles.sectionTitle}>Relatório</Text>
-          <Text style={styles.sectionSubtitle}>Selecione as categorias que deseja incluir no relatório.</Text>
+        <View style={[styles.reportSection, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }]}>
+        <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Relatório</Text>
+        <Text style={[styles.sectionSubtitle, { color: colors.onSurfaceVariant }]}>Selecione as categorias que deseja incluir no relatório.</Text>
           {EXPORT_CATEGORIES.map((category) => {
             const selected = selectedExportCategories.includes(category.key);
             return (
               <TouchableOpacity
                 key={category.key}
-                style={[styles.exportCategoryRow, selected && styles.exportCategoryRowSelected]}
+                style={[styles.exportCategoryRow, { backgroundColor: colors.cancelButtonBackground, borderColor: colors.outlineVariant }, selected && styles.exportCategoryRowSelected, selected && { backgroundColor: colors.waterLight, borderColor: colors.primary }]}
                 onPress={() => {
                   setSelectedExportCategories((prev) =>
                     prev.includes(category.key)
@@ -525,40 +526,60 @@ export default function SettingsScreen() {
                 <Ionicons
                   name={selected ? 'checkbox' : 'square-outline'}
                   size={20}
-                  color={selected ? Colors.primary : Colors.textSecondary}
+                  color={selected ? colors.primary : colors.onSurfaceVariant}
                 />
-                <Text style={[styles.exportCategoryText, selected && styles.exportCategoryTextSelected]}>{category.label}</Text>
+                <Text style={[styles.exportCategoryText, { color: colors.onSurface }, selected && styles.exportCategoryTextSelected, selected && { color: colors.primary }]}>{category.label}</Text>
               </TouchableOpacity>
             );
           })}
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportData} disabled={isExporting}>
-            <Ionicons name="document-text-outline" size={18} color={Colors.white} style={{ marginRight: 8 }} />
-            <Text style={styles.exportButtonText}>{isExporting ? 'Exportando...' : 'Exportar JSON'}</Text>
+          <TouchableOpacity style={[styles.exportButton, { backgroundColor: colors.primary }]} onPress={handleExportData} disabled={isExporting}>
+            <Ionicons name="document-text-outline" size={18} color={colors.onPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.exportButtonText, { color: colors.onPrimary }]}>{isExporting ? 'Exportando...' : 'Exportar JSON'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.exportButton, { backgroundColor: Colors.text }]} onPress={handleSendReportEmail} disabled={isSendingEmail}>
-            <Ionicons name="mail-outline" size={18} color={Colors.white} style={{ marginRight: 8 }} />
-            <Text style={styles.exportButtonText}>{isSendingEmail ? 'Enviando...' : 'Enviar por e-mail'}</Text>
-          </TouchableOpacity>
+<TouchableOpacity style={[styles.exportButton, { backgroundColor: colors.primary }]} onPress={handleSendReportEmail} disabled={isSendingEmail}>
+      <Ionicons name="mail-outline" size={18} color={colors.onPrimary} style={{ marginRight: 8 }} />
+      <Text style={[styles.exportButtonText, { color: colors.onPrimary }]}>{isSendingEmail ? 'Enviando...' : 'Enviar por e-mail'}</Text>
+    </TouchableOpacity>
+        </View>
+      )}
+
+{!isEditing && (
+        <View style={[styles.themeSection, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }]}>
+          <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Aparência</Text>
+          <Text style={[styles.sectionSubtitle, { color: colors.onSurfaceVariant }]}>Escolha o tema do aplicativo.</Text>
+          <View style={styles.themeModeRow}>
+            {([['system', 'Automático', 'phone-portrait-outline'], ['light', 'Claro', 'sunny-outline'], ['dark', 'Escuro', 'moon-outline']] as const).map(([m, label, icon]) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.themeModeChip, mode === m && styles.themeModeChipActive, { backgroundColor: mode === m ? colors.primaryContainer : colors.cancelButtonBackground, borderColor: mode === m ? colors.primary : colors.outlineVariant }]}
+                onPress={() => setMode(m)}
+              >
+                <Ionicons name={icon as any} size={16} color={mode === m ? colors.onPrimaryContainer : colors.onSurfaceVariant} />
+                <Text style={[styles.themeModeChipText, { color: mode === m ? colors.onPrimaryContainer : colors.onSurfaceVariant }]}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
         </View>
       )}
 
       {!isEditing && (
-        <View style={styles.bottomMenu}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => setAudioLibraryVisible(true)}>
-            <View style={styles.menuIconCircle}>
-              <Ionicons name="musical-notes-outline" size={20} color={Colors.primary} />
-            </View>
-            <Text style={styles.menuItemText}>Biblioteca de Audios</Text>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </TouchableOpacity>
+        <View style={[styles.bottomMenu]}>
+      <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.outlineVariant }]} onPress={() => setAudioLibraryVisible(true)}>
+        <View style={[styles.menuIconCircle, { backgroundColor: colors.cancelButtonBackground }]}>
+          <Ionicons name="musical-notes-outline" size={20} color={colors.primary} />
+        </View>
+        <Text style={[styles.menuItemText, { color: colors.onSurface }]}>Biblioteca de Audios</Text>
+        <Ionicons name="chevron-forward" size={20} color={colors.onSurfaceVariant} />
+      </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => signOut()}>
-            <View style={[styles.menuIconCircle, { backgroundColor: '#FFEEED' }]}>
-              <Ionicons name="log-out-outline" size={20} color={Colors.warning} />
-            </View>
-            <Text style={[styles.menuItemText, { color: Colors.warning }]}>Sair da conta</Text>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </TouchableOpacity>
+      <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.outlineVariant }]} onPress={() => signOut()}>
+        <View style={[styles.menuIconCircle, { backgroundColor: colors.errorContainer }]}>
+          <Ionicons name="log-out-outline" size={20} color={colors.warning} />
+        </View>
+        <Text style={[styles.menuItemText, { color: colors.warning }]}>Sair da conta</Text>
+        <Ionicons name="chevron-forward" size={20} color={colors.onSurfaceVariant} />
+      </TouchableOpacity>
         </View>
       )}
       </ScrollView>
@@ -581,36 +602,36 @@ export default function SettingsScreen() {
         onRequestClose={() => setGoalModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{editingGoal ? 'Editar Meta' : 'Nova Meta'}</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Título da meta"
+<View style={[styles.modalContent, { backgroundColor: colors.surfaceContainerLowest }]}>
+        <Text style={[styles.modalTitle, { color: colors.onSurface }]}>{editingGoal ? 'Editar Meta' : 'Nova Meta'}</Text>
+<TextInput
+          style={[styles.modalInput, { backgroundColor: colors.cancelButtonBackground }]}
+          placeholder="Título da meta"
               value={goalTitle}
               onChangeText={setGoalTitle}
               autoFocus
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setGoalModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={handleSaveGoal}
-              >
-                <Text style={styles.saveButtonText}>{editingGoal ? 'Salvar' : 'Adicionar'}</Text>
+style={[styles.modalButton, styles.cancelButton, { backgroundColor: colors.cancelButtonBackground }]}
+          onPress={() => setGoalModalVisible(false)}
+        >
+          <Text style={[styles.cancelButtonText, { color: colors.onSurfaceVariant }]}>Cancelar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.primary }]}
+          onPress={handleSaveGoal}
+        >
+          <Text style={[styles.saveButtonText, { color: colors.onPrimary }]}>{editingGoal ? 'Salvar' : 'Adicionar'}</Text>
               </TouchableOpacity>
             </View>
             {editingGoal && (
-              <TouchableOpacity
-                style={styles.deleteGoalButton}
-                onPress={() => handleDeleteGoal(editingGoal)}
-              >
-                <Ionicons name="trash-outline" size={18} color={Colors.warning} />
-                <Text style={styles.deleteGoalButtonText}>Excluir Meta</Text>
+<TouchableOpacity
+            style={[styles.deleteGoalButton, { borderTopColor: colors.outlineVariant }]}
+            onPress={() => handleDeleteGoal(editingGoal)}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.warning} />
+            <Text style={[styles.deleteGoalButtonText, { color: colors.warning }]}>Excluir Meta</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -624,8 +645,8 @@ export default function SettingsScreen() {
         onRequestClose={() => setPasswordModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Alterar Senha</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.surfaceContainerLowest }]}>
+            <Text style={[styles.modalTitle, { color: colors.onSurface }]}>Alterar Senha</Text>
             <InputWithValidation
               placeholder="Senha atual"
               secureTextEntry
@@ -647,22 +668,22 @@ export default function SettingsScreen() {
               onChangeText={(t) => setPwdConfirm(t)}
               containerStyle={{ marginBottom: 8 }}
             />
-            {pwdError ? <Text style={{ color: Colors.warning, marginBottom: 8 }}>{pwdError}</Text> : null}
+            {pwdError ? <Text style={{ color: colors.warning, marginBottom: 8 }}>{pwdError}</Text> : null}
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setPasswordModalVisible(false);
-                  setPwdCurrent('');
-                  setPwdNew('');
-                  setPwdConfirm('');
-                  setPwdError(null);
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
+style={[styles.modalButton, styles.cancelButton, { backgroundColor: colors.cancelButtonBackground }]}
+          onPress={() => {
+            setPasswordModalVisible(false);
+            setPwdCurrent('');
+            setPwdNew('');
+            setPwdConfirm('');
+            setPwdError(null);
+          }}
+        >
+          <Text style={[styles.cancelButtonText, { color: colors.onSurfaceVariant }]}>Cancelar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.primary }]}
                 onPress={async () => {
                   setPwdError(null);
                   if (!pwdCurrent) {
@@ -697,7 +718,7 @@ export default function SettingsScreen() {
                   }
                 }}
               >
-                <Text style={styles.saveButtonText}>{isChangingPassword ? 'Atualizando...' : 'Atualizar'}</Text>
+                <Text style={[styles.saveButtonText, { color: colors.onPrimary }]}>{isChangingPassword ? 'Atualizando...' : 'Atualizar'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -711,7 +732,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -719,10 +739,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: Colors.white,
   },
   headerTitle: {
-    ...Typography.h3,
+    ...Typography.titleMedium,
   },
   scrollContent: {
     padding: 20,
@@ -740,20 +759,17 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: Colors.white,
   },
   editAvatarButton: {
     position: 'absolute',
     bottom: 5,
     right: 5,
-    backgroundColor: Colors.primary,
     width: 28,
     height: 28,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   editAvatarControls: {
     position: 'absolute',
@@ -763,53 +779,44 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   removeAvatarButton: {
-    backgroundColor: Colors.warning,
     width: 28,
     height: 28,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   sectionLabel: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
+    ...Typography.labelMedium,
     marginBottom: 8,
     letterSpacing: 1.2,
   },
   userName: {
-    ...Typography.h2,
-    color: Colors.text,
+    ...Typography.titleLarge,
     marginBottom: 4,
   },
   userEmail: {
-    ...Typography.body,
-    color: Colors.textSecondary,
+    ...Typography.bodyMedium,
   },
   editSection: {
     width: '100%',
     paddingHorizontal: 20,
   },
   input: {
-    backgroundColor: Colors.white,
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
-    ...Typography.body,
+    ...Typography.bodyMedium,
   },
   sectionTitle: {
-    ...Typography.h3,
-    color: Colors.text,
+    ...Typography.titleMedium,
     marginTop: 10,
     marginBottom: 15,
   },
   sectionSubtitle: {
-    ...Typography.body,
-    color: Colors.textSecondary,
+    ...Typography.bodyMedium,
     marginBottom: 15,
   },
   biometryGrid: {
@@ -823,27 +830,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   biometryValue: {
-    ...Typography.h2,
-    color: Colors.text,
+    ...Typography.titleLarge,
     marginTop: 10,
     marginBottom: 5,
   },
   biometryInput: {
-    ...Typography.h2,
-    color: Colors.primary,
+    ...Typography.titleLarge,
     marginTop: 10,
     marginBottom: 5,
     textAlign: 'center',
     width: '100%',
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
   biometryLabel: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
+    ...Typography.labelMedium,
   },
   weightCard: {
-    backgroundColor: Colors.primary,
     padding: 20,
     alignItems: 'center',
     flexDirection: 'column',
@@ -853,18 +855,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   weightValue: {
-    ...Typography.h1,
-    color: Colors.white,
+    ...Typography.headlineLarge,
     marginBottom: 5,
   },
   weightLabel: {
-    ...Typography.caption,
+    ...Typography.labelMedium,
     color: 'rgba(255, 255, 255, 0.7)',
   },
   goalButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
     padding: 15,
     borderRadius: 12,
     marginBottom: 10,
@@ -872,12 +872,10 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   reportSection: {
-    backgroundColor: Colors.white,
     borderRadius: 18,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   exportCategoryRow: {
     flexDirection: 'row',
@@ -886,26 +884,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
     marginBottom: 10,
-    backgroundColor: '#FAFAFA',
   },
   exportCategoryRowSelected: {
-    backgroundColor: '#E9F5FF',
-    borderColor: Colors.primary,
   },
   exportCategoryText: {
-    ...Typography.body,
-    color: Colors.text,
+    ...Typography.bodyMedium,
     marginLeft: 12,
   },
   exportCategoryTextSelected: {
-    color: Colors.primary,
     fontWeight: '600',
   },
   exportButton: {
     marginTop: 8,
-    backgroundColor: Colors.primary,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -913,17 +904,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   exportButtonText: {
-    ...Typography.body,
-    color: Colors.white,
+    ...Typography.bodyMedium,
     fontWeight: '700',
   },
   goalIcon: {
     marginRight: 12,
   },
   goalButtonText: {
-    ...Typography.body,
-    color: Colors.text,
+    ...Typography.bodyMedium,
   },
+  themeSection: {
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  themeModeRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  themeModeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
+  },
+  themeModeChipActive: {
+  },
+  themeModeChipText: {
+    ...Typography.labelMedium,
+  },
+
   bottomMenu: {
     marginTop: 20,
   },
@@ -932,19 +947,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   menuIconCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
   menuItemText: {
-    ...Typography.body,
+    ...Typography.bodyMedium,
     fontWeight: '600',
     flex: 1,
   },
@@ -959,16 +972,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.white,
     padding: 15,
     borderRadius: 12,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   goalItemActive: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F0F7FF',
   },
   goalInfo: {
     flexDirection: 'row',
@@ -976,17 +985,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   goalText: {
-    ...Typography.body,
-    color: Colors.text,
+    ...Typography.bodyMedium,
     marginLeft: 10,
   },
   goalTextActive: {
-    color: Colors.primary,
     fontWeight: '600',
   },
   shareActionButton: {
     marginLeft: 12,
-    backgroundColor: Colors.primary,
   },
   modalOverlay: {
     flex: 1,
@@ -996,7 +1002,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: 25,
     width: '100%',
@@ -1007,41 +1012,36 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   modalTitle: {
-    ...Typography.h2,
+    ...Typography.titleLarge,
     marginBottom: 20,
     textAlign: 'center',
   },
   modalInput: {
-    backgroundColor: '#F5F5F5',
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderRadius: 10,
     marginBottom: 20,
-    ...Typography.body,
+    ...Typography.bodyMedium,
   },
   passwordChangeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     borderRadius: 10,
-    backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: Colors.border,
     marginTop: 6,
   },
   iconCircleSmall: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   passwordChangeText: {
-    ...Typography.body,
+    ...Typography.bodyMedium,
     fontWeight: '600',
-    color: Colors.text,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -1055,19 +1055,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButton: {
-    backgroundColor: Colors.primary,
   },
   saveButtonText: {
-    ...Typography.body,
-    color: Colors.white,
+    ...Typography.bodyMedium,
     fontWeight: '600',
   },
   cancelButton: {
-    backgroundColor: '#F5F5F5',
   },
   cancelButtonText: {
-    ...Typography.body,
-    color: Colors.textSecondary,
+    ...Typography.bodyMedium,
     fontWeight: '600',
   },
   deleteGoalButton: {
@@ -1077,12 +1073,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
     gap: 8,
   },
   deleteGoalButtonText: {
-    ...Typography.body,
-    color: Colors.warning,
+    ...Typography.bodyMedium,
     fontWeight: '600',
   },
 });
