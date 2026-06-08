@@ -1,7 +1,7 @@
 import { Card } from '@/components/Card';
-import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useQuery } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
 import { ProgressPhoto } from '@/models/ProgressPhoto';
@@ -35,6 +35,7 @@ const getStatusText = (status: ProgressPhoto['status']) => {
 };
 
 export default function ProgressPhotosScreen() {
+  const { colors, isDark } = useTheme();
   const { currentUser } = useAuth();
   const photosQuery = useQuery(ProgressPhoto);
   const photos = currentUser
@@ -99,10 +100,10 @@ export default function ProgressPhotosScreen() {
 
   const renderPhotoItem = ({ item }: { item: ProgressPhoto }) => (
     <Card style={styles.photoCard} key={item._id.toHexString()}>
-      <Image source={{ uri: item.localUri }} style={styles.photoImage} />
-      <View style={styles.photoDetails}>
-        <Text style={styles.photoDate}>{formatCapturedAt(item.capturedAt)}</Text>
-        <Text style={[styles.photoStatus, item.status === 'synced' ? styles.statusSynced : item.status === 'failed' ? styles.statusFailed : styles.statusPending]}>
+      <Image source={{ uri: item.localUri }} style={[styles.photoImage, { backgroundColor: colors.outlineVariant }]} />
+      <View style={[styles.photoDetails, { backgroundColor: colors.surfaceContainerLowest }]}>
+        <Text style={[styles.photoDate, { color: colors.onSurface }]}>{formatCapturedAt(item.capturedAt)}</Text>
+        <Text style={[styles.photoStatus, { color: colors.onSurfaceVariant }, item.status === 'synced' ? { color: colors.accent } : item.status === 'failed' ? { color: colors.warning } : { color: colors.primary }]}>
           {getStatusText(item.status)}
         </Text>
       </View>
@@ -110,18 +111,18 @@ export default function ProgressPhotosScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={Typography.h1}>Evolução Física</Text>
-        <Text style={Typography.caption}>Registre fotos semanais para acompanhar sua evolução de forma privada.</Text>
+        <Text style={[Typography.headlineLarge, { color: colors.onSurface }]}>Evolução Física</Text>
+        <Text style={[Typography.labelMedium, { color: colors.onSurfaceVariant }]}>Registre fotos semanais para acompanhar sua evolução de forma privada.</Text>
       </View>
 
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={[styles.actionButton, styles.actionButtonSpacing]} onPress={() => handleLaunchPicker(true)} disabled={isSaving}>
-          <Text style={styles.actionButtonText}>Câmera</Text>
+        <TouchableOpacity style={[styles.actionButton, styles.actionButtonSpacing, { backgroundColor: colors.primary }]} onPress={() => handleLaunchPicker(true)} disabled={isSaving}>
+          <Text style={[styles.actionButtonText, { color: colors.onPrimary }]}>Câmera</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleLaunchPicker(false)} disabled={isSaving}>
-          <Text style={styles.actionButtonText}>Galeria</Text>
+        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={() => handleLaunchPicker(false)} disabled={isSaving}>
+          <Text style={[styles.actionButtonText, { color: colors.onPrimary }]}>Galeria</Text>
         </TouchableOpacity>
       </View>
 
@@ -132,10 +133,10 @@ export default function ProgressPhotosScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={Typography.body}>Nenhuma foto registrada ainda.</Text>
+            <Text style={[Typography.bodyMedium, { color: colors.onSurface }]}>Nenhuma foto registrada ainda.</Text>
           </View>
         }
-      />
+    />
     </SafeAreaView>
   );
 }
@@ -143,7 +144,6 @@ export default function ProgressPhotosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -157,7 +157,6 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: Colors.primary,
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
@@ -166,8 +165,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   actionButtonText: {
-    ...Typography.body,
-    color: Colors.white,
+    ...Typography.bodyMedium,
   },
   listContent: {
     padding: 20,
@@ -181,28 +179,17 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 4 / 3,
     borderRadius: 14,
-    backgroundColor: Colors.border,
   },
   photoDetails: {
     padding: 12,
-    backgroundColor: Colors.white,
   },
   photoDate: {
-    ...Typography.body,
+    ...Typography.bodyMedium,
     fontWeight: '600',
     marginBottom: 4,
   },
   photoStatus: {
-    ...Typography.caption,
-  },
-  statusSynced: {
-    color: Colors.accent,
-  },
-  statusPending: {
-    color: Colors.primary,
-  },
-  statusFailed: {
-    color: Colors.warning,
+    ...Typography.labelMedium,
   },
   emptyContainer: {
     marginTop: 40,

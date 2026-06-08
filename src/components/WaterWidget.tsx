@@ -1,7 +1,7 @@
 import { Card } from '@/components/Card';
 import { ProgressCircle } from '@/components/ProgressCircle';
 import ShareProgressButton from '@/components/ShareProgressButton';
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@/context/RealmProvider';
 import { useSync } from '@/hooks/useSync';
@@ -13,304 +13,290 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export const WaterWidget = () => {
-  const { currentUser } = useAuth();
-  const user = currentUser;
-  const { save } = useSync();
-  const { baseGoal, targetGoal, isAdjusted } = useWaterGoal();
+const { colors } = useTheme();
+const { currentUser } = useAuth();
+const user = currentUser;
+const { save } = useSync();
+const { baseGoal, targetGoal, isAdjusted } = useWaterGoal();
 
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
+const today = useMemo(() => {
+const d = new Date();
+d.setHours(0, 0, 0, 0);
+return d;
+}, []);
 
-  const logs = useQuery(HydrationLog, (collection) =>
-    collection.filtered('timestamp >= $0', today), [today]
-  );
+const logs = useQuery(HydrationLog, (collection) =>
+collection.filtered('timestamp >= $0', today), [today]
+);
 
-  const currentIntake = useMemo(() => {
-    return logs.reduce((acc, log) => acc + log.amount, 0);
-  }, [logs]);
+const currentIntake = useMemo(() => {
+return logs.reduce((acc, log) => acc + log.amount, 0);
+}, [logs]);
 
-  const defaultGoal = baseGoal;
-  const progress = Math.min(currentIntake / targetGoal, 1);
+const defaultGoal = baseGoal;
+const progress = Math.min(currentIntake / targetGoal, 1);
 
-  const shareMessage = useMemo(() => {
-    if (currentIntake >= targetGoal) {
-      const extra = isAdjusted ? ' (meta aumentada por exercício intenso)' : '';
-      return `Bati minha meta de água hoje: bebi ${currentIntake}ml de ${targetGoal}ml${extra}. #Saude10`;
-    }
-    const extra = isAdjusted ? ' (meta aumentada por exercício intenso)' : '';
-    return `Hoje já bebi ${currentIntake}ml de ${targetGoal}ml de água${extra}. Continuo cuidando da minha hidratação. #Saude10`;
-  }, [currentIntake, targetGoal, isAdjusted]);
+const shareMessage = useMemo(() => {
+if (currentIntake >= targetGoal) {
+const extra = isAdjusted ? ' (meta aumentada por exercício intenso)' : '';
+return `Bati minha meta de água hoje: bebi ${currentIntake}ml de ${targetGoal}ml${extra}. #Saude10`;
+}
+const extra = isAdjusted ? ' (meta aumentada por exercício intenso)' : '';
+return `Hoje já bebi ${currentIntake}ml de ${targetGoal}ml de água${extra}. Continuo cuidando da minha hidratação. #Saude10`;
+}, [currentIntake, targetGoal, isAdjusted]);
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newGoal, setNewGoal] = useState(targetGoal.toString());
+const [modalVisible, setModalVisible] = useState(false);
+const [newGoal, setNewGoal] = useState(targetGoal.toString());
 
-  const handleAddWater = (amount: number) => {
-    if (!user) {
-      Alert.alert('Atenção', 'Faça login para registrar a ingestão de água.');
-      return;
-    }
+const handleAddWater = (amount: number) => {
+if (!user) {
+Alert.alert('Atenção', 'Faça login para registrar a ingestão de água.');
+return;
+}
 
-    const newId = new Realm.BSON.ObjectId();
-    save('HydrationLog', newId.toHexString(), {
-      _id: newId,
-      amount,
-      timestamp: new Date(),
-      userId: user._id,
-    });
-  };
+const newId = new Realm.BSON.ObjectId();
+save('HydrationLog', newId.toHexString(), {
+_id: newId,
+amount,
+timestamp: new Date(),
+userId: user._id,
+});
+};
 
-  const handleRemoveWater = (amount: number) => {
-    if (currentIntake <= 0) return;
+const handleRemoveWater = (amount: number) => {
+if (currentIntake <= 0) return;
 
-    const amountToRemove = Math.min(amount, currentIntake);
+const amountToRemove = Math.min(amount, currentIntake);
 
-    if (!user) {
-      Alert.alert('Atenção', 'Faça login para remover ingestão de água.');
-      return;
-    }
+if (!user) {
+Alert.alert('Atenção', 'Faça login para remover ingestão de água.');
+return;
+}
 
-    const newId = new Realm.BSON.ObjectId();
-    save('HydrationLog', newId.toHexString(), {
-      _id: newId,
-      amount: -amountToRemove,
-      timestamp: new Date(),
-      userId: user._id,
-    });
-  };
+const newId = new Realm.BSON.ObjectId();
+save('HydrationLog', newId.toHexString(), {
+_id: newId,
+amount: -amountToRemove,
+timestamp: new Date(),
+userId: user._id,
+});
+};
 
-  const handleUpdateGoal = () => {
-    const goalValue = parseInt(newGoal);
-    if (!isNaN(goalValue) && goalValue > 0) {
-      if (user) {
-        save('UserProfile', user._id, { waterGoal: goalValue });
-      }
-      setModalVisible(false);
-    }
-  };
+const handleUpdateGoal = () => {
+const goalValue = parseInt(newGoal);
+if (!isNaN(goalValue) && goalValue > 0) {
+if (user) {
+save('UserProfile', user._id, { waterGoal: goalValue });
+}
+setModalVisible(false);
+}
+};
 
-  return (
-    <>
-      <TouchableOpacity activeOpacity={0.8} onPress={() => setModalVisible(true)}>
-        <Card style={styles.container}>
-          <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <MaterialCommunityIcons name="water" size={20} color="#2196F3" />
-            </View>
-            <View style={styles.titleSection}>
-              <Text style={styles.title}>Hidratação</Text>
-              <Text style={styles.subtitle}>
-                META DIÁRIA: {targetGoal}ml
-                {isAdjusted && (
-                  <Text style={styles.adjustmentBadge}> +15% (exercício intenso)</Text>
-                )}
-              </Text>
-            </View>
-          </View>
+return (
+<>
+<TouchableOpacity activeOpacity={0.8} onPress={() => setModalVisible(true)}>
+<Card style={styles.container}>
+<View style={styles.header}>
+<View style={[styles.iconContainer, { backgroundColor: colors.waterLight }]}>
+<MaterialCommunityIcons name="water" size={20} color={colors.water} />
+</View>
+<View style={styles.titleSection}>
+<Text style={[styles.title, { color: colors.onSurface }]}>Hidratação</Text>
+<Text style={[styles.subtitle, { color: colors.onSurfaceVariant }]}>
+META DIÁRIA: {targetGoal}ml
+{isAdjusted && (
+<Text style={[styles.adjustmentBadge, { color: colors.tertiary }]}> +15% (exercício intenso)</Text>
+)}
+</Text>
+</View>
+</View>
 
-          <View style={styles.content}>
-            <ProgressCircle size={100} progress={progress} strokeWidth={8}>
-              <View style={styles.progressContent}>
-                <Text style={styles.currentValue}>{currentIntake}</Text>
-                <Text style={styles.unit}>ml</Text>
-              </View>
-            </ProgressCircle>
+<View style={styles.content}>
+<ProgressCircle size={100} progress={progress} strokeWidth={8}>
+<View style={styles.progressContent}>
+<Text style={[styles.currentValue, { color: colors.water }]}>{currentIntake}</Text>
+<Text style={[styles.unit, { color: colors.onSurfaceVariant }]}>ml</Text>
+</View>
+</ProgressCircle>
 
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => handleAddWater(250)}
-                onLongPress={() => handleRemoveWater(250)}
-                delayLongPress={500}
-              >
-                <Ionicons name="add" size={24} color={Colors.white} />
-                <Text style={styles.addButtonText}>250ml</Text>
-              </TouchableOpacity>
+<View style={styles.actionRow}>
+<TouchableOpacity
+style={[styles.addButton, { backgroundColor: colors.water }]}
+onPress={() => handleAddWater(250)}
+onLongPress={() => handleRemoveWater(250)}
+delayLongPress={500}
+>
+<Ionicons name="add" size={24} color={colors.surfaceContainerLowest} />
+<Text style={[styles.addButtonText, { color: colors.surfaceContainerLowest }]}>250ml</Text>
+</TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: '#E3F2FD' }]}
-                onPress={() => handleAddWater(500)}
-                onLongPress={() => handleRemoveWater(500)}
-                delayLongPress={500}
-              >
-                <Ionicons name="add" size={24} color="#2196F3" />
-                <Text style={[styles.addButtonText, { color: '#2196F3' }]}>500ml</Text>
-              </TouchableOpacity>
-            </View>
-            <ShareProgressButton compact message={shareMessage} buttonStyle={styles.shareButton} />
-          </View>
-        </Card>
-      </TouchableOpacity>
+<TouchableOpacity
+style={[styles.addButton, { backgroundColor: colors.waterLight }]}
+onPress={() => handleAddWater(500)}
+onLongPress={() => handleRemoveWater(500)}
+delayLongPress={500}
+>
+<Ionicons name="add" size={24} color={colors.water} />
+<Text style={[styles.addButtonText, { color: colors.water }]}>500ml</Text>
+</TouchableOpacity>
+</View>
+<ShareProgressButton compact message={shareMessage} buttonStyle={styles.shareButton} />
+</View>
+</Card>
+</TouchableOpacity>
 
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Ajustar Meta de Água</Text>
-            <Text style={styles.modalSubtitle}>
-              Recomendação baseada no seu peso: {defaultGoal}ml
-            </Text>
+<Modal
+animationType="fade"
+transparent={true}
+visible={modalVisible}
+onRequestClose={() => setModalVisible(false)}
+>
+<Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+<Pressable style={[styles.modalContent, { backgroundColor: colors.surfaceContainerLowest }]} onPress={(e) => e.stopPropagation()}>
+<Text style={[styles.modalTitle, { color: colors.onSurface }]}>Ajustar Meta de Água</Text>
+<Text style={[styles.modalSubtitle, { color: colors.onSurfaceVariant }]}>
+Recomendação baseada no seu peso: {defaultGoal}ml
+</Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>NOVA META (ml)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={defaultGoal.toString()}
-                keyboardType="numeric"
-                value={newGoal}
-                onChangeText={setNewGoal}
-              />
-            </View>
+<View style={styles.inputGroup}>
+<Text style={[styles.inputLabel, { color: colors.onSurfaceVariant }]}>NOVA META (ml)</Text>
+<TextInput
+style={[styles.textInput, { borderColor: colors.outlineVariant, color: colors.onSurface }]}
+placeholder={defaultGoal.toString()}
+placeholderTextColor={colors.onSurfaceVariant}
+keyboardType="numeric"
+value={newGoal}
+onChangeText={setNewGoal}
+/>
+</View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={handleUpdateGoal}>
-              <Text style={styles.saveButtonText}>SALVAR META</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    </>
-  );
+<TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.water }]} onPress={handleUpdateGoal}>
+<Text style={[styles.saveButtonText, { color: colors.surfaceContainerLowest }]}>SALVAR META</Text>
+</TouchableOpacity>
+</Pressable>
+</Pressable>
+</Modal>
+</>
+);
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  titleSection: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 12,
-    color: '#999',
-    fontWeight: '600',
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  progressContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  currentValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#2196F3',
-  },
-  unit: {
-    fontSize: 12,
-    color: '#999',
-    fontWeight: '600',
-  },
-  actionRow: {
-    flex: 1,
-    marginLeft: 20,
-    gap: 8,
-  },
-  shareButton: {
-    marginTop: 16,
-    alignSelf: 'flex-start',
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2196F3',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  addButtonText: {
-    color: Colors.white,
-    fontWeight: '700',
-    fontSize: 14,
-    marginLeft: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 24,
-    width: '100%',
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  adjustmentBadge: {
-    fontSize: 10,
-    color: '#FF6B35',
-    fontWeight: '700',
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#999',
-    marginBottom: 8,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  saveButton: {
-    backgroundColor: '#2196F3',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: Colors.white,
-    fontWeight: '800',
-    fontSize: 16,
-  },
+container: {
+padding: 16,
+},
+header: {
+flexDirection: 'row',
+alignItems: 'center',
+marginBottom: 16,
+},
+iconContainer: {
+width: 36,
+height: 36,
+borderRadius: 18,
+justifyContent: 'center',
+alignItems: 'center',
+marginRight: 12,
+},
+titleSection: {
+flex: 1,
+},
+title: {
+fontSize: 16,
+fontWeight: '700',
+},
+subtitle: {
+fontSize: 12,
+fontWeight: '600',
+},
+content: {
+flexDirection: 'row',
+alignItems: 'center',
+justifyContent: 'space-between',
+},
+progressContent: {
+alignItems: 'center',
+justifyContent: 'center',
+},
+currentValue: {
+fontSize: 20,
+fontWeight: '800',
+},
+unit: {
+fontSize: 12,
+fontWeight: '600',
+},
+actionRow: {
+flex: 1,
+marginLeft: 20,
+gap: 8,
+},
+shareButton: {
+marginTop: 16,
+alignSelf: 'flex-start',
+},
+addButton: {
+flexDirection: 'row',
+alignItems: 'center',
+justifyContent: 'center',
+paddingVertical: 8,
+paddingHorizontal: 12,
+borderRadius: 12,
+},
+addButtonText: {
+fontWeight: '700',
+fontSize: 14,
+marginLeft: 4,
+},
+modalOverlay: {
+flex: 1,
+backgroundColor: 'rgba(0,0,0,0.5)',
+justifyContent: 'center',
+alignItems: 'center',
+padding: 24,
+},
+modalContent: {
+borderRadius: 24,
+padding: 24,
+width: '100%',
+elevation: 5,
+},
+modalTitle: {
+fontSize: 20,
+fontWeight: '800',
+marginBottom: 8,
+textAlign: 'center',
+},
+adjustmentBadge: {
+fontSize: 10,
+fontWeight: '700',
+},
+modalSubtitle: {
+fontSize: 14,
+marginBottom: 24,
+textAlign: 'center',
+},
+inputGroup: {
+marginBottom: 24,
+},
+inputLabel: {
+fontSize: 12,
+fontWeight: '700',
+marginBottom: 8,
+},
+textInput: {
+borderWidth: 1,
+borderRadius: 12,
+padding: 12,
+fontSize: 18,
+fontWeight: '600',
+},
+saveButton: {
+borderRadius: 12,
+padding: 16,
+alignItems: 'center',
+},
+saveButtonText: {
+fontWeight: '800',
+fontSize: 16,
+},
 });

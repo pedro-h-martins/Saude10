@@ -1,5 +1,5 @@
 import { RecipeCard } from '@/components/RecipeCard';
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { useRecipes } from '@/hooks/useRecipes';
 import { Recipe } from '@/models/Recipe';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { FlatList, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View }
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function RecipesScreen() {
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { categories, getRecipesByCategory, toggleFavorite, favorites } = useRecipes();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -28,47 +29,47 @@ export default function RecipesScreen() {
         visible={!!selectedRecipe}
         onRequestClose={() => setSelectedRecipe(null)}
       >
-        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
-          <View style={styles.modalHeader}>
+        <View style={[styles.modalContainer, { paddingTop: insets.top, backgroundColor: colors.surfaceContainerLowest }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.outlineVariant }]}>
             <TouchableOpacity onPress={() => setSelectedRecipe(null)}>
-              <Ionicons name="arrow-back" size={24} color={Colors.text} />
+              <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{selectedRecipe.title}</Text>
+            <Text style={[styles.modalTitle, { color: colors.onSurface }]}>{selectedRecipe.title}</Text>
             <TouchableOpacity onPress={() => toggleFavorite(selectedRecipe)}>
-              <Ionicons 
-                name={selectedRecipe.isFavorite ? "heart" : "heart-outline"} 
-                size={24} 
-                color={selectedRecipe.isFavorite ? Colors.error : Colors.textSecondary} 
+              <Ionicons
+                name={selectedRecipe.isFavorite ? "heart" : "heart-outline"}
+                size={24}
+                color={selectedRecipe.isFavorite ? colors.error : colors.onSurfaceVariant}
               />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalBody}>
-            <View style={styles.recipeMeta}>
+            <View style={[styles.recipeMeta, { backgroundColor: colors.background }]}>
               <View style={styles.metaItem}>
-                <Ionicons name="time-outline" size={20} color={Colors.primary} />
-                <Text style={styles.metaLabel}>Tempo</Text>
-                <Text style={styles.metaValue}>{selectedRecipe.prepTime || 'N/A'}</Text>
+                <Ionicons name="time-outline" size={20} color={colors.primary} />
+                <Text style={[styles.metaLabel, { color: colors.onSurfaceVariant }]}>Tempo</Text>
+                <Text style={[styles.metaValue, { color: colors.onSurface }]}>{selectedRecipe.prepTime || 'N/A'}</Text>
               </View>
               <View style={styles.metaItem}>
-                <Ionicons name="flame-outline" size={20} color={Colors.primary} />
-                <Text style={styles.metaLabel}>Calorias</Text>
-                <Text style={styles.metaValue}>{selectedRecipe.calories || 'N/A'}</Text>
+                <Ionicons name="flame-outline" size={20} color={colors.primary} />
+                <Text style={[styles.metaLabel, { color: colors.onSurfaceVariant }]}>Calorias</Text>
+                <Text style={[styles.metaValue, { color: colors.onSurface }]}>{selectedRecipe.calories || 'N/A'}</Text>
               </View>
               <View style={styles.metaItem}>
-                <Ionicons name="restaurant-outline" size={20} color={Colors.primary} />
-                <Text style={styles.metaLabel}>Categoria</Text>
-                <Text style={styles.metaValue}>{selectedRecipe.category}</Text>
+                <Ionicons name="restaurant-outline" size={20} color={colors.primary} />
+                <Text style={[styles.metaLabel, { color: colors.onSurfaceVariant }]}>Categoria</Text>
+                <Text style={[styles.metaValue, { color: colors.onSurface }]}>{selectedRecipe.category}</Text>
               </View>
             </View>
 
-            <Text style={styles.sectionTitle}>Ingredientes</Text>
-            <Text style={styles.ingredientsText}>
+            <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Ingredientes</Text>
+            <Text style={[styles.ingredientsText, { color: colors.onSurface }]}>
               {selectedRecipe.ingredients.split(';').map(i => `• ${i.trim()}`).join('\n')}
             </Text>
 
-            <Text style={styles.sectionTitle}>Modo de Preparo</Text>
-            <Text style={styles.instructionsText}>{selectedRecipe.instructions}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Modo de Preparo</Text>
+            <Text style={[styles.instructionsText, { color: colors.onSurface }]}>{selectedRecipe.instructions}</Text>
           </ScrollView>
         </View>
       </Modal>
@@ -76,17 +77,17 @@ export default function RecipesScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Receitas Saudáveis</Text>
-        <TouchableOpacity 
-          style={[styles.favoriteToggle, showFavoritesOnly && styles.favoriteToggleActive]}
+        <Text style={[styles.headerTitle, { color: colors.onSurface }]}>Receitas Saudáveis</Text>
+        <TouchableOpacity
+          style={[styles.favoriteToggle, { borderColor: colors.primary }, showFavoritesOnly && { backgroundColor: colors.primary }]}
           onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
         >
-          <Ionicons 
-            name={showFavoritesOnly ? "heart" : "heart-outline"} 
-            size={20} 
-            color={showFavoritesOnly ? Colors.white : Colors.primary} 
+          <Ionicons
+            name={showFavoritesOnly ? "heart" : "heart-outline"}
+            size={20}
+            color={showFavoritesOnly ? colors.onPrimary : colors.primary}
           />
         </TouchableOpacity>
       </View>
@@ -99,13 +100,15 @@ export default function RecipesScreen() {
                 key={cat}
                 style={[
                   styles.categoryBtn,
-                  selectedCategory === cat && styles.categoryBtnActive
+                  { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant },
+                  selectedCategory === cat && { backgroundColor: colors.primary, borderColor: colors.primary }
                 ]}
                 onPress={() => setSelectedCategory(cat)}
               >
                 <Text style={[
                   styles.categoryBtnText,
-                  selectedCategory === cat && styles.categoryBtnTextActive
+                  { color: colors.onSurfaceVariant },
+                  selectedCategory === cat && { color: colors.onPrimary, fontWeight: 'bold' }
                 ]}>
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </Text>
@@ -117,7 +120,7 @@ export default function RecipesScreen() {
 
       {showFavoritesOnly && (
         <View style={styles.favoritesHeader}>
-          <Text style={styles.favoritesTitle}>Meus Favoritos</Text>
+          <Text style={[styles.favoritesTitle, { color: colors.onSurface }]}>Meus Favoritos</Text>
         </View>
       )}
 
@@ -134,8 +137,8 @@ export default function RecipesScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="restaurant-outline" size={64} color={Colors.border} />
-            <Text style={styles.emptyText}>
+            <Ionicons name="restaurant-outline" size={64} color={colors.outlineVariant} />
+            <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>
               {showFavoritesOnly ? 'Você ainda não tem receitas favoritas.' : 'Nenhuma receita encontrada.'}
             </Text>
           </View>
@@ -150,7 +153,6 @@ export default function RecipesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -162,19 +164,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.text,
   },
   favoriteToggle: {
     width: 40,
     height: 40,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  favoriteToggleActive: {
-    backgroundColor: Colors.primary,
   },
   categoryContainer: {
     paddingVertical: 10,
@@ -184,22 +181,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: Colors.white,
     marginRight: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  categoryBtnActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   categoryBtnText: {
     fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  categoryBtnTextActive: {
-    color: Colors.white,
-    fontWeight: 'bold',
   },
   favoritesHeader: {
     paddingHorizontal: 20,
@@ -208,7 +194,6 @@ const styles = StyleSheet.create({
   favoritesTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.text,
   },
   listContent: {
     padding: 20,
@@ -221,12 +206,10 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 20,
     fontSize: 16,
-    color: Colors.textSecondary,
     textAlign: 'center',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -235,12 +218,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.text,
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 10,
@@ -252,7 +233,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 25,
-    backgroundColor: Colors.background,
     padding: 15,
     borderRadius: 12,
   },
@@ -262,31 +242,26 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
     marginTop: 4,
   },
   metaValue: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: Colors.text,
     marginTop: 2,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: Colors.text,
     marginBottom: 10,
     marginTop: 10,
   },
   ingredientsText: {
     fontSize: 16,
-    color: Colors.text,
     lineHeight: 24,
     marginBottom: 20,
   },
   instructionsText: {
     fontSize: 16,
-    color: Colors.text,
     lineHeight: 24,
     marginBottom: 40,
   },

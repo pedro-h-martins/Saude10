@@ -5,8 +5,8 @@ import ShareProgressButton from '@/components/ShareProgressButton';
 import { SleepWidget } from '@/components/SleepWidget';
 import { WaterWidget } from '@/components/WaterWidget';
 import { WellnessWidget } from '@/components/WellnessWidget';
-import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useQuery } from '@/context/RealmProvider';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { useSync } from '@/hooks/useSync';
@@ -21,68 +21,75 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const DashboardHeader = ({ avatarUri, onAvatarPress }: { avatarUri?: string | null; onAvatarPress?: () => void }) => (
-  <View style={styles.header}>
-    <View style={styles.userSection}>
-      <TouchableOpacity onPress={onAvatarPress} activeOpacity={0.8}>
-        {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatarPlaceholderImage} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={20} color={Colors.white} />
-          </View>
-        )}
+const DashboardHeader = ({ avatarUri, onAvatarPress }: { avatarUri?: string | null; onAvatarPress?: () => void }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.header}>
+      <View style={styles.userSection}>
+        <TouchableOpacity onPress={onAvatarPress} activeOpacity={0.8}>
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={[styles.avatarPlaceholderImage, { borderColor: colors.surfaceContainerLowest }]} />
+          ) : (
+            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary, borderColor: colors.surfaceContainerLowest, shadowColor: colors.primary }]}>
+              <Ionicons name="person" size={20} color={colors.white} />
+            </View>
+          )}
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.onPrimaryFixed }]}>SaudeIO</Text>
+      </View>
+      <TouchableOpacity style={[styles.notificationBtn, { backgroundColor: colors.surfaceContainerLowest }]}>
+        <View style={[styles.notificationDot, { backgroundColor: colors.notificationDot, borderColor: colors.surfaceContainerLowest }]} />
+        <Ionicons name="notifications-outline" size={24} color={colors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>SaudeIO</Text>
     </View>
-    <TouchableOpacity style={styles.notificationBtn}>
-      <View style={styles.notificationDot} />
-      <Ionicons name="notifications-outline" size={24} color={Colors.primary} />
-    </TouchableOpacity>
-  </View>
-);
+  );
+};
 
-const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFormatted: string }) => (
-  <LinearGradient
-    colors={[Colors.primary, Colors.primaryLight]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.activityCard}
-  >
-    <View style={styles.activityHeader}>
-      <Text style={styles.activityLabel}>ATIVIDADE HOJE</Text>
-      <View style={styles.lightningIcon}>
-        <Ionicons name="flash" size={16} color={Colors.white} />
-      </View>
-    </View>
-    
-    <Text style={styles.stepsCount}>{steps.toLocaleString()}</Text>
-    <Text style={styles.stepsLabel}>Passos concluidos hoje</Text>
-
-    <View style={styles.activityStats}>
-      <View style={styles.statItem}>
-        <Text style={styles.statLabel}>DISTÂNCIA PERCORRIDA</Text>
-        <Text style={styles.statValue}>{distanceFormatted}</Text>
-      </View>
-      <View style={styles.divider} />
-      <View style={styles.statItem}>
-        <Text style={styles.statLabel}>STATUS</Text>
-        <View style={styles.statusRow}>
-            <View style={styles.greenDot} />
-            <Text style={styles.statValue}>ATIVO</Text>
+const ActivityCard = ({ steps, distanceFormatted }: { steps: number; distanceFormatted: string }) => {
+  const { colors } = useTheme();
+  return (
+    <LinearGradient
+      colors={[colors.primary, colors.primaryContainer]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.activityCard, { shadowColor: colors.primary }]}
+    >
+      <View style={styles.activityHeader}>
+        <Text style={styles.activityLabel}>ATIVIDADE HOJE</Text>
+        <View style={styles.lightningIcon}>
+          <Ionicons name="flash" size={16} color={colors.white} />
         </View>
       </View>
-    </View>
-  </LinearGradient>
-);
+
+      <Text style={[styles.stepsCount, { color: colors.white }]}>{steps.toLocaleString()}</Text>
+      <Text style={[styles.stepsLabel, { color: colors.white }]}>Passos concluidos hoje</Text>
+
+      <View style={styles.activityStats}>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>DISTÂNCIA PERCORRIDA</Text>
+          <Text style={[styles.statValue, { color: colors.white }]}>{distanceFormatted}</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>STATUS</Text>
+          <View style={styles.statusRow}>
+            <View style={[styles.greenDot, { backgroundColor: colors.greenDot }]} />
+            <Text style={[styles.statValue, { color: colors.white }]}>ATIVO</Text>
+          </View>
+        </View>
+      </View>
+    </LinearGradient>
+  );
+};
 
 export function Home() {
+  const { colors, isDark } = useTheme();
   const { currentUser } = useAuth();
   const user = currentUser;
   const { steps, formattedDistance } = useActivityTracking();
   const router = useRouter();
   const { save } = useSync();
-  
+
   const bpLogs = useQuery(BloodPressure).sorted('timestamp', true);
   const lastBP = bpLogs.length > 0 ? bpLogs[0] : null;
 
@@ -121,17 +128,17 @@ export function Home() {
   };
 
   const chartData = useMemo(() => {
-    
+
     const groups: { [key: string]: { systolic: number, diastolic: number, count: number, date: Date } } = {};
-    
+
     const sortedLogs = [...bpLogs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-    
+
     sortedLogs.forEach(log => {
       const d = new Date(log.timestamp);
       const hours = d.getHours();
       const intervalStart = Math.floor(hours / 4) * 4;
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}-${intervalStart}`;
-      
+
       if (!groups[key]) {
         groups[key] = { systolic: 0, diastolic: 0, count: 0, date: d };
       }
@@ -156,12 +163,12 @@ export function Home() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={{ paddingTop: insets.top }}>
           <DashboardHeader avatarUri={user?.avatarUri ?? null} onAvatarPress={() => router.push('/(tabs)/settings')} />
         </View>
-        
+
         <View style={styles.activityContainer}>
           <ActivityCard steps={steps} distanceFormatted={formattedDistance} />
           <ShareProgressButton
@@ -171,51 +178,51 @@ export function Home() {
 
         <WellnessWidget />
         <WaterWidget />
-        
-        <TouchableOpacity 
-          activeOpacity={0.8} 
+
+        <TouchableOpacity
+          activeOpacity={0.8}
           onPress={() => {
             setDate(new Date());
             setModalVisible(true);
           }}
         >
           <Card style={styles.bpCard}>
-              <View style={styles.bpHeader}>
-                  <View style={styles.bpIconContainer}>
-                      <MaterialIcons name="grid-on" size={20} color="#8E6E53" />
-                  </View>
-                  <View style={styles.bpTitleSection}>
-                      <Text style={styles.cardTitle}>Pressão arterial</Text>
-                      <Text style={styles.cardSubtitle}>
-                        {lastBP ? `ÚLTIMA VEZ: ${formatDate(lastBP.timestamp)}` : 'NENHUM REGISTRO'}
-                      </Text>
-                  </View>
+            <View style={styles.bpHeader}>
+              <View style={[styles.bpIconContainer, { backgroundColor: colors.surfaceContainer }]}>
+                <MaterialIcons name="grid-on" size={20} color={colors.tertiary} />
               </View>
-              <View style={styles.bpValueRow}>
-                  <Text style={styles.bpValueLarge}>{lastBP ? lastBP.systolic : '--'}</Text>
-                  <Text style={styles.bpDivider}>/</Text>
-                  <Text style={styles.bpValueSmall}>{lastBP ? lastBP.diastolic : '--'}</Text>
-                  <Text style={styles.bpUnit}>MMHG</Text>
+              <View style={styles.bpTitleSection}>
+                <Text style={[styles.cardTitle, { color: colors.onPrimaryFixed }]}>Pressão arterial</Text>
+                <Text style={[styles.cardSubtitle, { color: colors.onSurfaceVariant }]}>
+                  {lastBP ? `ÚLTIMA VEZ: ${formatDate(lastBP.timestamp)}` : 'NENHUM REGISTRO'}
+                </Text>
               </View>
-              
-              <View style={styles.chartWrapper}>
-                  <View style={styles.barChartPlaceholder}>
-                      {chartData.map((data, i) => (
-                          <View key={i} style={styles.chartCol}>
-                              <View style={[styles.bar, { 
-                                  height: Math.min(60, data.systolic / 3), 
-                                  backgroundColor: i === chartData.length - 1 ? Colors.primary : '#EAEAEA',
-                                  width: 12,
-                                  borderRadius: 6
-                              }]} />
-                              <Text style={styles.chartLabel}>{data.label}</Text>
-                          </View>
-                      ))}
-                      {chartData.length === 0 && (
-                        <Text style={styles.noDataText}>Toque para adicionar sua primeira medição</Text>
-                      )}
+            </View>
+            <View style={styles.bpValueRow}>
+              <Text style={[styles.bpValueLarge, { color: colors.onPrimaryFixed }]}>{lastBP ? lastBP.systolic : '--'}</Text>
+              <Text style={[styles.bpDivider, { color: colors.outlineVariant }]}>/</Text>
+              <Text style={[styles.bpValueSmall, { color: colors.onSurfaceVariant }]}>{lastBP ? lastBP.diastolic : '--'}</Text>
+              <Text style={[styles.bpUnit, { color: colors.onSurfaceVariant }]}>MMHG</Text>
+            </View>
+
+            <View style={[styles.chartWrapper, { borderTopColor: colors.cancelButtonBackground }]}>
+              <View style={styles.barChartPlaceholder}>
+                {chartData.map((data, i) => (
+                  <View key={i} style={styles.chartCol}>
+                    <View style={[styles.bar, {
+                      height: Math.min(60, data.systolic / 3),
+                      backgroundColor: i === chartData.length - 1 ? colors.primary : colors.outlineVariant,
+                      width: 12,
+                      borderRadius: 6
+                    }]} />
+                    <Text style={[styles.chartLabel, { color: colors.onSurfaceVariant }]}>{data.label}</Text>
                   </View>
+                ))}
+                {chartData.length === 0 && (
+                  <Text style={[styles.noDataText, { color: colors.onSurfaceVariant }]}>Toque para adicionar sua primeira medição</Text>
+                )}
               </View>
+            </View>
           </Card>
         </TouchableOpacity>
 
@@ -225,15 +232,15 @@ export function Home() {
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
-          <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
-            <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-              <Text style={styles.modalTitle}>Nova Medição</Text>
-              
+          <Pressable style={[styles.modalOverlay, { backgroundColor: colors.shadow + '66' }]} onPress={() => setModalVisible(false)}>
+            <Pressable style={[styles.modalContent, { backgroundColor: colors.surfaceContainerLowest, shadowColor: colors.shadow }]} onPress={(e) => e.stopPropagation()}>
+              <Text style={[styles.modalTitle, { color: colors.onPrimaryFixed }]}>Nova Medição</Text>
+
               <View style={styles.inputRow}>
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>SISTÓLICA</Text>
+                  <Text style={[styles.inputLabel, { color: colors.onSurfaceVariant }]}>SISTÓLICA</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, { backgroundColor: colors.inputBackground, color: colors.onPrimaryFixed, borderColor: colors.outlineVariant }]}
                     placeholder="120"
                     keyboardType="numeric"
                     value={systolic}
@@ -241,9 +248,9 @@ export function Home() {
                   />
                 </View>
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>DIASTÓLICA</Text>
+                  <Text style={[styles.inputLabel, { color: colors.onSurfaceVariant }]}>DIASTÓLICA</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, { backgroundColor: colors.inputBackground, color: colors.onPrimaryFixed, borderColor: colors.outlineVariant }]}
                     placeholder="80"
                     keyboardType="numeric"
                     value={diastolic}
@@ -253,22 +260,22 @@ export function Home() {
               </View>
 
               <View style={styles.dateTimeRow}>
-                <TouchableOpacity 
-                  style={styles.dateTimeButton} 
+                <TouchableOpacity
+                  style={[styles.dateTimeButton, { backgroundColor: colors.waterLight, borderColor: colors.water }]}
                   onPress={() => setShowDatePicker(true)}
                 >
-                  <Ionicons name="calendar-outline" size={18} color={Colors.primary} />
-                  <Text style={styles.dateTimeText}>
+                  <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+                  <Text style={[styles.dateTimeText, { color: colors.primary }]}>
                     {date.toLocaleDateString('pt-BR')}
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={styles.dateTimeButton} 
+                <TouchableOpacity
+                  style={[styles.dateTimeButton, { backgroundColor: colors.waterLight, borderColor: colors.water }]}
                   onPress={() => setShowTimePicker(true)}
                 >
-                  <Ionicons name="time-outline" size={18} color={Colors.primary} />
-                  <Text style={styles.dateTimeText}>
+                  <Ionicons name="time-outline" size={18} color={colors.primary} />
+                  <Text style={[styles.dateTimeText, { color: colors.primary }]}>
                     {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </TouchableOpacity>
@@ -292,17 +299,17 @@ export function Home() {
               )}
 
               <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={[styles.modalBtn, styles.cancelBtn]} 
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: colors.cancelButtonBackground }]}
                   onPress={() => setModalVisible(false)}
                 >
-                  <Text style={styles.cancelBtnText}>CANCELAR</Text>
+                  <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>CANCELAR</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.modalBtn, styles.saveBtn]} 
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.saveBtn, { backgroundColor: colors.primary }]}
                   onPress={handleSaveBP}
                 >
-                  <Text style={styles.saveBtnText}>SALVAR</Text>
+                  <Text style={[styles.saveBtnText, { color: colors.white }]}>SALVAR</Text>
                 </TouchableOpacity>
               </View>
             </Pressable>
@@ -312,26 +319,26 @@ export function Home() {
         <SleepWidget />
 
         <NutritionWidget />
-        
+
         <View style={styles.gridRow}>
-            <PomodoroWidget />
-            <Card style={styles.halfCard}>
-                <Text style={styles.gridCardTitle}>IMC</Text>
-                {bmiData ? (
-                  <View style={styles.imcContent}>
-                    <Text style={[styles.imcValue, { color: bmiData.color }]}>
-                      {bmiData.value.toFixed(1)}
-                    </Text>
-                    <View style={[styles.imcBadge, { backgroundColor: bmiData.color + '20' }]}>
-                      <Text style={[styles.imcBadgeText, { color: bmiData.color }]}>
-                        {bmiData.isIdeal ? 'IDEAL' : bmiData.category.toUpperCase()}
-                      </Text>
-                    </View>
-                  </View>
-                ) : (
-                  <Text style={styles.timerText}>N/A</Text>
-                )}
-            </Card>
+          <PomodoroWidget />
+          <Card style={styles.halfCard}>
+            <Text style={[styles.gridCardTitle, { color: colors.onSurfaceVariant }]}>IMC</Text>
+            {bmiData ? (
+              <View style={styles.imcContent}>
+                <Text style={[styles.imcValue, { color: bmiData.color }]}>
+                  {bmiData.value.toFixed(1)}
+                </Text>
+                <View style={[styles.imcBadge, { backgroundColor: bmiData.color + '20' }]}>
+                  <Text style={[styles.imcBadgeText, { color: bmiData.color }]}>
+                    {bmiData.isIdeal ? 'IDEAL' : bmiData.category.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={[styles.timerText, { color: colors.onPrimaryFixed }]}>N/A</Text>
+            )}
+          </Card>
         </View>
       </ScrollView>
     </View>
@@ -341,7 +348,6 @@ export function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -363,12 +369,9 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -379,19 +382,16 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     borderWidth: 2,
-    borderColor: Colors.white,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#002244',
     letterSpacing: -0.5,
   },
   notificationBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -407,15 +407,12 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF4D4D',
     borderWidth: 1.5,
-    borderColor: Colors.white,
     zIndex: 1,
   },
   activityCard: {
     borderRadius: 24,
     padding: 24,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 15,
@@ -445,12 +442,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepsCount: {
-    color: Colors.white,
     fontSize: 42,
     fontWeight: '800',
   },
   stepsLabel: {
-    color: Colors.white,
     fontSize: 15,
     opacity: 0.9,
     marginBottom: 25,
@@ -472,7 +467,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   statValue: {
-    color: Colors.white,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -491,7 +485,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#4FF088',
   },
   bpCard: {
     padding: 24,
@@ -506,7 +499,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#F8F4F0',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -516,11 +508,9 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#002244',
   },
   cardSubtitle: {
     fontSize: 10,
-    color: '#94A3B8',
     fontWeight: '700',
     marginTop: 2,
   },
@@ -532,29 +522,24 @@ const styles = StyleSheet.create({
   bpValueLarge: {
     fontSize: 48,
     fontWeight: '800',
-    color: '#002244',
   },
   bpDivider: {
     fontSize: 28,
-    color: '#E2E8F0',
     marginHorizontal: 8,
     fontWeight: '300',
   },
   bpValueSmall: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#64748B',
   },
   bpUnit: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#94A3B8',
     marginLeft: 10,
   },
   chartWrapper: {
     marginTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
     paddingTop: 15,
   },
   barChartPlaceholder: {
@@ -570,35 +555,29 @@ const styles = StyleSheet.create({
   },
   chartLabel: {
     fontSize: 8,
-    color: '#94A3B8',
     fontWeight: '700',
     textAlign: 'center',
     width: 35,
   },
   noDataText: {
     fontSize: 12,
-    color: '#94A3B8',
     fontStyle: 'italic',
     width: '100%',
     textAlign: 'center',
     paddingBottom: 20,
   },
   bar: {
-    backgroundColor: '#EAEAEA',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 34, 68, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
     width: '100%',
-    backgroundColor: Colors.white,
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#002244',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -607,7 +586,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#002244',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -622,20 +600,16 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#94A3B8',
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   textInput: {
-    backgroundColor: '#F8FAFC',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 18,
     fontWeight: '700',
-    color: '#002244',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -648,16 +622,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F0F9FF',
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#BAE6FD',
   },
   dateTimeText: {
     fontSize: 14,
     fontWeight: '700',
-    color: Colors.primary,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -670,20 +641,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelBtn: {
-    backgroundColor: '#F1F5F9',
   },
   saveBtn: {
-    backgroundColor: Colors.primary,
   },
   cancelBtnText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#64748B',
   },
   saveBtnText: {
     fontSize: 13,
     fontWeight: '800',
-    color: Colors.white,
   },
   gridRow: {
     flexDirection: 'row',
@@ -697,14 +664,12 @@ const styles = StyleSheet.create({
   gridCardTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#94A3B8',
     marginBottom: 15,
     letterSpacing: 0.5,
   },
   timerText: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#002244',
   },
   imcContent: {
     alignItems: 'center',

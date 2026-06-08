@@ -1,10 +1,10 @@
 import { Card } from '@/components/Card';
 import { GoalProgressBar } from '@/components/GoalProgressBar';
 import { StretchSection } from '@/components/StretchSection';
-import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery, useRealm } from '@/context/RealmProvider';
+import { useTheme } from '@/context/ThemeContext';
 import { useGoals } from '@/hooks/useGoals';
 import { useReminders } from '@/hooks/useReminders';
 import { useSync } from '@/hooks/useSync';
@@ -35,6 +35,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GoalsRemindersScreen() {
+  const { colors, isDark } = useTheme();
   const realm = useRealm();
   const goals = useQuery(Goal);
   const users = useQuery(UserProfile);
@@ -300,23 +301,23 @@ export default function GoalsRemindersScreen() {
       <TouchableOpacity key={item._id.toHexString()} onPress={() => openWorkoutDetail(item)}>
         <Card style={styles.itemCard}>
           <View style={styles.itemInfo}>
-            <Text style={styles.itemTitle}>{item.title}</Text>
-            <Text style={styles.itemSubtitle}>{recurrenceLabel}</Text>
-            <Text style={styles.itemSubtitle}>{statusText}</Text>
-            {nextOccurrenceLabel ? <Text style={styles.itemSubtitle}>{nextOccurrenceLabel}</Text> : null}
+                    <Text style={[styles.itemTitle, { color: colors.onSurface }]}>{item.title}</Text>
+                    <Text style={[styles.itemSubtitle, { color: colors.onSurfaceVariant }]}>{recurrenceLabel}</Text>
+                    <Text style={[styles.itemSubtitle, { color: colors.onSurfaceVariant }]}>{statusText}</Text>
+                    {nextOccurrenceLabel ? <Text style={[styles.itemSubtitle, { color: colors.onSurfaceVariant }]}>{nextOccurrenceLabel}</Text> : null}
           </View>
-          <Ionicons name={completed ? 'checkmark-circle-outline' : 'ellipse-outline'} size={22} color={completed ? Colors.primary : Colors.textSecondary} />
+          <Ionicons name={completed ? 'checkmark-circle-outline' : 'ellipse-outline'} size={22} color={completed ? colors.primary : colors.onSurfaceVariant} />
         </Card>
       </TouchableOpacity>
     );
   };
 
-  const renderGoalItem = (item: Goal) => (
-    <TouchableOpacity key={item._id.toHexString()} onPress={() => openGoalDetail(item)}>
-      <Card style={styles.itemCard}>
-        <View style={styles.itemInfo}>
-          <Text style={styles.itemTitle}>{item.title}</Text>
-          <Text style={styles.itemSubtitle}>Iniciada em: {item.startDate.toLocaleDateString()}</Text>
+const renderGoalItem = (item: Goal) => (
+  <TouchableOpacity key={item._id.toHexString()} onPress={() => openGoalDetail(item)}>
+    <Card style={styles.itemCard}>
+      <View style={styles.itemInfo}>
+        <Text style={[styles.itemTitle, { color: colors.onSurface }]}>{item.title}</Text>
+        <Text style={[styles.itemSubtitle, { color: colors.onSurfaceVariant }]}>Iniciada em: {item.startDate.toLocaleDateString()}</Text>
           {(() => {
             try {
               const cg = (computedGoals as any).find((c: any) => c.goal._id.toHexString() === item._id.toHexString());
@@ -330,66 +331,66 @@ export default function GoalsRemindersScreen() {
           })()}
         </View>
         <TouchableOpacity onPress={() => confirmDeleteGoal(item)}>
-          <Ionicons name="trash-outline" size={22} color={Colors.warning} />
-        </TouchableOpacity>
-      </Card>
+      <Ionicons name="trash-outline" size={22} color={colors.warning} />
     </TouchableOpacity>
-  );
+  </Card>
+</TouchableOpacity>
+);
 
-  const renderReminderItem = (item: Reminder) => (
-    <Card key={item._id.toHexString()} style={styles.itemCard}>
-      <View style={styles.reminderIconContainer}>
-        <MaterialIcons
-          name={item.type === 'water' ? 'local-drink' : item.type === 'meditation' ? 'self-improvement' : 'notifications'}
-          size={24}
-          color={Colors.primary}
-        />
-      </View>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle}>{item.title}</Text>
-        <Text style={styles.itemSubtitle}>{item.time}</Text>
-      </View>
-      <Switch
-        value={item.isEnabled}
-        onValueChange={() => toggleReminder(item._id)}
-        trackColor={{ false: '#767577', true: Colors.primary + '80' }}
-        thumbColor={item.isEnabled ? Colors.primary : '#f4f3f4'}
+const renderReminderItem = (item: Reminder) => (
+  <Card key={item._id.toHexString()} style={styles.itemCard}>
+    <View style={styles.reminderIconContainer}>
+      <MaterialIcons
+        name={item.type === 'water' ? 'local-drink' : item.type === 'meditation' ? 'self-improvement' : 'notifications'}
+        size={24}
+        color={colors.primary}
       />
-      <TouchableOpacity onPress={() => confirmDeleteReminder(item)} style={{ marginLeft: 10 }}>
-        <Ionicons name="trash-outline" size={22} color={Colors.warning} />
+    </View>
+    <View style={styles.itemInfo}>
+      <Text style={[styles.itemTitle, { color: colors.onSurface }]}>{item.title}</Text>
+      <Text style={[styles.itemSubtitle, { color: colors.onSurfaceVariant }]}>{item.time}</Text>
+    </View>
+    <Switch
+      value={item.isEnabled}
+      onValueChange={() => toggleReminder(item._id)}
+      trackColor={{ false: colors.onSurfaceVariant, true: colors.primary + '80' }}
+      thumbColor={item.isEnabled ? colors.primary : colors.surfaceContainerLow}
+    />
+    <TouchableOpacity onPress={() => confirmDeleteReminder(item)} style={{ marginLeft: 10 }}>
+      <Ionicons name="trash-outline" size={22} color={colors.warning} />
       </TouchableOpacity>
     </Card>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.headerMainTitle}>Objetivos & Lembretes</Text>
+          <Text style={[styles.headerMainTitle, { color: colors.onSurface }]}>Objetivos & Lembretes</Text>
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Minhas Metas</Text>
-          <TouchableOpacity style={styles.addButton} onPress={() => setGoalModalVisible(true)}>
-            <Ionicons name="add" size={24} color={Colors.white} />
+          <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Minhas Metas</Text>
+          <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => setGoalModalVisible(true)}>
+            <Ionicons name="add" size={24} color={colors.onPrimary} />
           </TouchableOpacity>
         </View>
 
         {goals.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Nenhuma meta definida.</Text>
+          <View style={[styles.emptyCard, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }]}>
+            <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>Nenhuma meta definida.</Text>
           </View>
         ) : (
           goals.map(goal => renderGoalItem(goal))
         )}
 
         <View style={[styles.sectionHeader, { marginTop: 30 }]}>
-          <Text style={styles.sectionTitle}>Treinos Pré-definidos</Text>
+          <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Treinos Pré-definidos</Text>
         </View>
 
         {workouts.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Nenhum treino disponível.</Text>
+          <View style={[styles.emptyCard, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }]}>
+            <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>Nenhum treino disponível.</Text>
           </View>
         ) : (
           workouts.map(workout => renderWorkoutItem(workout))
@@ -398,21 +399,21 @@ export default function GoalsRemindersScreen() {
         <StretchSection />
 
         <View style={[styles.sectionHeader, { marginTop: 30 }]}>
-          <Text style={styles.sectionTitle}>Lembretes Customizados</Text>
+          <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Lembretes Customizados</Text>
           <TouchableOpacity
-            style={styles.addButton}
+            style={[styles.addButton, { backgroundColor: colors.primary }]}
             onPress={() => {
               setReminderTime(new Date());
               setReminderModalVisible(true);
             }}
           >
-            <Ionicons name="add" size={24} color={Colors.white} />
+            <Ionicons name="add" size={24} color={colors.onPrimary} />
           </TouchableOpacity>
         </View>
 
         {reminders.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Nenhum lembrete configurado.</Text>
+          <View style={[styles.emptyCard, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }]}>
+            <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>Nenhum lembrete configurado.</Text>
           </View>
         ) : (
           reminders.map(reminder => renderReminderItem(reminder))
@@ -421,11 +422,11 @@ export default function GoalsRemindersScreen() {
 
       <Modal visible={goalModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nova Meta</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.surfaceContainerLowest }]}>
+            <Text style={[styles.modalTitle, { color: colors.onSurface }]}>Nova Meta</Text>
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderBottomColor: colors.outlineVariant }]}
               placeholder="Título: Ex: Caminhar 10.000 passos"
               value={newGoalTitle}
               onChangeText={setNewGoalTitle}
@@ -434,44 +435,44 @@ export default function GoalsRemindersScreen() {
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, { flex: 1, borderBottomColor: colors.outlineVariant }]}
                 placeholder="Alvo (número)"
                 keyboardType="numeric"
                 value={newGoalTarget}
                 onChangeText={setNewGoalTarget}
               />
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, { flex: 1, borderBottomColor: colors.outlineVariant }]}
                 placeholder="Unidade (ex: passos, ml)"
                 value={newGoalUnit}
                 onChangeText={setNewGoalUnit}
               />
             </View>
 
-            <Text style={{ marginTop: 8, marginBottom: 6, color: Colors.textSecondary }}>Métrica</Text>
+            <Text style={{ marginTop: 8, marginBottom: 6, color: colors.onSurfaceVariant }}>Métrica</Text>
             <View style={styles.typeSelector}>
               {(['steps', 'hydration', 'meditation', 'workout', 'weight'] as const).map((m) => (
                 <TouchableOpacity
                   key={m}
-                  style={[styles.typeBtn, newGoalMetric === m && styles.typeBtnActive]}
+                  style={[styles.typeBtn, { backgroundColor: colors.cancelButtonBackground }, newGoalMetric === m && { backgroundColor: colors.primary }]}
                   onPress={() => setNewGoalMetric(m)}
                 >
-                  <Text style={[styles.typeBtnText, newGoalMetric === m && styles.typeBtnTextActive]}>
+                  <Text style={[styles.typeBtnText, { color: colors.onSurface }, newGoalMetric === m && { color: colors.onPrimary, fontWeight: '600' }]}>
                     {m === 'steps' ? 'Passos' : m === 'hydration' ? 'Hidratação' : m === 'meditation' ? 'Meditar' : m === 'workout' ? 'Treinos' : 'Peso'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={{ marginTop: 8, marginBottom: 6, color: Colors.textSecondary }}>Período</Text>
+            <Text style={{ marginTop: 8, marginBottom: 6, color: colors.onSurfaceVariant }}>Período</Text>
             <View style={styles.typeSelector}>
               {(['daily', 'weekly', 'custom'] as const).map((p) => (
                 <TouchableOpacity
                   key={p}
-                  style={[styles.typeBtn, newGoalPeriodType === p && styles.typeBtnActive]}
+                  style={[styles.typeBtn, { backgroundColor: colors.cancelButtonBackground }, newGoalPeriodType === p && { backgroundColor: colors.primary }]}
                   onPress={() => setNewGoalPeriodType(p)}
                 >
-                  <Text style={[styles.typeBtnText, newGoalPeriodType === p && styles.typeBtnTextActive]}>
+                  <Text style={[styles.typeBtnText, { color: colors.onSurface }, newGoalPeriodType === p && { color: colors.onPrimary, fontWeight: '600' }]}>
                     {p === 'daily' ? 'Diário' : p === 'weekly' ? 'Semanal' : 'Personalizado'}
                   </Text>
                 </TouchableOpacity>
@@ -479,15 +480,15 @@ export default function GoalsRemindersScreen() {
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-              <Text style={{ color: Colors.text }}>Criar lembrete para esta meta</Text>
-              <Switch value={newGoalCreateReminder} onValueChange={setNewGoalCreateReminder} trackColor={{ false: '#767577', true: Colors.primary + '80' }} thumbColor={newGoalCreateReminder ? Colors.primary : '#f4f3f4'} />
+              <Text style={{ color: colors.onSurface }}>Criar lembrete para esta meta</Text>
+              <Switch value={newGoalCreateReminder} onValueChange={setNewGoalCreateReminder} trackColor={{ false: colors.onSurfaceVariant, true: colors.primary + '80' }} thumbColor={newGoalCreateReminder ? colors.primary : colors.surfaceContainerLow} />
             </View>
 
             {newGoalCreateReminder ? (
               <>
-                <TouchableOpacity style={styles.timePickerBtn} onPress={() => setShowTimePicker(true)}>
-                  <Ionicons name="time-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.timePickerText}>
+                <TouchableOpacity style={[styles.timePickerBtn, { backgroundColor: colors.primary + '10' }]} onPress={() => setShowTimePicker(true)}>
+                  <Ionicons name="time-outline" size={20} color={colors.primary} />
+                  <Text style={[styles.timePickerText, { color: colors.primary }]}>
                     Horário: {newGoalReminderTime.getHours().toString().padStart(2, '0')}:{newGoalReminderTime.getMinutes().toString().padStart(2, '0')}
                   </Text>
                 </TouchableOpacity>
@@ -507,12 +508,12 @@ export default function GoalsRemindersScreen() {
               </>
             ) : null}
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setGoalModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, styles.saveBtn]} onPress={handleAddGoal}>
-                <Text style={styles.saveBtnText}>Adicionar</Text>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: colors.cancelButtonBackground }]} onPress={() => setGoalModalVisible(false)}>
+              <Text style={[styles.cancelBtnText, { color: colors.onSurface }]}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={handleAddGoal}>
+              <Text style={[styles.saveBtnText, { color: colors.onPrimary }]}>Adicionar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -521,28 +522,28 @@ export default function GoalsRemindersScreen() {
 
       <Modal visible={workoutModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{selectedWorkout?.title ?? 'Detalhes do Treino'}</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.surfaceContainerLowest }]}>
+            <Text style={[styles.modalTitle, { color: colors.onSurface }]}>{selectedWorkout?.title ?? 'Detalhes do Treino'}</Text>
             {selectedWorkout ? (
               <>
-                <Text style={styles.workoutSubtitle}>{getWorkoutRecurrenceLabel(selectedWorkout)}</Text>
-                <Text style={styles.workoutSubtitle}>{getWorkoutStatusText(selectedWorkout)}</Text>
-                {selectedWorkout.isRecurring ? (
-                  <Text style={styles.workoutDetailText}>{getNextOccurrenceLabel(selectedWorkout)}</Text>
-                ) : null}
-                <Text style={styles.modalText}>{selectedWorkout.instructions}</Text>
+            <Text style={[styles.workoutSubtitle, { color: colors.onSurfaceVariant }]}>{getWorkoutRecurrenceLabel(selectedWorkout)}</Text>
+              <Text style={[styles.workoutSubtitle, { color: colors.onSurfaceVariant }]}>{getWorkoutStatusText(selectedWorkout)}</Text>
+              {selectedWorkout.isRecurring ? (
+                <Text style={[styles.workoutDetailText, { color: colors.onSurfaceVariant }]}>{getNextOccurrenceLabel(selectedWorkout)}</Text>
+              ) : null}
+              <Text style={[styles.modalText, { color: colors.onSurfaceVariant }]}>{selectedWorkout.instructions}</Text>
               </>
             ) : null}
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setWorkoutModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Fechar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.saveBtn, (!selectedWorkout || isWorkoutCompleted(selectedWorkout)) && styles.disabledBtn]}
-                onPress={handleToggleSelectedWorkout}
-                disabled={!selectedWorkout || isWorkoutCompleted(selectedWorkout)}
-              >
-                <Text style={styles.saveBtnText}>
+            <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: colors.cancelButtonBackground }]} onPress={() => setWorkoutModalVisible(false)}>
+              <Text style={[styles.cancelBtnText, { color: colors.onSurface }]}>Fechar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.primary }, (!selectedWorkout || isWorkoutCompleted(selectedWorkout)) && styles.disabledBtn]}
+              onPress={handleToggleSelectedWorkout}
+              disabled={!selectedWorkout || isWorkoutCompleted(selectedWorkout)}
+            >
+              <Text style={[styles.saveBtnText, { color: colors.onPrimary }]}>
                   {selectedWorkout
                     ? isWorkoutCompleted(selectedWorkout)
                       ? 'Treino concluído'
@@ -557,24 +558,24 @@ export default function GoalsRemindersScreen() {
 
       <Modal visible={goalDetailModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{selectedGoal?.title ?? 'Detalhes da Meta'}</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.surfaceContainerLowest }]}>
+            <Text style={[styles.modalTitle, { color: colors.onSurface }]}>{selectedGoal?.title ?? 'Detalhes da Meta'}</Text>
             {selectedGoal ? (
               <>
-                <Text style={styles.workoutSubtitle}>Métrica: {(selectedGoal as any).metric ?? 'N/A'}</Text>
-                <Text style={styles.workoutDetailText}>Iniciada em: {selectedGoal.startDate.toLocaleDateString()}</Text>
-                <View style={{ marginBottom: 12 }}>
-                  <Text style={{ color: Colors.textSecondary, marginBottom: 6 }}>Valor</Text>
-                  <TextInput style={styles.input} placeholder="Quantidade (ex: 1000)" keyboardType="numeric" value={metricValueInput} onChangeText={setMetricValueInput} />
+              <Text style={[styles.workoutSubtitle, { color: colors.onSurfaceVariant }]}>Métrica: {(selectedGoal as any).metric ?? 'N/A'}</Text>
+              <Text style={[styles.workoutDetailText, { color: colors.onSurfaceVariant }]}>Iniciada em: {selectedGoal.startDate.toLocaleDateString()}</Text>
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ color: colors.onSurfaceVariant, marginBottom: 6 }}>Valor</Text>
+                <TextInput style={[styles.input, { borderBottomColor: colors.outlineVariant }]} placeholder="Quantidade (ex: 1000)" keyboardType="numeric" value={metricValueInput} onChangeText={setMetricValueInput} />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                    <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { flex: 0.48 }]} onPress={() => setMetricValueInput('')}>
-                      <Text style={styles.cancelBtnText}>Limpar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.modalBtn, styles.saveBtn, { flex: 0.23 }]} onPress={() => selectedGoal && handleAddMetricValue(selectedGoal)}>
-                      <Text style={styles.saveBtnText}>Adicionar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.modalBtn, styles.saveBtn, { flex: 0.23 }]} onPress={() => selectedGoal && handleRemoveMetricValue(selectedGoal)}>
-                      <Text style={styles.saveBtnText}>Remover</Text>
+                <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { flex: 0.48, backgroundColor: colors.cancelButtonBackground }]} onPress={() => setMetricValueInput('')}>
+                  <Text style={[styles.cancelBtnText, { color: colors.onSurface }]}>Limpar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalBtn, { flex: 0.23, backgroundColor: colors.primary }]} onPress={() => selectedGoal && handleAddMetricValue(selectedGoal)}>
+                  <Text style={[styles.saveBtnText, { color: colors.onPrimary }]}>Adicionar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalBtn, { flex: 0.23, backgroundColor: colors.primary }]} onPress={() => selectedGoal && handleRemoveMetricValue(selectedGoal)}>
+                  <Text style={[styles.saveBtnText, { color: colors.onPrimary }]}>Remover</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -583,8 +584,8 @@ export default function GoalsRemindersScreen() {
             ) : null}
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setGoalDetailModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Fechar</Text>
+            <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: colors.cancelButtonBackground }]} onPress={() => setGoalDetailModalVisible(false)}>
+              <Text style={[styles.cancelBtnText, { color: colors.onSurface }]}>Fechar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -593,10 +594,10 @@ export default function GoalsRemindersScreen() {
 
       <Modal visible={reminderModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Novo Lembrete</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.surfaceContainerLowest }]}>
+            <Text style={[styles.modalTitle, { color: colors.onSurface }]}>Novo Lembrete</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderBottomColor: colors.outlineVariant }]}
               placeholder="Ex: Beber água ou Meditar"
               value={newReminderTitle}
               onChangeText={setNewReminderTitle}
@@ -606,19 +607,19 @@ export default function GoalsRemindersScreen() {
               {(['water', 'meditation', 'custom'] as const).map((t) => (
                 <TouchableOpacity
                   key={t}
-                  style={[styles.typeBtn, reminderType === t && styles.typeBtnActive]}
+                  style={[styles.typeBtn, { backgroundColor: colors.cancelButtonBackground }, reminderType === t && { backgroundColor: colors.primary }]}
                   onPress={() => setReminderType(t)}
                 >
-                  <Text style={[styles.typeBtnText, reminderType === t && styles.typeBtnTextActive]}>
+                  <Text style={[styles.typeBtnText, { color: colors.onSurface }, reminderType === t && { color: colors.onPrimary, fontWeight: '600' }]}>
                     {t === 'water' ? 'Água' : t === 'meditation' ? 'Meditar' : 'Outro'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <TouchableOpacity style={styles.timePickerBtn} onPress={() => setShowTimePicker(true)}>
-              <Ionicons name="time-outline" size={20} color={Colors.primary} />
-              <Text style={styles.timePickerText}>
+            <TouchableOpacity style={[styles.timePickerBtn, { backgroundColor: colors.primary + '10' }]} onPress={() => setShowTimePicker(true)}>
+              <Ionicons name="time-outline" size={20} color={colors.primary} />
+              <Text style={[styles.timePickerText, { color: colors.primary }]}>
                 Horário: {reminderTime.getHours().toString().padStart(2, '0')}:{reminderTime.getMinutes().toString().padStart(2, '0')}
               </Text>
             </TouchableOpacity>
@@ -635,11 +636,11 @@ export default function GoalsRemindersScreen() {
             )}
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setReminderModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, styles.saveBtn]} onPress={handleAddReminder}>
-                <Text style={styles.saveBtnText}>Configurar</Text>
+            <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: colors.cancelButtonBackground }]} onPress={() => setReminderModalVisible(false)}>
+              <Text style={[styles.cancelBtnText, { color: colors.onSurface }]}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={handleAddReminder}>
+              <Text style={[styles.saveBtnText, { color: colors.onPrimary }]}>Configurar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -650,40 +651,37 @@ export default function GoalsRemindersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   scrollContent: { padding: 20 },
   header: { marginBottom: 20 },
-  headerMainTitle: { ...Typography.h1, color: Colors.text },
-  sectionTitle: { ...Typography.h2, color: Colors.text },
+  headerMainTitle: { ...Typography.headlineLarge },
+  sectionTitle: { ...Typography.titleLarge },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  addButton: { backgroundColor: Colors.primary, width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  addButton: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   itemCard: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, padding: 15 },
   itemInfo: { flex: 1 },
-  itemTitle: { ...Typography.h3, color: Colors.text, marginBottom: 2 },
-  itemSubtitle: { ...Typography.caption, color: Colors.textSecondary },
-  emptyCard: { padding: 20, alignItems: 'center', backgroundColor: Colors.white, borderRadius: 12, borderStyle: 'dashed', borderWidth: 1, borderColor: Colors.border },
-  emptyText: { ...Typography.body, color: Colors.textSecondary },
+  itemTitle: { ...Typography.titleMedium, marginBottom: 2 },
+  itemSubtitle: { ...Typography.labelMedium },
+  emptyCard: { padding: 20, alignItems: 'center', borderRadius: 12, borderStyle: 'dashed', borderWidth: 1 },
+  emptyText: { ...Typography.bodyMedium },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: Colors.white, borderRadius: 16, padding: 20 },
-  modalTitle: { ...Typography.h2, color: Colors.text, marginBottom: 20, textAlign: 'center' },
-  input: { borderBottomWidth: 1, borderBottomColor: Colors.border, paddingVertical: 10, fontSize: 16, marginBottom: 20 },
+  modalContent: { borderRadius: 16, padding: 20 },
+  modalTitle: { ...Typography.titleLarge, marginBottom: 20, textAlign: 'center' },
+  input: { borderBottomWidth: 1, paddingVertical: 10, fontSize: 16, marginBottom: 20 },
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   modalBtn: { flex: 0.48, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  cancelBtn: { backgroundColor: '#f0f0f0' },
-  saveBtn: { backgroundColor: Colors.primary },
-  cancelBtnText: { color: Colors.text, fontWeight: '600' },
-  saveBtnText: { color: Colors.white, fontWeight: '600' },
-  timePickerBtn: { flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: Colors.primary + '10', borderRadius: 8, marginBottom: 20 },
-  timePickerText: { marginLeft: 10, color: Colors.primary, fontWeight: '500' },
+  cancelBtn: {},
+  cancelBtnText: { fontWeight: '600' },
+  saveBtnText: { fontWeight: '600' },
+  timePickerBtn: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8, marginBottom: 20 },
+  timePickerText: { marginLeft: 10, fontWeight: '500' },
   reminderIconContainer: { marginRight: 15 },
   typeSelector: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  typeBtn: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20, backgroundColor: '#f0f0f0' },
-  typeBtnActive: { backgroundColor: Colors.primary },
-  typeBtnText: { fontSize: 13, color: Colors.text },
-  typeBtnTextActive: { color: Colors.white, fontWeight: '600' },
-  workoutSubtitle: { ...Typography.caption, color: Colors.textSecondary, marginBottom: 8 },
-  workoutDetailText: { ...Typography.body, color: Colors.textSecondary, marginBottom: 16, lineHeight: 20 },
-  modalText: { ...Typography.body, color: Colors.textSecondary, marginBottom: 16, lineHeight: 20 },
+  typeBtn: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20 },
+  typeBtnText: { fontSize: 13 },
+  workoutSubtitle: { ...Typography.labelMedium, marginBottom: 8 },
+  workoutDetailText: { ...Typography.bodyMedium, marginBottom: 16, lineHeight: 20 },
+  modalText: { ...Typography.bodyMedium, marginBottom: 16, lineHeight: 20 },
   disabledBtn: { opacity: 0.6 },
 });
 

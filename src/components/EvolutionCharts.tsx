@@ -1,4 +1,4 @@
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { Typography } from '@/constants/Typography';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
@@ -18,11 +18,13 @@ const CHART_WIDTH = Math.min(600, width - 64 - CHART_PADDING * 2);
 const CHART_HEIGHT = 120;
 
 export default function EvolutionCharts({ title = 'Gráficos de Evolução', data }: Props) {
+  const { colors } = useTheme();
+
   if (!data || data.length === 0) {
     return (
       <Card style={styles.emptyCard}>
-        <Text style={Typography.h3}>{title}</Text>
-        <Text style={Typography.body}>Nenhum dado disponível para este período.</Text>
+        <Text style={[Typography.titleMedium, { color: colors.onSurface }]}>{title}</Text>
+        <Text style={[Typography.bodyMedium, { color: colors.onSurfaceVariant }]}>Nenhum dado disponível para este período.</Text>
       </Card>
     );
   }
@@ -43,7 +45,7 @@ export default function EvolutionCharts({ title = 'Gráficos de Evolução', dat
 
   return (
     <Card style={styles.card}>
-      <Text style={Typography.h3}>{title}</Text>
+      <Text style={[Typography.titleMedium, { color: colors.onSurface }]}>{title}</Text>
       <View style={{ marginTop: 8, paddingHorizontal: CHART_PADDING, overflow: 'hidden' }}>
         <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
           {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
@@ -53,21 +55,21 @@ export default function EvolutionCharts({ title = 'Gráficos de Evolução', dat
               y1={CHART_HEIGHT - t * CHART_HEIGHT}
               x2={CHART_WIDTH}
               y2={CHART_HEIGHT - t * CHART_HEIGHT}
-              stroke={Colors.border}
+              stroke={colors.outlineVariant}
               strokeWidth={0.5}
             />
           ))}
 
-          <Path d={dPath} fill="none" stroke={Colors.primary} strokeWidth={2} />
+          <Path d={dPath} fill="none" stroke={colors.primary} strokeWidth={2} />
 
           {points.map((p, i) => (
-            <Circle key={i} cx={p.x} cy={p.y} r={3.5} fill={Colors.primary} />
+            <Circle key={i} cx={p.x} cy={p.y} r={3.5} fill={colors.primary} />
           ))}
         </Svg>
       </View>
       <View style={styles.summary}>
-        <Text style={Typography.body}>Último: {data[data.length - 1].value}</Text>
-        <Text style={Typography.body}>Média: {Math.round(values.reduce((a, b) => a + b, 0) / values.length)}</Text>
+        <Text style={[Typography.bodyMedium, { color: colors.onSurface }]}>Último: {data[data.length - 1].value}</Text>
+        <Text style={[Typography.bodyMedium, { color: colors.onSurface }]}>Média: {Math.round(values.reduce((a, b) => a + b, 0) / values.length)}</Text>
       </View>
     </Card>
   );

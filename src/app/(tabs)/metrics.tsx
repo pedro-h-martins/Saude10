@@ -1,9 +1,10 @@
 import { Card } from '@/components/Card';
 import EvolutionCharts from '@/components/EvolutionCharts';
 import { SymptomWidget } from '@/components/SymptomWidget';
-import { Colors } from '@/constants/Colors';
+import { ThemeColors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useQuery } from "@/context/RealmProvider";
+import { useTheme } from '@/context/ThemeContext';
 import { ActivityLog } from '@/models/ActivityLog';
 import { BloodPressure } from '@/models/BloodPressure';
 import { MealLog } from '@/models/MealLog';
@@ -16,29 +17,28 @@ import React, { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const getMoodConfig = (rating: number) => {
+const getMoodConfig = (rating: number, colors: ThemeColors) => {
   switch (rating) {
-    case 1: return { icon: 'sad-outline', label: 'Péssimo', color: '#E74C3C' };
-    case 2: return { icon: 'trending-down-outline', label: 'Mal', color: '#E67E22' };
-    case 3: return { icon: 'reorder-two-outline', label: 'Ok', color: '#F1C40F' };
-    case 4: return { icon: 'happy-outline', label: 'Bem', color: '#2ECC71' };
-    case 5: return { icon: 'star-outline', label: 'Ótimo', color: '#9B59B6' };
-    default: return { icon: 'help-outline', label: 'Indefinido', color: Colors.textSecondary };
+    case 1: return { icon: 'sad-outline', label: 'Péssimo', color: colors.moodTerrible };
+    case 2: return { icon: 'trending-down-outline', label: 'Mal', color: colors.moodBad };
+    case 3: return { icon: 'reorder-two-outline', label: 'Ok', color: colors.moodOk };
+    case 4: return { icon: 'happy-outline', label: 'Bem', color: colors.moodGood };
+    case 5: return { icon: 'star-outline', label: 'Ótimo', color: colors.moodGreat };
+    default: return { icon: 'help-outline', label: 'Indefinido', color: colors.onSurfaceVariant };
   }
 };
 
-
-const getBPStatus = (systolic: number, diastolic: number) => {
+const getBPStatus = (systolic: number, diastolic: number, colors: ThemeColors) => {
   if (systolic >= 140 || diastolic >= 90) {
-    return { label: 'Hipertensão Estágio 2', color: '#C0392B' };
+    return { label: 'Hipertensão Estágio 2', color: colors.error };
   } else if (systolic >= 130 || diastolic >= 80) {
-    return { label: 'Hipertensão Estágio 1', color: '#E67E22' };
+    return { label: 'Hipertensão Estágio 1', color: colors.moodBad };
   } else if (systolic >= 120 && diastolic < 80) {
-    return { label: 'Elevada', color: '#F1C40F' };
+    return { label: 'Elevada', color: colors.moodOk };
   } else if (systolic < 120 && diastolic < 80) {
-    return { label: 'Normal', color: Colors.accent };
+    return { label: 'Normal', color: colors.accent };
   }
-  return { label: 'Desconhecido', color: Colors.textSecondary };
+  return { label: 'Desconhecido', color: colors.onSurfaceVariant };
 };
 
 const formatDate = (date?: Date | string | null) => {
@@ -66,6 +66,7 @@ function getItemKey(item: any) {
 }
 
 export default function Metrics() {
+  const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<'pressure' | 'mood' | 'symptoms' | 'meals' | 'sleep'>('pressure');
   const [selectedMetric, setSelectedMetric] = useState<'weight' | 'steps' | 'sleep_duration' | 'sleep_quality'>('steps');
   const [rangeDays, setRangeDays] = useState<number>(7);
@@ -96,24 +97,24 @@ export default function Metrics() {
     return (
       <Card style={styles.measurementCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="moon-outline" size={20} color="#6366F1" style={{ marginRight: 8 }} />
+          <Ionicons name="moon-outline" size={20} color={colors.sleep} style={{ marginRight: 8 }} />
           <View style={{ flex: 1 }}>
             <Text style={styles.dateText}>
               {item.startTime.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
             </Text>
-            <Text style={Typography.caption}>
+            <Text style={[Typography.labelMedium, { color: colors.onSurfaceVariant }]}>
               {item.startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - {item.endTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ ...Typography.body, color: Colors.primary, fontWeight: 'bold' }}>{hours}h {minutes}min</Text>
+            <Text style={{ ...Typography.bodyMedium, color: colors.primary, fontWeight: 'bold' }}>{hours}h {minutes}min</Text>
             <View style={styles.qualityContainer}>
               {[1, 2, 3, 4, 5].map((s) => (
-                <Ionicons 
-                  key={s} 
-                  name={item.quality >= s ? "star" : "star-outline"} 
-                  size={10} 
-                  color={item.quality >= s ? "#F1C40F" : Colors.border} 
+                <Ionicons
+                  key={s}
+                  name={item.quality >= s ? "star" : "star-outline"}
+                  size={10}
+                  color={item.quality >= s ? colors.moodOk : colors.outlineVariant}
                 />
               ))}
             </View>
@@ -124,22 +125,22 @@ export default function Metrics() {
   };
 
   const renderPressureItem = ({ item }: { item: BloodPressure }) => {
-    const status = getBPStatus(item.systolic, item.diastolic);
+    const status = getBPStatus(item.systolic, item.diastolic, colors);
 
     return (
       <Card style={styles.measurementCard}>
         <View style={styles.cardHeader}>
           <View style={[styles.statusIndicator, { backgroundColor: status.color }]} />
-          <Text style={styles.dateText}>{formatDate(item.timestamp)}</Text>
+          <Text style={[styles.dateText, { color: colors.onSurfaceVariant }]}>{formatDate(item.timestamp)}</Text>
         </View>
 
         <View style={styles.readingContainer}>
           <View>
-            <Text style={styles.bpValue}>
+            <Text style={[styles.bpValue, { color: colors.onSurface }]}>
               {item.systolic}
-              <Text style={styles.separator}>/</Text>
+              <Text style={[styles.separator, { color: colors.onSurfaceVariant }]}>/</Text>
               {item.diastolic}
-              <Text style={styles.unit}> mmHg</Text>
+              <Text style={[styles.unit, { color: colors.onSurfaceVariant }]}> mmHg</Text>
             </Text>
             <Text style={[styles.statusLabel, { color: status.color }]}>
               {status.label}
@@ -151,13 +152,13 @@ export default function Metrics() {
   };
 
   const renderMoodItem = ({ item }: { item: WellnessLog }) => {
-    const config = getMoodConfig(item.rating);
+    const config = getMoodConfig(item.rating, colors);
 
     return (
       <Card style={styles.measurementCard}>
         <View style={styles.cardHeader}>
           <Ionicons name={config.icon as any} size={20} color={config.color} style={{ marginRight: 8 }} />
-          <Text style={styles.dateText}>{formatDate(item.timestamp)}</Text>
+          <Text style={[styles.dateText, { color: colors.onSurfaceVariant }]}>{formatDate(item.timestamp)}</Text>
         </View>
 
         <View style={styles.moodContent}>
@@ -165,9 +166,9 @@ export default function Metrics() {
             {config.label}
           </Text>
           {item.notes ? (
-            <Text style={styles.noteText}>&quot;{item.notes}&quot;</Text>
+            <Text style={[styles.noteText, { color: colors.onSurface }]}>&quot;{item.notes}&quot;</Text>
           ) : (
-            <Text style={styles.emptyNoteText}>Sem observações</Text>
+            <Text style={[styles.emptyNoteText, { color: colors.onSurfaceVariant }]}>Sem observações</Text>
           )}
         </View>
       </Card>
@@ -175,7 +176,7 @@ export default function Metrics() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList<any>
         data={
           activeTab === 'pressure' ? measurements : 
@@ -189,46 +190,46 @@ export default function Metrics() {
           if (activeTab === 'pressure') return renderPressureItem({ item } as any);
           if (activeTab === 'mood') return renderMoodItem({ item } as any);
           if (activeTab === 'sleep') return renderSleepItem({ item } as any);
-          if (activeTab === 'symptoms') {
-            return (
-              <Card style={styles.measurementCard}>
-                <View style={styles.cardHeader}>
-                  <Ionicons name={'medkit-outline' as any} size={20} color={Colors.primary} style={{ marginRight: 8 }} />
-                  <Text style={styles.dateText}>{formatDate(item.timestamp)}</Text>
-                </View>
-                <View style={{ marginTop: 4 }}>
-                  <Text style={styles.noteText}>&quot;{item.description}&quot;</Text>
-                </View>
-              </Card>
-            );
-          }
+            if (activeTab === 'symptoms') {
+                return (
+                  <Card style={styles.measurementCard}>
+                    <View style={styles.cardHeader}>
+                      <Ionicons name={'medkit-outline' as any} size={20} color={colors.primary} style={{ marginRight: 8 }} />
+                      <Text style={[styles.dateText, { color: colors.onSurfaceVariant }]}>{formatDate(item.timestamp)}</Text>
+                    </View>
+                    <View style={{ marginTop: 4 }}>
+                      <Text style={[styles.noteText, { color: colors.onSurface }]}>&quot;{item.description}&quot;</Text>
+                    </View>
+                  </Card>
+                );
+              }
 
-          return (
-            <Card style={styles.measurementCard}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="restaurant-outline" size={20} color={Colors.primary} style={{ marginRight: 8 }} />
-                <Text style={styles.dateText}>{formatDate((item as any).timestamp)}</Text>
-              </View>
-              <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View>
-                  <Text style={{ ...Typography.body, fontWeight: 'bold' }}>{(item as any).name}</Text>
-                  <Text style={{ ...Typography.caption, color: Colors.textSecondary }}>{(item as any).mealType}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ ...Typography.body, color: Colors.primary, fontWeight: 'bold' }}>{(item as any).calories} kcal</Text>
-                  <Text style={{ ...Typography.caption, color: Colors.textSecondary }}>
-                    P: {(item as any).protein}g • C: {(item as any).carbs}g • G: {(item as any).fat}g
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          );
+              return (
+                <Card style={styles.measurementCard}>
+                  <View style={styles.cardHeader}>
+                    <Ionicons name="restaurant-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+                    <Text style={[styles.dateText, { color: colors.onSurfaceVariant }]}>{formatDate((item as any).timestamp)}</Text>
+                  </View>
+                  <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View>
+                      <Text style={{ ...Typography.bodyMedium, fontWeight: 'bold', color: colors.onSurface }}>{(item as any).name}</Text>
+                      <Text style={{ ...Typography.labelMedium, color: colors.onSurfaceVariant }}>{(item as any).mealType}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ ...Typography.bodyMedium, color: colors.primary, fontWeight: 'bold' }}>{(item as any).calories} kcal</Text>
+                      <Text style={{ ...Typography.labelMedium, color: colors.onSurfaceVariant }}>
+                        P: {(item as any).protein}g • C: {(item as any).carbs}g • G: {(item as any).fat}g
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              );
         }}
         ListHeaderComponent={() => (
           <View>
             <View style={styles.header}>
-              <Text style={Typography.h1}>Suas Métricas</Text>
-              <Text style={Typography.caption}>Acompanhe seu progresso diário</Text>
+              <Text style={[Typography.headlineLarge, { color: colors.onSurface }]}>Suas Métricas</Text>
+              <Text style={[Typography.labelMedium, { color: colors.onSurfaceVariant }]}>Acompanhe seu progresso diário</Text>
             </View>
 
             <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
@@ -239,18 +240,18 @@ export default function Metrics() {
                 nestedScrollEnabled
                 directionalLockEnabled
               >
-                <TouchableOpacity onPress={() => setSelectedMetric('weight')} style={[styles.smallSelector, selectedMetric === 'weight' && styles.smallSelectorActive, { marginRight: 8 }]}>
-                  <Text style={[styles.smallSelectorText, selectedMetric === 'weight' && styles.smallSelectorTextActive]}>Peso</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setSelectedMetric('steps')} style={[styles.smallSelector, selectedMetric === 'steps' && styles.smallSelectorActive, { marginRight: 8 }]}>
-                  <Text style={[styles.smallSelectorText, selectedMetric === 'steps' && styles.smallSelectorTextActive]}>Média de passos</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setSelectedMetric('sleep_duration')} style={[styles.smallSelector, selectedMetric === 'sleep_duration' && styles.smallSelectorActive, { marginRight: 8 }]}>
-                  <Text style={[styles.smallSelectorText, selectedMetric === 'sleep_duration' && styles.smallSelectorTextActive]}>Duração do Sono</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setSelectedMetric('sleep_quality')} style={[styles.smallSelector, selectedMetric === 'sleep_quality' && styles.smallSelectorActive, { marginRight: 8 }]}>
-                  <Text style={[styles.smallSelectorText, selectedMetric === 'sleep_quality' && styles.smallSelectorTextActive]}>Qualidade do Sono</Text>
-                </TouchableOpacity>
+            <TouchableOpacity onPress={() => setSelectedMetric('weight')} style={[styles.smallSelector, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, selectedMetric === 'weight' && { backgroundColor: colors.primary, borderColor: colors.primary }, { marginRight: 8 }]}>
+              <Text style={[styles.smallSelectorText, { color: colors.onSurfaceVariant }, selectedMetric === 'weight' && { color: colors.onPrimary }]}>Peso</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setSelectedMetric('steps')} style={[styles.smallSelector, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, selectedMetric === 'steps' && { backgroundColor: colors.primary, borderColor: colors.primary }, { marginRight: 8 }]}>
+              <Text style={[styles.smallSelectorText, { color: colors.onSurfaceVariant }, selectedMetric === 'steps' && { color: colors.onPrimary }]}>Média de passos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setSelectedMetric('sleep_duration')} style={[styles.smallSelector, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, selectedMetric === 'sleep_duration' && { backgroundColor: colors.primary, borderColor: colors.primary }, { marginRight: 8 }]}>
+              <Text style={[styles.smallSelectorText, { color: colors.onSurfaceVariant }, selectedMetric === 'sleep_duration' && { color: colors.onPrimary }]}>Duração do Sono</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setSelectedMetric('sleep_quality')} style={[styles.smallSelector, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, selectedMetric === 'sleep_quality' && { backgroundColor: colors.primary, borderColor: colors.primary }, { marginRight: 8 }]}>
+              <Text style={[styles.smallSelectorText, { color: colors.onSurfaceVariant }, selectedMetric === 'sleep_quality' && { color: colors.onPrimary }]}>Qualidade do Sono</Text>
+            </TouchableOpacity>
               </ScrollView>
 
               <ScrollView
@@ -260,11 +261,11 @@ export default function Metrics() {
                 nestedScrollEnabled
                 directionalLockEnabled
               >
-                {[7, 15, 30, 90, 180, 365].map((d) => (
-                  <TouchableOpacity key={d} onPress={() => setRangeDays(d)} style={[styles.rangeButton, rangeDays === d && styles.rangeButtonActive, { marginRight: 8 }]}>
-                    <Text style={[styles.rangeText, rangeDays === d && styles.rangeTextActive]}>{getRangeLabel(d)}</Text>
-                  </TouchableOpacity>
-                ))}
+              {[7, 15, 30, 90, 180, 365].map((d) => (
+                <TouchableOpacity key={d} onPress={() => setRangeDays(d)} style={[styles.rangeButton, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, rangeDays === d && { backgroundColor: colors.primary, borderColor: colors.primary }, { marginRight: 8 }]}>
+                  <Text style={[styles.rangeText, { color: colors.onSurfaceVariant }, rangeDays === d && { color: colors.onPrimary }]}>{getRangeLabel(d)}</Text>
+                </TouchableOpacity>
+              ))}
               </ScrollView>
             </View>
 
@@ -350,36 +351,36 @@ export default function Metrics() {
               nestedScrollEnabled
               directionalLockEnabled
             >
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'pressure' && styles.activeTabButton]}
-                onPress={() => setActiveTab('pressure')}
-              >
-                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'pressure' && styles.activeTabText]}>Pressão</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'mood' && styles.activeTabButton]}
-                onPress={() => setActiveTab('mood')}
-              >
-                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'mood' && styles.activeTabText]}>Humor</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'sleep' && styles.activeTabButton]}
-                onPress={() => setActiveTab('sleep')}
-              >
-                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'sleep' && styles.activeTabText]}>Sono</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'symptoms' && styles.activeTabButton]}
-                onPress={() => setActiveTab('symptoms')}
-              >
-                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'symptoms' && styles.activeTabText]}>Sintomas</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'meals' && styles.activeTabButton]}
-                onPress={() => setActiveTab('meals')}
-              >
-                <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, activeTab === 'meals' && styles.activeTabText]}>Alimentação</Text>
-              </TouchableOpacity>
+        <TouchableOpacity
+            style={[styles.tabButton, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, activeTab === 'pressure' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+            onPress={() => setActiveTab('pressure')}
+          >
+            <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, { color: colors.onSurfaceVariant }, activeTab === 'pressure' && { color: colors.onPrimary }]}>Pressão</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, activeTab === 'mood' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+            onPress={() => setActiveTab('mood')}
+          >
+            <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, { color: colors.onSurfaceVariant }, activeTab === 'mood' && { color: colors.onPrimary }]}>Humor</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, activeTab === 'sleep' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+            onPress={() => setActiveTab('sleep')}
+          >
+            <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, { color: colors.onSurfaceVariant }, activeTab === 'sleep' && { color: colors.onPrimary }]}>Sono</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, activeTab === 'symptoms' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+            onPress={() => setActiveTab('symptoms')}
+          >
+            <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, { color: colors.onSurfaceVariant }, activeTab === 'symptoms' && { color: colors.onPrimary }]}>Sintomas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, { backgroundColor: colors.background, borderColor: colors.outlineVariant }, activeTab === 'meals' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+            onPress={() => setActiveTab('meals')}
+          >
+            <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.tabText, { color: colors.onSurfaceVariant }, activeTab === 'meals' && { color: colors.onPrimary }]}>Alimentação</Text>
+          </TouchableOpacity>
             </ScrollView>
 
             {activeTab === 'symptoms' && (
@@ -390,7 +391,7 @@ export default function Metrics() {
           </View>
         )}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<View style={styles.emptyContainer}><Text style={Typography.body}>Nenhum registro encontrado.</Text></View>}
+        ListEmptyComponent={<View style={styles.emptyContainer}><Text style={[Typography.bodyMedium, { color: colors.onSurfaceVariant }]}>Nenhum registro encontrado.</Text></View>}
       />
     </SafeAreaView>
   );
@@ -399,7 +400,6 @@ export default function Metrics() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -417,26 +417,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: '#eee',
     minWidth: 88,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeTabButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
   tabText: {
-    ...Typography.body,
+    ...Typography.bodyMedium,
     fontSize: 14,
-    color: Colors.textSecondary,
     fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#fff',
   },
   listContent: {
     padding: 20,
@@ -458,7 +448,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   dateText: {
-    ...Typography.caption,
+    ...Typography.labelMedium,
     fontSize: 13,
   },
   readingContainer: {
@@ -467,20 +457,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   bpValue: {
-    ...Typography.h2,
+    ...Typography.titleLarge,
     fontSize: 28,
   },
   separator: {
-    color: Colors.textSecondary,
     fontWeight: '300',
   },
   unit: {
-    ...Typography.body,
+    ...Typography.bodyMedium,
     fontSize: 16,
-    color: Colors.textSecondary,
   },
   statusLabel: {
-    ...Typography.caption,
+    ...Typography.labelMedium,
     fontWeight: '700',
     marginTop: 4,
     textTransform: 'uppercase',
@@ -489,21 +477,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   moodLabel: {
-    ...Typography.h3,
+    ...Typography.titleMedium,
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 8,
   },
   noteText: {
-    ...Typography.body,
+    ...Typography.bodyMedium,
     fontSize: 14,
-    color: Colors.text,
     fontStyle: 'italic',
   },
   emptyNoteText: {
-    ...Typography.caption,
+    ...Typography.labelMedium,
     fontSize: 12,
-    color: Colors.textSecondary,
   },
   emptyContainer: {
     marginTop: 100,
@@ -514,21 +500,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 16,
-    backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: '#eee',
-  },
-  smallSelectorActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   smallSelectorText: {
-    ...Typography.body,
+    ...Typography.bodyMedium,
     fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  smallSelectorTextActive: {
-    color: '#fff',
   },
   qualityContainer: {
     flexDirection: 'row',
@@ -538,20 +514,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 16,
-    backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: '#eee',
-  },
-  rangeButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   rangeText: {
-    ...Typography.body,
+    ...Typography.bodyMedium,
     fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  rangeTextActive: {
-    color: '#fff',
   },
 });

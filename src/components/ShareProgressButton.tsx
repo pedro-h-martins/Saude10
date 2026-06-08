@@ -1,4 +1,4 @@
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Share, StyleSheet, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
@@ -18,6 +18,7 @@ const ShareProgressButton = ({
   compact = true,
   buttonStyle,
 }: ShareProgressButtonProps) => {
+  const { colors } = useTheme();
   const handleShare = async () => {
     try {
       await Share.share({ title, message });
@@ -27,17 +28,17 @@ const ShareProgressButton = ({
   };
 
   const flattenedStyle = StyleSheet.flatten(buttonStyle) as { backgroundColor?: string } | undefined;
-  const hasColoredBg = !!(flattenedStyle && flattenedStyle.backgroundColor && flattenedStyle.backgroundColor !== Colors.white && flattenedStyle.backgroundColor !== 'transparent');
-  const iconColor = hasColoredBg ? Colors.white : Colors.primary;
+  const hasColoredBg = !!(flattenedStyle && flattenedStyle.backgroundColor && flattenedStyle.backgroundColor !== colors.surfaceContainerLowest && flattenedStyle.backgroundColor !== 'transparent');
+  const iconColor = hasColoredBg ? colors.onPrimary : colors.primary;
 
   return (
     <TouchableOpacity
-      style={[styles.button, compact && styles.compactButton, buttonStyle]}
+      style={[styles.button, { backgroundColor: colors.surfaceContainerLowest, borderColor: colors.outlineVariant }, compact && styles.compactButton, buttonStyle]}
       onPress={handleShare}
       activeOpacity={0.75}
     >
       <Ionicons name="share-social-outline" size={compact ? 18 : 20} color={iconColor} />
-      {!compact && <Text style={[styles.label, hasColoredBg && { color: Colors.white }]}>{buttonLabel}</Text>}
+      {!compact && <Text style={[styles.label, { color: colors.primary }, hasColoredBg && { color: colors.onPrimary }]}>{buttonLabel}</Text>}
     </TouchableOpacity>
   );
 };
@@ -47,10 +48,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.white,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: Colors.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
     gap: 8,
@@ -65,7 +64,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    color: Colors.primary,
     fontWeight: '700',
     fontSize: 13,
   },
