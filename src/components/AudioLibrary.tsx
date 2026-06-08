@@ -9,15 +9,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-ActivityIndicator,
-Animated,
-Dimensions,
-PanResponder,
-ScrollView,
-StyleSheet,
-Text,
-TouchableOpacity,
-View,
+  ActivityIndicator,
+  Dimensions,
+  PanResponder,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -58,46 +57,65 @@ trackBackgroundColor: string;
 }
 
 const SeekBar: React.FC<SeekBarProps> = ({ durationMs, positionMs, onSeek, color, trackBackgroundColor }) => {
-const progress = durationMs > 0 ? positionMs / durationMs : 0;
-const barWidth = SCREEN_WIDTH - 80;
-const panRef = useRef(new Animated.ValueXY()).current;
-const isDragging = useRef(false);
+  const progress = durationMs > 0 ? Math.min(1, Math.max(0, positionMs / durationMs)) : 0;
+  const barWidth = SCREEN_WIDTH - 80;
+  const isDragging = useRef(false);
+  const [dragProgress, setDragProgress] = useState<number | null>(null);
+  const trackPageX = useRef(0);
+  const trackRef = useRef<View>(null);
 
-const panResponder = useMemo(
-() =>
-PanResponder.create({
-onStartShouldSetPanResponder: () => {
-isDragging.current = true;
-return true;
-},
-onMoveShouldSetPanResponder: () => true,
-onPanResponderMove: (_, gestureState) => {
-const newX = Math.max(0, Math.min(barWidth, gestureState.moveX - 40));
-panRef.setValue({ x: newX, y: 0 });
-},
-onPanResponderRelease: (_, gestureState) => {
-isDragging.current = false;
-const newX = Math.max(0, Math.min(barWidth, gestureState.moveX - 40));
-const ratio = newX / barWidth;
-onSeek(ratio * durationMs);
-},
-}),
-[barWidth, durationMs, onSeek, panRef],
-);
+  const displayProgress = dragProgress !== null ? dragProgress : progress;
+  const thumbLeft = displayProgress * barWidth - 6;
 
-return (
-<View style={styles.seekContainer}>
-<Text style={[styles.seekTime, { color: trackBackgroundColor }]}>{formatTime(positionMs / 1000)}</Text>
-<View style={[styles.seekTrack, { width: barWidth, backgroundColor: trackBackgroundColor }]}>
-<View style={[styles.seekFill, { width: progress * barWidth, backgroundColor: color }]} />
-<Animated.View
-style={[styles.seekThumb, { left: progress * barWidth - 6, backgroundColor: color }]}
-{...panResponder.panHandlers}
-/>
-</View>
-<Text style={[styles.seekTime, { color: trackBackgroundColor }]}>{formatTime(durationMs / 1000)}</Text>
-</View>
-);
+  const measureTrack = useCallback(() => {
+    trackRef.current?.measure((x, y, w, h, pageX) => {
+      trackPageX.current = pageX;
+    });
+  }, []);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => {
+          isDragging.current = true;
+          measureTrack();
+          return true;
+        },
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderMove: (_, gestureState) => {
+          const newX = Math.max(0, Math.min(barWidth, gestureState.moveX - trackPageX.current));
+          setDragProgress(newX / barWidth);
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          isDragging.current = false;
+          const newX = Math.max(0, Math.min(barWidth, gestureState.moveX - trackPageX.current));
+          const ratio = newX / barWidth;
+          setDragProgress(null);
+          onSeek(ratio * durationMs);
+        },
+        onPanResponderTerminate: () => {
+          isDragging.current = false;
+          setDragProgress(null);
+        },
+      }),
+    [barWidth, durationMs, onSeek, measureTrack],
+  );
+
+  return (
+    <View style={styles.seekContainer}>
+      <Text style={[styles.seekTime, { color: trackBackgroundColor }]}>{formatTime(positionMs / 1000)}</Text>
+      <View ref={trackRef} style={styles.seekTrackWrapper} onLayout={measureTrack}>
+        <View style={[styles.seekTrack, { width: barWidth, backgroundColor: trackBackgroundColor }]}>
+          <View style={[styles.seekFill, { width: displayProgress * barWidth, backgroundColor: color }]} />
+        </View>
+        <View
+          style={[styles.seekThumb, { left: thumbLeft, backgroundColor: color }]}
+          {...panResponder.panHandlers}
+        />
+      </View>
+      <Text style={[styles.seekTime, { color: trackBackgroundColor }]}>{formatTime(durationMs / 1000)}</Text>
+    </View>
+  );
 };
 
 interface AudioItemProps {
@@ -591,38 +609,44 @@ paddingVertical: 4,
 borderRadius: 8,
 },
 placeholderText: { ...Typography.labelMedium, fontWeight: '600' },
-seekContainer: {
-flexDirection: 'row',
-alignItems: 'center',
-marginTop: 10,
-gap: 8,
-},
-seekTime: { ...Typography.labelMedium, fontSize: 11, width: 32 },
-seekTrack: {
-height: 4,
-borderRadius: 2,
-overflow: 'hidden',
-position: 'relative',
-},
-seekFill: {
-position: 'absolute',
-top: 0,
-left: 0,
-height: 4,
-borderRadius: 2,
-},
-seekThumb: {
-position: 'absolute',
-top: -4,
-width: 12,
-height: 12,
-borderRadius: 6,
-elevation: 2,
-shadowColor: '#000',
-shadowOffset: { width: 0, height: 1 },
-shadowOpacity: 0.2,
-shadowRadius: 2,
-},
+  seekContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 8,
+    overflow: 'hidden',
+  },
+  seekTime: { ...Typography.labelMedium, fontSize: 11, width: 32 },
+  seekTrackWrapper: {
+    position: 'relative',
+    height: 20,
+    justifyContent: 'center',
+    width: SCREEN_WIDTH - 80,
+  },
+  seekTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  seekFill: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: 4,
+    borderRadius: 2,
+  },
+  seekThumb: {
+    position: 'absolute',
+    top: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
 emptyState: {
 alignItems: 'center',
 justifyContent: 'center',
